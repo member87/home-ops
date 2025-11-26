@@ -20,7 +20,7 @@ spec:
       create: true
       username: admin
       # Password: admin (bcrypt hash)
-      passwordHash: $2a$10$P/tHQ1DNFXdvX0zRGA8LPeSOyb0JXq9rP3fZ4W8HGTpLV7qHDlWhe
+      passwordHash: $2y$10$PwnDhPoCUjv9atuW/.Wsn.srI6U899cjZ8EqvaWUf7FM.0H1O8dsi
     service:
       type: NodePort
       nodePort: 30080

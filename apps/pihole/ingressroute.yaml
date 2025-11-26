@@ -24,7 +24,6 @@ spec:
       kind: Rule
       middlewares:
         - name: authelia-forwardauth
-          namespace: authelia
       services:
         - name: pihole-web
           port: 80

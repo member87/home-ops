@@ -1,0 +1,21 @@
+---
+# ArgoCD Application Controller Settings
+# Configures repository polling interval for auto-sync
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Repository polling interval (default: 3m)
+  timeout.reconciliation: 180s
+  
+  # Enable resource tracking
+  application.resourceTrackingMethod: annotation
+  
+  # Repository credentials (if needed for private repos)
+  # repositories: |
+  #   - url: https://github.com/member87/home-ops.git

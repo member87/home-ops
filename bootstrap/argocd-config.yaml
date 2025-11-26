@@ -1,0 +1,34 @@
+---
+# ArgoCD ConfigMap for insecure mode (no TLS redirect)
+# Allows accessing ArgoCD UI via HTTP on NodePort
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Run server without TLS
+  server.insecure: "true"
+  # Disable TLS on repository server
+  reposerver.disable.tls: "true"
+---
+# ArgoCD Repository Configuration
+# Connects ArgoCD to the GitHub repository
+apiVersion: v1
+kind: Secret
+metadata:
+  name: home-ops-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: git
+  url: https://github.com/member87/home-ops.git
+  # For public repositories, no credentials needed
+  # For private repos, add:
+  # username: member87
+  # password: <your-github-token>

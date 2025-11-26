@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ip-checker
+  namespace: ip-checker
+  labels:
+    app: ip-checker
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: http
+    nodePort: 30002
+    protocol: TCP
+    name: http
+  selector:
+    app: ip-checker

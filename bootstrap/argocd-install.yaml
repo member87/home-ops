@@ -1,0 +1,18 @@
+---
+# Namespace for ArgoCD
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+---
+# ArgoCD Installation using official manifest
+# This includes all core ArgoCD components
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-install
+  namespace: argocd
+data:
+  install.sh: |
+    #!/bin/bash
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml

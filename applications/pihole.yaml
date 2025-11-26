@@ -16,10 +16,13 @@ spec:
         # Admin password - Helm chart automatically sets FTLCONF_webserver_api_password
         adminPassword: "password"
         
-        # Persistent storage disabled - using emptyDir for now
-        # TODO: Set up proper persistent storage later (Rook Ceph or Talos-compatible solution)
+        # Persistent storage using local-path provisioner
         persistentVolumeClaim:
-          enabled: false
+          enabled: true
+          size: "2Gi"
+          storageClass: "local-path"
+          accessModes:
+            - ReadWriteOnce
         
         # DNS Service Configuration - using LoadBalancer with MetalLB
         serviceDns:

@@ -67,9 +67,9 @@ spec:
     persistence:
       enabled: true
       name: traefik-data
-      accessMode: ReadWriteOnce
-      size: 1Gi
       path: /data
+      type: hostPath
+      hostPath: /var/lib/traefik
     logs:
       general:
         level: INFO

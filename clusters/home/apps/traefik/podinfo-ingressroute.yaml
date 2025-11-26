@@ -1,0 +1,17 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: podinfo
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`podinfo.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: podinfo
+          port: 9898
+  tls:
+    certResolver: letsencrypt

@@ -21,5 +21,4 @@ spec:
       # Password: admin (bcrypt hash)
       passwordHash: $2y$10$PwnDhPoCUjv9atuW/.Wsn.srI6U899cjZ8EqvaWUf7FM.0H1O8dsi
     service:
-      type: NodePort
-      nodePort: 30080
+      type: ClusterIP

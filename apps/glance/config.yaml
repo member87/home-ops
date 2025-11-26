@@ -40,24 +40,26 @@ pages:
               - UCrUL8K81R4VBzm-KOYwrcxQ # Dreams of Code
               - UCsBjURrPoezykLs9EqgamOA # Fireship
             collapse-after: 3
-            
-          - type: reddit
-            subreddit: unixporn
-            limit: 10
-            collapse-after: 5
-            
-          - type: reddit
-            subreddit: technology
-            limit: 10
-            collapse-after: 5
+
+
+          - type: group
+            widgets:
+              - type: reddit
+                subreddit: unixporn
+                show-thumbnails: true
+                limit: 10
+                collapse-after: 5
+              - type: reddit
+                subreddit: technology
+                limit: 10
+                collapse-after: 5
+              - type: reddit
+                subreddit: science
+                limit: 10
+                collapse-after: 5
 
       - size: small
         widgets:
-          - type: reddit
-            subreddit: science
-            limit: 10
-            collapse-after: 5
-
           - type: clock
             hour-format: 24h
             timezones:

@@ -61,7 +61,9 @@ spec:
         
         # Environment variables
         extraEnvVars:
+          TZ: "UTC"
           FTLCONF_dns_listeningMode: "all"
+          FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/192.168.1.200"
         
         # Pod DNS Configuration
         podDnsConfig:

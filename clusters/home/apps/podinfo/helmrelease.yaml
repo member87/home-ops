@@ -17,6 +17,9 @@ spec:
       interval: 1m
   values:
     replicaCount: 2
+    service:
+      type: NodePort
+      nodePort: 30081
     resources:
       limits:
         cpu: 100m

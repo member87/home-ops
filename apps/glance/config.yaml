@@ -10,7 +10,7 @@ pages:
           - type: calendar
 
           - type: weather
-            location: Tower Hamlets, London, United Kingdom
+            location: London, United Kingdom
             units: metric
 
           - type: monitor

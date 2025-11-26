@@ -1,0 +1,56 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: podinfo-cert
+  namespace: podinfo
+spec:
+  secretName: podinfo-tls
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  dnsNames:
+    - podinfo.jackhumes.com
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: podinfo
+  namespace: podinfo
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`podinfo.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: podinfo
+          port: 9898
+  tls:
+    secretName: podinfo-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: podinfo-http
+  namespace: podinfo
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`podinfo.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: podinfo
+          port: 9898
+      middlewares:
+        - name: redirect-https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: podinfo
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

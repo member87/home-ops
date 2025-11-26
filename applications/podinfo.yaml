@@ -17,9 +17,8 @@ spec:
         replicaCount: 1
         service:
           enabled: true
-          type: NodePort
+          type: ClusterIP
           httpPort: 9898
-          nodePort: 30001
         resources:
           limits:
             cpu: 200m

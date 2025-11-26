@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/weaveworks/charts/weave-gitops
   ref:
-    semver: ">=4.0.40"
+    tag: "4.0.36"

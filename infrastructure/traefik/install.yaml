@@ -117,9 +117,6 @@ spec:
             - --providers.kubernetescrd
             - --entrypoints.web.address=:80
             - --entrypoints.websecure.address=:443
-            - --certificatesresolvers.letsencrypt.acme.email=admin@jackhumes.com
-            - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
-            - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
             - --log.level=INFO
           ports:
             - name: web

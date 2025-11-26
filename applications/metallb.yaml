@@ -8,19 +8,18 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/metallb/metallb.git
-    targetRevision: v0.14.3
-    path: config/manifests
+    repoURL: https://github.com/member87/home-ops.git
+    targetRevision: HEAD
+    path: infrastructure/metallb
+    directory:
+      include: "{namespace.yaml,install.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
+      - Replace=true
     retry:
       limit: 5
       backoff:
@@ -41,6 +40,8 @@ spec:
     repoURL: https://github.com/member87/home-ops.git
     targetRevision: HEAD
     path: infrastructure/metallb
+    directory:
+      exclude: "{namespace.yaml,install.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system

@@ -25,6 +25,7 @@ spec:
       services:
         - name: ip-checker
           port: 80
+          kind: Service
   tls:
     secretName: ip-checker-tls
 ---
@@ -42,6 +43,7 @@ spec:
       services:
         - name: ip-checker
           port: 80
+          kind: Service
       middlewares:
         - name: redirect-https
 ---

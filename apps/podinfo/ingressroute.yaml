@@ -25,6 +25,7 @@ spec:
       services:
         - name: podinfo
           port: 9898
+          kind: Service
   tls:
     secretName: podinfo-tls
 ---
@@ -42,6 +43,7 @@ spec:
       services:
         - name: podinfo
           port: 9898
+          kind: Service
       middlewares:
         - name: redirect-https
 ---

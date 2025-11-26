@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia-config
+  namespace: authelia
+data:
+  configuration.yml: |
+    ---
+    theme: dark
+    
+    server:
+      address: 'tcp://0.0.0.0:9091/'
+    
+    log:
+      level: info
+      format: text
+    
+    totp:
+      disable: true
+      issuer: authelia.com
+    
+    webauthn:
+      disable: true
+    
+    authentication_backend:
+      file:
+        path: /config/users.yml
+        password:
+          algorithm: argon2id
+          iterations: 3
+          memory: 65536
+          parallelism: 4
+          key_length: 32
+          salt_length: 16
+    
+    access_control:
+      default_policy: deny
+      rules:
+        - domain:
+            - "pihole.lab.jackhumes.com"
+          policy: one_factor
+    
+    session:
+      name: authelia_session
+      domain: lab.jackhumes.com
+      expiration: 1h
+      inactivity: 15m
+      remember_me: 1M
+    
+    regulation:
+      max_retries: 3
+      find_time: 2m
+      ban_time: 5m
+    
+    storage:
+      local:
+        path: /data/db.sqlite3
+    
+    notifier:
+      disable_startup_check: true
+      filesystem:
+        filename: /data/notification.txt

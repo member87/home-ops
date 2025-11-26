@@ -1,0 +1,17 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authelia
+  namespace: authelia
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`auth.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: authelia
+          port: 9091
+  tls:
+    certResolver: letsencrypt-production

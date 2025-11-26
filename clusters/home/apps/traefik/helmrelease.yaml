@@ -20,7 +20,7 @@ spec:
   values:
     deployment:
       kind: Deployment
-      replicas: 2
+      replicas: 1
     service:
       type: LoadBalancer
       # If you don't have a LoadBalancer, use NodePort with these settings:

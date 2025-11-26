@@ -1,0 +1,79 @@
+---
+# Glance Dashboard Configuration
+# Personal homepage with RSS feeds, weather, and calendar
+
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          - type: calendar
+
+          - type: weather
+            location: Tower Hamlets, London, United Kingdom
+            units: metric
+
+          - type: monitor
+            cache: 1m
+            title: Services
+            sites:
+              - title: PiHole
+                url: http://pihole-web.pihole.svc.cluster.local
+                icon: si:pihole
+              - title: Traefik
+                url: http://traefik-dashboard.kube-system.svc.cluster.local
+                icon: si:traefikproxy
+              - title: ArgoCD
+                url: http://argocd-server.argocd.svc.cluster.local
+                icon: si:argo
+
+      - size: full
+        widgets:
+          - type: rss
+            limit: 15
+            collapse-after: 5
+            cache: 30m
+            feeds:
+              - url: https://news.ycombinator.com/rss
+                title: Hacker News
+                
+          - type: videos
+            channels:
+              - UCUyeluBRhGPCW4rPe_UvBZQ # ThePrimeagen
+              - UCXuqSBlHAE6Xw-yeJA0Tunw # Linus Tech Tips  
+              - UCrUL8K81R4VBzm-KOYwrcxQ # Dreams of Code
+              - UCsBjURrPoezykLs9EqgamOA # Fireship
+            collapse-after: 3
+            
+          - type: reddit
+            subreddit: unixporn
+            limit: 10
+            collapse-after: 5
+            
+          - type: reddit
+            subreddit: technology
+            limit: 10
+            collapse-after: 5
+
+      - size: small
+        widgets:
+          - type: reddit
+            subreddit: science
+            limit: 10
+            collapse-after: 5
+
+          - type: clock
+            hour-format: 24h
+            timezones:
+              - timezone: Europe/London
+                label: London
+              - timezone: America/New_York
+                label: New York
+              - timezone: Asia/Tokyo
+                label: Tokyo
+
+# Theme configuration
+theme:
+  background-color: 20 20 25
+  primary-color: 180 190 220
+  contrast-multiplier: 1.2

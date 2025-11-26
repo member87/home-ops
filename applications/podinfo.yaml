@@ -7,28 +7,31 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    chart: podinfo
-    repoURL: https://stefanprodan.github.io/podinfo
-    targetRevision: 6.5.4
-    helm:
-      releaseName: podinfo
-      values: |
-        replicaCount: 1
-        service:
-          enabled: true
-          type: ClusterIP
-          httpPort: 9898
-        resources:
-          limits:
-            cpu: 200m
-            memory: 256Mi
-          requests:
-            cpu: 100m
-            memory: 64Mi
-        ui:
-          color: "#34577c"
-          message: "Welcome to Podinfo - Home Lab"
+  sources:
+    - chart: podinfo
+      repoURL: https://stefanprodan.github.io/podinfo
+      targetRevision: 6.5.4
+      helm:
+        releaseName: podinfo
+        values: |
+          replicaCount: 1
+          service:
+            enabled: true
+            type: ClusterIP
+            httpPort: 9898
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          ui:
+            color: "#34577c"
+            message: "Welcome to Podinfo - Home Lab"
+    - repoURL: https://github.com/member87/home-ops.git
+      targetRevision: HEAD
+      path: apps/podinfo
   destination:
     server: https://kubernetes.default.svc
     namespace: podinfo

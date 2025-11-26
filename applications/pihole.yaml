@@ -7,12 +7,12 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    repoURL: https://mojo2600.github.io/pihole-kubernetes/
-    chart: pihole
-    targetRevision: 2.34.0
-    helm:
-      valuesObject:
+  sources:
+    - repoURL: https://mojo2600.github.io/pihole-kubernetes/
+      chart: pihole
+      targetRevision: 2.34.0
+      helm:
+        valuesObject:
         # Admin password - Helm chart automatically sets FTLCONF_webserver_api_password
         adminPassword: "password"
         
@@ -96,6 +96,9 @@ spec:
             enabled: false
           sidecar:
             enabled: false
+    - repoURL: https://github.com/member87/home-ops.git
+      targetRevision: HEAD
+      path: apps/pihole
   destination:
     server: https://kubernetes.default.svc
     namespace: pihole

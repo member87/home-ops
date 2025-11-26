@@ -1,0 +1,150 @@
+---
+# Rook Ceph Cluster Configuration
+# Creates a Ceph cluster with minimal configuration for home lab
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  # Ceph version - using Pacific (v16) for stability
+  cephVersion:
+    image: quay.io/ceph/ceph:v18.2.4
+    allowUnsupported: false
+  
+  # Data directory on host
+  dataDirHostPath: /var/lib/rook
+  
+  # Skip upgrade checks for initial installation
+  skipUpgradeChecks: false
+  continueUpgradeAfterChecksEvenIfNotHealthy: false
+  
+  # Wait for healthy daemon during upgrade
+  waitTimeoutForHealthyOSDInMinutes: 10
+  
+  # Mon (Monitor) configuration - 3 monitors for quorum
+  mon:
+    count: 3
+    allowMultiplePerNode: false
+  
+  # MGR (Manager) configuration
+  mgr:
+    count: 2
+    allowMultiplePerNode: false
+    modules:
+      - name: pg_autoscaler
+        enabled: true
+  
+  # Dashboard configuration
+  dashboard:
+    enabled: true
+    ssl: false
+  
+  # Monitoring configuration
+  monitoring:
+    enabled: false
+  
+  # Network configuration
+  network:
+    # Use host networking for better performance
+    provider: host
+  
+  # Crash collector
+  crashCollector:
+    disable: false
+  
+  # Log collector
+  logCollector:
+    enabled: true
+    periodicity: daily
+    maxLogSize: 500M
+  
+  # Cleanup policy on cluster deletion
+  cleanupPolicy:
+    confirmation: ""
+    sanitizeDisks:
+      method: quick
+      dataSource: zero
+      iteration: 1
+    allowUninstallWithVolumes: false
+  
+  # Placement configuration - no specific placement for home lab
+  placement:
+    all:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+  
+  # Resource configuration
+  resources:
+    mgr:
+      limits:
+        memory: "1Gi"
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+    mon:
+      limits:
+        memory: "1Gi"
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+    osd:
+      limits:
+        memory: "2Gi"
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+  
+  # Remove OSDs that are not in the desired state
+  removeOSDsIfOutAndSafeToRemove: false
+  
+  # Priority class names for Ceph daemons
+  priorityClassNames:
+    mon: system-node-critical
+    osd: system-node-critical
+    mgr: system-cluster-critical
+  
+  # Storage configuration - using directories on host path
+  # For Talos without additional disks, we use directories
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+    config:
+      osdsPerDevice: "1"
+    nodes:
+      - name: "talos-lox-1n1"
+        directories:
+          - path: "/var/lib/rook/osd0"
+      - name: "talos-t8o-8d5"
+        directories:
+          - path: "/var/lib/rook/osd0"
+      - name: "talos-tug-zp7"
+        directories:
+          - path: "/var/lib/rook/osd0"
+  
+  # Disruption management
+  disruptionManagement:
+    managePodBudgets: true
+    osdMaintenanceTimeout: 30
+    pgHealthCheckTimeout: 0
+  
+  # Health checks
+  healthCheck:
+    daemonHealth:
+      mon:
+        interval: 45s
+        timeout: 600s
+      osd:
+        interval: 60s
+        timeout: 600s
+      status:
+        interval: 60s
+    livenessProbe:
+      mon:
+        disabled: false
+      mgr:
+        disabled: false
+      osd:
+        disabled: false

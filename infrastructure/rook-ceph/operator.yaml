@@ -1,0 +1,16 @@
+---
+# Rook Ceph Operator Installation
+# This installs the Rook operator to manage Ceph clusters
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rook-operator-install
+  namespace: rook-ceph
+data:
+  version: "v1.15.8"
+  install.sh: |
+    #!/bin/bash
+    # Install Rook Ceph Operator
+    kubectl apply -f https://raw.githubusercontent.com/rook/rook/v1.15.8/deploy/examples/crds.yaml
+    kubectl apply -f https://raw.githubusercontent.com/rook/rook/v1.15.8/deploy/examples/common.yaml
+    kubectl apply -f https://raw.githubusercontent.com/rook/rook/v1.15.8/deploy/examples/operator.yaml

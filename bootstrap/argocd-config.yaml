@@ -14,6 +14,10 @@ data:
   server.insecure: "true"
   # Disable TLS on repository server
   reposerver.disable.tls: "true"
+  # Use plaintext communication with repo server (for argocd-server)
+  server.repo.server.plaintext: "true"
+  # Use plaintext communication with repo server (for application controller)
+  controller.repo.server.plaintext: "true"
 ---
 # ArgoCD Repository Configuration
 # Connects ArgoCD to the GitHub repository

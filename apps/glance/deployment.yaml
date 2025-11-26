@@ -86,8 +86,8 @@ data:
                     label: Tokyo
 
     theme:
-      background-color: 20 20 25
-      primary-color: 180 190 220
+      background-color: 240 15 10
+      primary-color: 220 15 85
       contrast-multiplier: 1.2
 ---
 apiVersion: apps/v1

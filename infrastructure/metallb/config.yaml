@@ -1,0 +1,20 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  # Allocate IPs in your local network range
+  # Adjust this range to IPs that are available in your network
+  # and won't conflict with DHCP
+  - 192.168.1.200-192.168.1.250
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool

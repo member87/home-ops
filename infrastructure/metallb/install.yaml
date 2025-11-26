@@ -1,0 +1,6 @@
+# MetalLB installation
+# This will be deployed via ArgoCD pointing to the official manifests
+# Version: v0.14.3
+#
+# The manifests will be pulled from:
+# https://raw.githubusercontent.com/metallb/metallb/v0.14.3/config/manifests/metallb-native.yaml

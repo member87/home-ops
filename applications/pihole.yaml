@@ -16,12 +16,10 @@ spec:
         # Admin password - change this!
         adminPassword: "changeme123"
         
-        # Persistent storage for Pi-hole data
+        # Persistent storage disabled - using emptyDir for now
+        # TODO: Set up proper persistent storage later (Rook Ceph or Talos-compatible solution)
         persistentVolumeClaim:
-          enabled: true
-          size: "1Gi"
-          accessModes:
-            - ReadWriteOnce
+          enabled: false
         
         # DNS Service Configuration - using LoadBalancer with MetalLB
         serviceDns:

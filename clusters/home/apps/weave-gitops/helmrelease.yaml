@@ -9,8 +9,9 @@ spec:
   chart:
     spec:
       chart: weave-gitops
+      version: "4.0.36"
       sourceRef:
-        kind: OCIRepository
+        kind: HelmRepository
         name: weave-gitops
         namespace: flux-system
       interval: 1m

@@ -13,8 +13,8 @@ spec:
     targetRevision: 2.34.0
     helm:
       valuesObject:
-        # Admin password - change this!
-        adminPassword: "changeme123"
+        # Admin password set via FTLCONF environment variable below
+        adminPassword: ""
         
         # Persistent storage disabled - using emptyDir for now
         # TODO: Set up proper persistent storage later (Rook Ceph or Talos-compatible solution)
@@ -54,9 +54,8 @@ spec:
         dnsmasq:
           enableCustomDnsMasq: true
           customDnsEntries:
-            # Add custom DNS entries for your local services
-            - address=/pihole.home.local/192.168.1.201
-            - address=/traefik.home.local/192.168.1.200
+            # Wildcard DNS for lab domain - routes all *.lab.jackhumes.com to Traefik
+            - address=/.lab.jackhumes.com/192.168.1.200
           customCnameEntries: []
           upstreamServers: []
         
@@ -64,6 +63,7 @@ spec:
         extraEnvVars:
           TZ: "UTC"
           FTLCONF_dns_listeningMode: "all"
+          FTLCONF_webserver_api_password: "password"
         
         # Pod DNS Configuration
         podDnsConfig:

@@ -9,7 +9,7 @@ spec:
     name: letsencrypt-staging
     kind: ClusterIssuer
   dnsNames:
-    - pihole.jackhumes.com
+    - pihole.lab.jackhumes.com
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -20,7 +20,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`pihole.jackhumes.com`)
+    - match: Host(`pihole.lab.jackhumes.com`)
       kind: Rule
       services:
         - name: pihole-web
@@ -37,7 +37,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`pihole.jackhumes.com`)
+    - match: Host(`pihole.lab.jackhumes.com`)
       kind: Rule
       services:
         - name: pihole-web

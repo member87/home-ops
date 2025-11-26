@@ -9,7 +9,7 @@ spec:
     name: letsencrypt-staging
     kind: ClusterIssuer
   dnsNames:
-    - podinfo.jackhumes.com
+    - podinfo.lab.jackhumes.com
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -20,7 +20,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`podinfo.jackhumes.com`)
+    - match: Host(`podinfo.lab.jackhumes.com`)
       kind: Rule
       services:
         - name: podinfo
@@ -37,7 +37,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`podinfo.jackhumes.com`)
+    - match: Host(`podinfo.lab.jackhumes.com`)
       kind: Rule
       services:
         - name: podinfo

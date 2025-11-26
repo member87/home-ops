@@ -55,13 +55,12 @@ spec:
           enableCustomDnsMasq: true
           customDnsEntries:
             # Wildcard DNS for lab domain - routes all *.lab.jackhumes.com to Traefik
-            - address=/.lab.jackhumes.com/192.168.1.200
+            - address=/lab.jackhumes.com/192.168.1.200
           customCnameEntries: []
           upstreamServers: []
         
         # Environment variables
         extraEnvVars:
-          TZ: "UTC"
           FTLCONF_dns_listeningMode: "all"
         
         # Pod DNS Configuration

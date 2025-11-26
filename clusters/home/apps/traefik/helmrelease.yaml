@@ -19,7 +19,8 @@ spec:
     createNamespace: true
   values:
     deployment:
-      kind: DaemonSet
+      kind: Deployment
+      replicas: 2
     service:
       type: LoadBalancer
       # If you don't have a LoadBalancer, use NodePort with these settings:

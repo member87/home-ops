@@ -1,10 +1,11 @@
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
-kind: HelmRepository
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
 metadata:
   name: weave-gitops
   namespace: flux-system
 spec:
   interval: 1h
-  url: https://helm.gitops.weave.works
-  insecure: true
+  url: oci://ghcr.io/weaveworks/charts/weave-gitops
+  ref:
+    semver: ">=4.0.0"

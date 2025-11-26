@@ -1,0 +1,85 @@
+# Pi-hole Helm Chart Values
+# Configures Pi-hole for DNS ad-blocking in home-ops cluster
+
+# Admin password - change this!
+adminPassword: "changeme123"
+
+# Persistent storage for Pi-hole data
+persistentVolumeClaim:
+  enabled: true
+  size: "1Gi"
+  accessModes:
+    - ReadWriteOnce
+
+# DNS Service Configuration - using LoadBalancer with MetalLB
+serviceDns:
+  type: LoadBalancer
+  loadBalancerIP: "192.168.1.201"
+  port: 53
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+
+# Web Interface Service Configuration
+serviceWeb:
+  type: LoadBalancer
+  loadBalancerIP: "192.168.1.201"
+  http:
+    enabled: true
+    port: 80
+  https:
+    enabled: true
+    port: 443
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+
+# DHCP Service - disable if not needed
+serviceDhcp:
+  enabled: false
+
+# DNS Configuration
+DNS1: "1.1.1.1"
+DNS2: "1.0.0.1"
+
+# DNSMasq custom configuration
+dnsmasq:
+  enableCustomDnsMasq: true
+  customDnsEntries:
+    # Add custom DNS entries for your local services
+    - address=/pihole.home.local/192.168.1.201
+    - address=/traefik.home.local/192.168.1.200
+  customCnameEntries: []
+  upstreamServers: []
+
+# Environment variables
+extraEnvVars:
+  TZ: "UTC"
+  FTLCONF_dns_listeningMode: "all"
+
+# Pod DNS Configuration
+podDnsConfig:
+  enabled: true
+  policy: "None"
+  nameservers:
+    - 127.0.0.1
+    - 1.1.1.1
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Additional blocklists
+adlists:
+  - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  - https://dbl.oisd.nl/
+
+# Monitoring
+monitoring:
+  podMonitor:
+    enabled: false
+  sidecar:
+    enabled: false

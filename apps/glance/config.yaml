@@ -1,35 +1,6 @@
 pages:
   - name: Home
 
-    head-widgets:
-      - type: monitor
-        cache: 1m
-        title: Services
-        sites:
-          - title: PiHole
-            url: https://pihole.lab.jackhumes.com
-            icon: si:pihole
-          - title: ArgoCD
-            url: https://argocd.lab.jackhumes.com
-            icon: si:argo
-          - title: Authelia
-            url: https://auth.lab.jackhumes.com
-            icon: si:auth0
-          - title: LLDAP
-            url: https://lldap.lab.jackhumes.com
-            icon: si:ldap
-          - title: Glance
-            url: https://glance.lab.jackhumes.com
-            icon: si:homeassistant
-          - title: IP Checker
-            url: https://ip-checker.lab.jackhumes.com
-            icon: si:checkmarx
-          - title: Podinfo
-            url: https://podinfo.lab.jackhumes.com
-            icon: si:kubernetes
-
-
-
     columns:
       - size: small
         widgets:
@@ -42,6 +13,32 @@ pages:
 
       - size: full
         widgets:
+          - type: monitor
+            cache: 1m
+            title: Services
+            sites:
+              - title: PiHole
+                url: https://pihole.lab.jackhumes.com
+                icon: si:pihole
+              - title: ArgoCD
+                url: https://argocd.lab.jackhumes.com
+                icon: si:argo
+              - title: Authelia
+                url: https://auth.lab.jackhumes.com
+                icon: si:auth0
+              - title: LLDAP
+                url: https://lldap.lab.jackhumes.com
+                icon: si:ldap
+              - title: Glance
+                url: https://glance.lab.jackhumes.com
+                icon: si:homeassistant
+              - title: IP Checker
+                url: https://ip-checker.lab.jackhumes.com
+                icon: si:checkmarx
+              - title: Podinfo
+                url: https://podinfo.lab.jackhumes.com
+                icon: si:kubernetes
+
           - type: rss
             limit: 15
             collapse-after: 5

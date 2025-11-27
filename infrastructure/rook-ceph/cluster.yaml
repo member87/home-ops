@@ -9,7 +9,7 @@ metadata:
 spec:
   # Ceph version - using Pacific (v16) for stability
   cephVersion:
-    image: quay.io/ceph/ceph:v18.2.7
+    image: quay.io/ceph/ceph:v20.2.0
     allowUnsupported: false
   
   # Data directory on host

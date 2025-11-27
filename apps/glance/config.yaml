@@ -1,5 +1,35 @@
 pages:
   - name: Home
+
+    head-widgets:
+      - type: monitor
+        cache: 1m
+        title: Services
+        sites:
+          - title: PiHole
+            url: https://pihole.lab.jackhumes.com
+            icon: si:pihole
+          - title: ArgoCD
+            url: https://argocd.lab.jackhumes.com
+            icon: si:argo
+          - title: Authelia
+            url: https://auth.lab.jackhumes.com
+            icon: si:auth0
+          - title: LLDAP
+            url: https://lldap.lab.jackhumes.com
+            icon: si:ldap
+          - title: Glance
+            url: https://glance.lab.jackhumes.com
+            icon: si:homeassistant
+          - title: IP Checker
+            url: https://ip-checker.lab.jackhumes.com
+            icon: si:checkmarx
+          - title: Podinfo
+            url: https://podinfo.lab.jackhumes.com
+            icon: si:kubernetes
+
+
+
     columns:
       - size: small
         widgets:
@@ -9,19 +39,6 @@ pages:
             location: London, United Kingdom
             units: metric
 
-          - type: monitor
-            cache: 1m
-            title: Services
-            sites:
-              - title: PiHole
-                url: http://pihole-web.pihole.svc.cluster.local
-                icon: si:pihole
-              - title: Traefik
-                url: http://traefik.kube-system.svc.cluster.local:9000/dashboard/
-                icon: si:traefikproxy
-              - title: ArgoCD
-                url: http://argocd-server.argocd.svc.cluster.local
-                icon: si:argo
 
       - size: full
         widgets:

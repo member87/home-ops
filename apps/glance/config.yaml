@@ -25,16 +25,16 @@ pages:
                 icon: si:argo
               - title: Authelia
                 url: https://auth.lab.jackhumes.com
-                icon: si:auth0
+                icon: si:authelia
               - title: LLDAP
                 url: https://lldap.lab.jackhumes.com
-                icon: si:ldap
+                icon: si:authelia
               - title: Glance
                 url: https://glance.lab.jackhumes.com
-                icon: si:homeassistant
+                icon: si:glance
               - title: IP Checker
                 url: https://ip-checker.lab.jackhumes.com
-                icon: si:checkmarx
+                icon: si:speedtest
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
                 icon: si:kubernetes

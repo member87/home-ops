@@ -81,7 +81,22 @@ print_info "Waiting for ArgoCD components to be ready (this may take 2-3 minutes
 wait_for_pods "argocd" "app.kubernetes.io/name=argocd-server" 300
 echo ""
 
-# Step 4: Apply ArgoCD configurations
+# Step 4: Deploy Sealed Secrets (required for secure secret management)
+print_info "Deploying Sealed Secrets controller..."
+if [ -d "infrastructure/sealed-secrets" ]; then
+    kubectl apply -f infrastructure/sealed-secrets/namespace.yaml
+    kubectl apply -f infrastructure/sealed-secrets/crds.yaml
+    kubectl apply -f infrastructure/sealed-secrets/install.yaml
+    print_success "Sealed Secrets controller deployed"
+    
+    # Wait for controller to be ready
+    wait_for_pods "sealed-secrets" "app.kubernetes.io/name=sealed-secrets-controller" 120
+else
+    print_warning "infrastructure/sealed-secrets not found, skipping"
+fi
+echo ""
+
+# Step 5: Apply ArgoCD configurations
 print_info "Applying ArgoCD configurations..."
 
 if [ -f "bootstrap/argocd-cm.yaml" ]; then
@@ -98,6 +113,13 @@ else
     print_warning "bootstrap/argocd-config.yaml not found, skipping"
 fi
 
+if [ -f "bootstrap/argocd-repo-sealedsecret.yaml" ]; then
+    kubectl apply -f bootstrap/argocd-repo-sealedsecret.yaml
+    print_success "Applied argocd-repo-sealedsecret.yaml (sealed repository secret)"
+else
+    print_warning "bootstrap/argocd-repo-sealedsecret.yaml not found, skipping"
+fi
+
 if [ -f "bootstrap/argocd-nodeport.yaml" ]; then
     kubectl apply -f bootstrap/argocd-nodeport.yaml
     print_success "Applied argocd-nodeport.yaml (NodePort service)"
@@ -107,14 +129,14 @@ fi
 
 echo ""
 
-# Step 5: Restart ArgoCD server to pick up configuration changes
+# Step 6: Restart ArgoCD server to pick up configuration changes
 print_info "Restarting ArgoCD server to apply configuration changes..."
 kubectl rollout restart deployment argocd-server -n argocd
 kubectl rollout status deployment argocd-server -n argocd --timeout=180s
 print_success "ArgoCD server restarted"
 echo ""
 
-# Step 6: Get initial admin password
+# Step 7: Get initial admin password
 print_info "Retrieving ArgoCD admin password..."
 sleep 5  # Give it a moment to ensure secret is available
 
@@ -135,7 +157,7 @@ else
     echo ""
 fi
 
-# Step 7: Get node IP and display access URLs
+# Step 8: Get node IP and display access URLs
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null)
 
 if [ -z "$NODE_IP" ]; then
@@ -154,7 +176,7 @@ echo "IP-Checker:        http://$NODE_IP:30002"
 echo "=========================================="
 echo ""
 
-# Step 8: Deploy root application
+# Step 9: Deploy root application
 print_info "Deploying root application..."
 if [ -f "bootstrap/root-app.yaml" ]; then
     kubectl apply -f bootstrap/root-app.yaml
@@ -170,7 +192,7 @@ fi
 
 echo ""
 
-# Step 9: Show application status
+# Step 10: Show application status
 print_info "Checking application status (waiting 10 seconds for sync to start)..."
 sleep 10
 

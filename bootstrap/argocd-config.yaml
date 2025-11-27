@@ -19,20 +19,5 @@ data:
   # Use plaintext communication with repo server (for application controller)
   controller.repo.server.plaintext: "true"
 ---
-# ArgoCD Repository Configuration
-# Connects ArgoCD to the GitHub repository
-apiVersion: v1
-kind: Secret
-metadata:
-  name: home-ops-repo
-  namespace: argocd
-  labels:
-    argocd.argoproj.io/secret-type: repository
-type: Opaque
-stringData:
-  type: git
-  url: https://github.com/member87/home-ops.git
-  # For public repositories, no credentials needed
-  # For private repos, add:
-  # username: member87
-  # password: <your-github-token>
+# NOTE: The ArgoCD repository secret has been moved to argocd-repo-sealedsecret.yaml
+# Use SealedSecrets for secure secret management

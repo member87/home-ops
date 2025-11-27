@@ -14,8 +14,8 @@ spec:
       helm:
         valuesObject:
           # Admin password disabled - protected by Authelia
-          # Empty string disables password requirement
-          adminPassword: ""
+          # Note: Some PiHole Helm charts require setting webPassword instead
+          webPassword: ""
           
           # Persistent storage using local-path provisioner
           persistentVolumeClaim:
@@ -69,6 +69,8 @@ spec:
             TZ: "UTC"
             FTLCONF_dns_listeningMode: "all"
             FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/192.168.1.200"
+            # Disable web interface password (protected by Authelia)
+            FTLCONF_webserver_api_password: ""
           
           # Pod DNS Configuration
           podDnsConfig:

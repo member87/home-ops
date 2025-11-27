@@ -42,8 +42,8 @@ data:
           mail: mail
           member_of: memberOf
           group_name: cn
-        user: uid=admin,ou=people,dc=lab,dc=jackhumes,dc=com
-        password: changeme
+        user: uid=authelia-service,ou=people,dc=lab,dc=jackhumes,dc=com
+        password: AutheliaService123!
     
     access_control:
       default_policy: deny

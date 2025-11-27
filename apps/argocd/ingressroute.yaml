@@ -18,13 +18,14 @@ metadata:
   namespace: argocd
 spec:
   forwardAuth:
-    address: http://authelia.authelia.svc.cluster.local:9091/api/verify?rd=https://auth.lab.jackhumes.com
+    address: http://authelia.authelia.svc.cluster.local:9091/api/verify?rd=https://auth.lab.jackhumes.com/
     trustForwardHeader: true
     authResponseHeaders:
       - Remote-User
       - Remote-Groups
       - Remote-Name
       - Remote-Email
+    authResponseHeadersRegex: ^Remote-
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute

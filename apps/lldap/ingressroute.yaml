@@ -25,7 +25,6 @@ spec:
       kind: Rule
       middlewares:
         - name: authelia-forwardauth
-          namespace: authelia
       services:
         - name: lldap
           port: 17170

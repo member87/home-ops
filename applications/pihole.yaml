@@ -13,8 +13,9 @@ spec:
       targetRevision: 2.34.0
       helm:
         valuesObject:
-          # Admin password - Helm chart automatically sets FTLCONF_webserver_api_password
-          adminPassword: "password"
+          # Admin password disabled - protected by Authelia
+          # Empty string disables password requirement
+          adminPassword: ""
           
           # Persistent storage using local-path provisioner
           persistentVolumeClaim:

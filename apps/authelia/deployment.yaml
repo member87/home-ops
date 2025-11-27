@@ -37,10 +37,6 @@ spec:
         - name: secrets
           mountPath: /secrets
           readOnly: true
-        - name: users
-          mountPath: /config/users.yml
-          subPath: users.yml
-          readOnly: true
         - name: data
           mountPath: /data
         livenessProbe:
@@ -65,8 +61,5 @@ spec:
       - name: secrets
         secret:
           secretName: authelia-secrets
-      - name: users
-        secret:
-          secretName: authelia-users
       - name: data
         emptyDir: {}

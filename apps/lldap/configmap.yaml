@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lldap-config
+  namespace: lldap
+data:
+  lldap_config.toml: |
+    ldap_host = "0.0.0.0"
+    ldap_port = 3890
+    http_host = "0.0.0.0"
+    http_port = 17170
+    http_url = "https://lldap.lab.jackhumes.com"
+    ldap_base_dn = "dc=lab,dc=jackhumes,dc=com"
+    ldap_user_dn = "admin"
+    database_url = "sqlite:///data/users.db?mode=rwc"
+    verbose = false

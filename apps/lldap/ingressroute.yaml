@@ -1,0 +1,60 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lldap-cert
+  namespace: lldap
+spec:
+  secretName: lldap-tls
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  dnsNames:
+    - lldap.lab.jackhumes.com
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: lldap
+  namespace: lldap
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`lldap.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: authelia-forwardauth
+          namespace: authelia
+      services:
+        - name: lldap
+          port: 17170
+  tls:
+    secretName: lldap-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: lldap-http
+  namespace: lldap
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`lldap.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: lldap
+          port: 17170
+      middlewares:
+        - name: redirect-https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: lldap
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

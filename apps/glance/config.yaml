@@ -45,13 +45,9 @@ pages:
                 url: https://podinfo.lab.jackhumes.com
                 icon: si:kubernetes
 
-          - type: rss
+          - type: hacker-news
             limit: 15
             collapse-after: 5
-            cache: 30m
-            feeds:
-              - url: https://news.ycombinator.com/rss
-                title: Hacker News
                 
           - type: videos
             channels:

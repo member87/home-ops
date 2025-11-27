@@ -76,7 +76,6 @@ data:
     
     identity_providers:
       oidc:
-        issuer: https://auth.lab.jackhumes.com
         hmac_secret: /Vxio7ih/F/MmU7e6FoPApkiltAQTr+jLMMuGQ90Cfk=
         issuer_private_key: |
           -----BEGIN RSA PRIVATE KEY-----
@@ -146,7 +145,7 @@ data:
         clients:
           - client_id: 'argocd'
             client_name: 'Argo CD'
-            client_secret: '$pbkdf2-sha512$310000$c8p78n7pUMln0jzvd4aK4Q$JNRBzwAo0ek5qKn50cFzzvE9RXV88h1wJn5KGiHrD0YKtZaR/nCb2CJPOsKaPK0hjf.9yHxzQGZziziccp6Yng'
+            client_secret: '$pbkdf2-sha512$310000$baPJvDhRlw873xb4RBxjOw$O6Jkym38TgbtDZxdgH5JYGjpHudnuQJYL.oYKxMYc0CKtIndhhvjqL0H67ReSnRGV5LDzOjGZ9pKHFF6xsDlEg'
             public: false
             authorization_policy: 'one_factor'
             require_pkce: false

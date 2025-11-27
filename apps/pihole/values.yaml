@@ -1,8 +1,8 @@
 # Pi-hole Helm Chart Values
 # Configures Pi-hole for DNS ad-blocking in home-ops cluster
 
-# Admin password - change this!
-adminPassword: "changeme123"
+# Admin password disabled - protected by Authelia
+adminPassword: ""
 
 # Persistent storage for Pi-hole data
 persistentVolumeClaim:

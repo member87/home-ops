@@ -21,12 +21,12 @@ pages:
                 url: https://pihole.lab.jackhumes.com/admin
                 icon: si:pihole
                 alt-status-codes:
-                  - 403
+                  - 302
               - title: ArgoCD
                 url: https://argocd.lab.jackhumes.com
                 icon: si:argo
                 alt-status-codes:
-                  - 403
+                  - 302
               - title: Authelia
                 url: https://auth.lab.jackhumes.com
                 icon: si:authelia
@@ -34,7 +34,7 @@ pages:
                 url: https://lldap.lab.jackhumes.com
                 icon: si:authelia
                 alt-status-codes:
-                  - 403
+                  - 302
               - title: Glance
                 url: https://glance.lab.jackhumes.com
                 icon: si:glance

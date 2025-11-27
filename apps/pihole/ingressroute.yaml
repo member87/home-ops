@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: pihole-tls
   issuerRef:
-    name: letsencrypt-staging
+    name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
     - pihole.lab.jackhumes.com

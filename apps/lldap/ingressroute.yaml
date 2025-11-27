@@ -7,7 +7,7 @@ metadata:
 spec:
   secretName: lldap-tls
   issuerRef:
-    name: letsencrypt-staging
+    name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
     - lldap.lab.jackhumes.com

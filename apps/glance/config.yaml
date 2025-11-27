@@ -18,7 +18,7 @@ pages:
             title: Services
             sites:
               - title: PiHole
-                url: https://pihole.lab.jackhumes.com
+                url: https://pihole.lab.jackhumes.com/admin
                 icon: si:pihole
               - title: ArgoCD
                 url: https://argocd.lab.jackhumes.com

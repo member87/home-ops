@@ -1,23 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: glance-cert
+  namespace: glance
+spec:
+  secretName: glance-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - glance.lab.jackhumes.com
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: glance
-  namespace: glance
-spec:
-  entryPoints:
-    - web
-  routes:
-    - match: Host(`glance.lab.jackhumes.com`)
-      kind: Rule
-      services:
-        - name: glance
-          port: 8080
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: glance-tls
   namespace: glance
 spec:
   entryPoints:
@@ -29,4 +26,31 @@ spec:
         - name: glance
           port: 8080
   tls:
-    certResolver: letsencrypt-production
+    secretName: glance-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: glance-http
+  namespace: glance
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`glance.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: glance
+          port: 8080
+      middlewares:
+        - name: redirect-https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: glance
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

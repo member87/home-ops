@@ -1,3 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authelia-cert
+  namespace: authelia
+spec:
+  secretName: authelia-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - auth.lab.jackhumes.com
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -14,4 +26,31 @@ spec:
         - name: authelia
           port: 9091
   tls:
-    certResolver: letsencrypt-production
+    secretName: authelia-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authelia-http
+  namespace: authelia
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`auth.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: authelia
+          port: 9091
+      middlewares:
+        - name: redirect-https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: authelia
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

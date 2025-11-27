@@ -99,6 +99,9 @@ pages:
                     {{ end }}
                   {{ end }}
                 {{ else }}
+                  {{ with newRequest "https://api.tfl.gov.uk/line/mode/dlr/status" | withHeader "User-Agent" "Glance-Dashboard/1.0" | getResponse }}
+                    {{ if eq .Response.StatusCode 200 }}{{ range .JSON.Array "" }}{{ template "line" . }}{{ end }}{{ end }}
+                  {{ end }}
                   {{ with newRequest "https://api.tfl.gov.uk/line/mode/tube/status" | withHeader "User-Agent" "Glance-Dashboard/1.0" | getResponse }}
                     {{ if eq .Response.StatusCode 200 }}{{ range .JSON.Array "" }}{{ template "line" . }}{{ end }}{{ end }}
                   {{ end }}

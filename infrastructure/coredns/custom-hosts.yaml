@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+        log . {
+            class error
+        }
+        prometheus :9153
+
+        hosts {
+            # Lab domain entries for internal cluster DNS resolution
+            192.168.1.200 pihole.lab.jackhumes.com
+            192.168.1.200 argocd.lab.jackhumes.com
+            192.168.1.200 auth.lab.jackhumes.com
+            192.168.1.200 lldap.lab.jackhumes.com
+            192.168.1.200 glance.lab.jackhumes.com
+            192.168.1.200 ip-checker.lab.jackhumes.com
+            192.168.1.200 podinfo.lab.jackhumes.com
+            # Legacy entries without .lab subdomain
+            192.168.1.200 ip-checker.jackhumes.com
+            192.168.1.200 podinfo.jackhumes.com
+            fallthrough
+        }
+
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        forward . 192.168.1.1 {
+           max_concurrent 1000
+        }
+        cache 30 {
+           disable success cluster.local
+           disable denial cluster.local
+        }
+        loop
+        reload
+        loadbalance
+    }

@@ -90,6 +90,12 @@ pages:
               - timezone: Asia/Tokyo
                 label: Tokyo
 
+          - type: repository
+            repository: member87/home-ops
+            pull-requests-limit: 5
+            issues-limit: 3
+            commits-limit: 3
+
 theme:
   background-color: 240 15 10
   primary-color: 220 15 85

@@ -1,0 +1,21 @@
+---
+# ArgoCD RBAC ConfigMap
+# Configures role-based access control with Authelia authentication
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Anonymous users (authenticated via Authelia) get admin role
+  policy.default: role:admin
+  
+  # Optionally, you can define more granular policies based on groups:
+  # policy.csv: |
+  #   g, argocd-admins, role:admin
+  
+  # RBAC scopes for anonymous access
+  scopes: '[groups, email]'

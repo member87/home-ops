@@ -51,6 +51,7 @@ data:
         - domain:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
+            - "argocd.lab.jackhumes.com"
           policy: one_factor
     
     session:

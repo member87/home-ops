@@ -16,6 +16,9 @@ data:
   # Enable resource tracking
   application.resourceTrackingMethod: annotation
   
+  # Enable anonymous user - authentication handled by Authelia
+  users.anonymous.enabled: "true"
+  
   # Repository credentials (if needed for private repos)
   # repositories: |
   #   - url: https://github.com/member87/home-ops.git

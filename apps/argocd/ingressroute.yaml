@@ -12,6 +12,21 @@ spec:
     - argocd.lab.jackhumes.com
 ---
 apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: authelia-forwardauth
+  namespace: argocd
+spec:
+  forwardAuth:
+    address: http://authelia.authelia.svc.cluster.local:9091/api/verify?rd=https://auth.lab.jackhumes.com
+    trustForwardHeader: true
+    authResponseHeaders:
+      - Remote-User
+      - Remote-Groups
+      - Remote-Name
+      - Remote-Email
+---
+apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: argocd
@@ -22,6 +37,8 @@ spec:
   routes:
     - match: Host(`argocd.lab.jackhumes.com`)
       kind: Rule
+      middlewares:
+        - name: authelia-forwardauth
       services:
         - name: argocd-server
           port: 80

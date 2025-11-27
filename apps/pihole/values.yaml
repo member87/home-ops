@@ -2,7 +2,9 @@
 # Configures Pi-hole for DNS ad-blocking in home-ops cluster
 
 # Admin password disabled - protected by Authelia
-adminPassword: ""
+# Setting to null prevents the FTLCONF_webserver_api_password env var from being created
+adminPassword: null
+webPassword: ""
 
 # Persistent storage for Pi-hole data
 persistentVolumeClaim:

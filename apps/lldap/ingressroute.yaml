@@ -23,8 +23,9 @@ spec:
   routes:
     - match: Host(`lldap.lab.jackhumes.com`)
       kind: Rule
-      middlewares:
-        - name: authelia-forwardauth
+      # Temporarily disabled to create service account
+      # middlewares:
+      #   - name: authelia-forwardauth
       services:
         - name: lldap
           port: 17170

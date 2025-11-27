@@ -51,7 +51,6 @@ data:
         - domain:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
-            - "argocd.lab.jackhumes.com"
           policy: one_factor
     
     session:
@@ -74,3 +73,116 @@ data:
       disable_startup_check: true
       filesystem:
         filename: /data/notification.txt
+    
+    identity_providers:
+      oidc:
+        hmac_secret: /Vxio7ih/F/MmU7e6FoPApkiltAQTr+jLMMuGQ90Cfk=
+        issuer_private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+          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
+          -----END RSA PRIVATE KEY-----
+        access_token_lifespan: 1h
+        authorize_code_lifespan: 1m
+        id_token_lifespan: 1h
+        refresh_token_lifespan: 90m
+        enable_client_debug_messages: false
+        enforce_pkce: public_clients_only
+        cors:
+          endpoints:
+            - authorization
+            - token
+            - revocation
+            - introspection
+          allowed_origins_from_client_redirect_uris: true
+        clients:
+          - client_id: 'argocd'
+            client_name: 'Argo CD'
+            client_secret: '$pbkdf2-sha512$310000$c8p78n7pUMln0jzvd4aK4Q$JNRBzwAo0ek5qKn50cFzzvE9RXV88h1wJn5KGiHrD0YKtZaR/nCb2CJPOsKaPK0hjf.9yHxzQGZziziccp6Yng'
+            public: false
+            authorization_policy: 'one_factor'
+            require_pkce: false
+            pkce_challenge_method: ''
+            redirect_uris:
+              - 'https://argocd.lab.jackhumes.com/auth/callback'
+            scopes:
+              - 'openid'
+              - 'groups'
+              - 'email'
+              - 'profile'
+            response_types:
+              - 'code'
+            grant_types:
+              - 'authorization_code'
+            access_token_signed_response_alg: 'none'
+            userinfo_signed_response_alg: 'none'
+            token_endpoint_auth_method: 'client_secret_basic'
+          - client_id: 'argocd-cli'
+            client_name: 'Argo CD (CLI)'
+            public: true
+            authorization_policy: 'one_factor'
+            require_pkce: true
+            pkce_challenge_method: 'S256'
+            redirect_uris:
+              - 'http://localhost:8085/auth/callback'
+            scopes:
+              - 'openid'
+              - 'offline_access'
+              - 'groups'
+              - 'email'
+              - 'profile'
+            response_types:
+              - 'code'
+            grant_types:
+              - 'authorization_code'
+              - 'refresh_token'
+            access_token_signed_response_alg: 'none'
+            userinfo_signed_response_alg: 'none'
+            token_endpoint_auth_method: 'none'

@@ -16,8 +16,21 @@ data:
   # Enable resource tracking
   application.resourceTrackingMethod: annotation
   
-  # Enable anonymous user - authentication handled by Authelia
-  users.anonymous.enabled: "true"
+  # OIDC Configuration for Authelia
+  url: https://argocd.lab.jackhumes.com
+  oidc.config: |
+    name: Authelia
+    issuer: https://auth.lab.jackhumes.com
+    clientID: argocd
+    clientSecret: TqLynrmOo6GR4ocpE0wJY87amKLQykOxyaciyMVtjJo=
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true
   
   # Repository credentials (if needed for private repos)
   # repositories: |

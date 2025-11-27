@@ -10,12 +10,12 @@ metadata:
     app.kubernetes.io/name: argocd-rbac-cm
     app.kubernetes.io/part-of: argocd
 data:
-  # Anonymous users (authenticated via Authelia) get admin role
-  policy.default: role:admin
+  # Default policy for authenticated users (read-only)
+  policy.default: role:readonly
   
-  # Optionally, you can define more granular policies based on groups:
-  # policy.csv: |
-  #   g, argocd-admins, role:admin
+  # Map LDAP groups to ArgoCD roles
+  policy.csv: |
+    g, lldap_admin, role:admin
   
-  # RBAC scopes for anonymous access
+  # RBAC scopes
   scopes: '[groups, email]'

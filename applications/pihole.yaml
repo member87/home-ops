@@ -69,8 +69,6 @@ spec:
             TZ: "UTC"
             FTLCONF_dns_listeningMode: "all"
             FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/10.0.0.200"
-            # Disable web interface password (protected by Authelia)
-            FTLCONF_webserver_api_password: ""
           
           # Pod DNS Configuration
           podDnsConfig:

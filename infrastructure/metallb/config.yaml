@@ -8,7 +8,7 @@ spec:
   # Allocate IPs in your local network range
   # Adjust this range to IPs that are available in your network
   # and won't conflict with DHCP
-  - 192.168.1.200-192.168.1.250
+  - 10.0.0.200-10.0.0.250
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement

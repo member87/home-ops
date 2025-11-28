@@ -18,16 +18,16 @@ data:
 
         hosts {
             # Lab domain entries for internal cluster DNS resolution
-            192.168.1.200 pihole.lab.jackhumes.com
-            192.168.1.200 argocd.lab.jackhumes.com
-            192.168.1.200 auth.lab.jackhumes.com
-            192.168.1.200 lldap.lab.jackhumes.com
-            192.168.1.200 glance.lab.jackhumes.com
-            192.168.1.200 ip-checker.lab.jackhumes.com
-            192.168.1.200 podinfo.lab.jackhumes.com
+            10.0.0.200 pihole.lab.jackhumes.com
+            10.0.0.200 argocd.lab.jackhumes.com
+            10.0.0.200 auth.lab.jackhumes.com
+            10.0.0.200 lldap.lab.jackhumes.com
+            10.0.0.200 glance.lab.jackhumes.com
+            10.0.0.200 ip-checker.lab.jackhumes.com
+            10.0.0.200 podinfo.lab.jackhumes.com
             # Legacy entries without .lab subdomain
-            192.168.1.200 ip-checker.jackhumes.com
-            192.168.1.200 podinfo.jackhumes.com
+            10.0.0.200 ip-checker.jackhumes.com
+            10.0.0.200 podinfo.jackhumes.com
             fallthrough
         }
 
@@ -36,7 +36,7 @@ data:
             fallthrough in-addr.arpa ip6.arpa
             ttl 30
         }
-        forward . 192.168.1.1 {
+        forward . 10.0.0.1 {
            max_concurrent 1000
         }
         cache 30 {

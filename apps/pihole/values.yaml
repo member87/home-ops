@@ -46,6 +46,8 @@ DNS2: "1.0.0.1"
 dnsmasq:
   enableCustomDnsMasq: true
   customDnsEntries:
+    # Wildcard DNS for lab domain - routes all *.lab.jackhumes.com to Traefik
+    - address=/.lab.jackhumes.com/10.0.0.200
     # Add custom DNS entries for your local services
     - address=/pihole.home.local/10.0.0.201
     - address=/traefik.home.local/10.0.0.200
@@ -56,6 +58,7 @@ dnsmasq:
 extraEnvVars:
   TZ: "UTC"
   FTLCONF_dns_listeningMode: "all"
+  FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/10.0.0.200"
 
 # Pod DNS Configuration
 podDnsConfig:

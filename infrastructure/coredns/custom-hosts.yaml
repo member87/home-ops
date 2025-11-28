@@ -16,29 +16,22 @@ data:
         }
         prometheus :9153
 
-        hosts {
-            # Lab domain entries for internal cluster DNS resolution
-            10.0.0.200 pihole.lab.jackhumes.com
-            10.0.0.200 argocd.lab.jackhumes.com
-            10.0.0.200 auth.lab.jackhumes.com
-            10.0.0.200 lldap.lab.jackhumes.com
-            10.0.0.200 glance.lab.jackhumes.com
-            10.0.0.200 ip-checker.lab.jackhumes.com
-            10.0.0.200 podinfo.lab.jackhumes.com
-            # Legacy entries without .lab subdomain
-            10.0.0.200 ip-checker.jackhumes.com
-            10.0.0.200 podinfo.jackhumes.com
-            fallthrough
-        }
-
+        # Kubernetes service discovery for cluster.local domains
         kubernetes cluster.local in-addr.arpa ip6.arpa {
             pods insecure
             fallthrough in-addr.arpa ip6.arpa
             ttl 30
         }
-        forward . 10.0.0.1 {
+
+        # Forward all external DNS queries to PiHole
+        # PiHole handles:
+        # - Wildcard DNS for *.lab.jackhumes.com -> 10.0.0.200
+        # - Ad-blocking
+        # - External DNS resolution (1.1.1.1, 1.0.0.1)
+        forward . 10.0.0.201 {
            max_concurrent 1000
         }
+
         cache 30 {
            disable success cluster.local
            disable denial cluster.local

@@ -18,7 +18,7 @@ data:
             "URI": "netbird.lab.jackhumes.com:443"
         },
         "Datadir": "/var/lib/netbird",
-        "DataStoreEncryptionKey": "REPLACE_WITH_RANDOM_KEY_IN_PRODUCTION",
+        "DataStoreEncryptionKey": "7I+9GxmIwUu91U0cNm0HDx8dzKt7xDN8BghqITRs/0w=",
         "EmbeddedIdP": {
             "Enabled": true,
             "Issuer": "https://netbird.lab.jackhumes.com/oauth2",

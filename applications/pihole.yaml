@@ -71,12 +71,13 @@ spec:
             FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/10.0.0.200"
           
           # Pod DNS Configuration
+          # Use external DNS during startup to avoid chicken-and-egg problem
           podDnsConfig:
             enabled: true
             policy: "None"
             nameservers:
-              - 127.0.0.1
               - 1.1.1.1
+              - 1.0.0.1
           
           # Resources
           resources:

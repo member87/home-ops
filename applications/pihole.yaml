@@ -14,7 +14,10 @@ spec:
       helm:
         valuesObject:
           # Admin password disabled - protected by Authelia
-          # Note: Some PiHole Helm charts require setting webPassword instead
+          # Empty password disables Pi-hole authentication
+          admin:
+            existingSecret: ""
+            passwordKey: ""
           webPassword: ""
           
           # Persistent storage using local-path provisioner

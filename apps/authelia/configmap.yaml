@@ -192,6 +192,7 @@ data:
             client_secret: '$pbkdf2-sha512$310000$7.ZSykJh5JXUxHulsq4Tow$.EUeduX8AX28K7NEz3fHHB0Rdy532lv38sa9HqpYlB6OH/2j.QI.0pZ8HCYsyKjqVBa9c.cWRE5M6jaaD2nsqg'
             public: false
             authorization_policy: 'one_factor'
+            enable_client_debug_messages: true
             require_pkce: false
             pkce_challenge_method: ''
             redirect_uris:

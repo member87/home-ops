@@ -14,11 +14,10 @@ spec:
       helm:
         valuesObject:
           # Admin password disabled - protected by Authelia
-          # Empty password disables Pi-hole authentication
+          # Use empty password secret to disable Pi-hole authentication
           admin:
-            existingSecret: ""
-            passwordKey: ""
-          webPassword: ""
+            existingSecret: "pihole-password-empty"
+            passwordKey: "password"
           
           # Persistent storage using local-path provisioner
           persistentVolumeClaim:

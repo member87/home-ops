@@ -51,7 +51,6 @@ data:
         - domain:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
-            - "netbird.lab.jackhumes.com"
           policy: one_factor
     
     session:
@@ -195,19 +194,17 @@ data:
             require_pkce: false
             pkce_challenge_method: ''
             redirect_uris:
-              - 'https://netbird.lab.jackhumes.com/nb-auth'
-              - 'https://netbird.lab.jackhumes.com/nb-silent-auth'
+              - 'https://netbird.lab.jackhumes.com/peers'
+              - 'https://netbird.lab.jackhumes.com/add-peers'
+              - 'http://localhost'
             scopes:
               - 'openid'
-              - 'groups'
               - 'email'
               - 'profile'
-              - 'offline_access'
             response_types:
               - 'code'
             grant_types:
               - 'authorization_code'
-              - 'refresh_token'
             access_token_signed_response_alg: 'none'
             userinfo_signed_response_alg: 'none'
             token_endpoint_auth_method: 'client_secret_post'

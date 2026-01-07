@@ -21,12 +21,10 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # Dashboard routes (protected by Authelia)
+    # Dashboard routes (no middleware - NetBird handles auth via OIDC)
     - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/`)
       kind: Rule
       priority: 10
-      middlewares:
-        - name: authelia-forwardauth
       services:
         - name: netbird-dashboard
           port: 80

@@ -137,6 +137,7 @@ data:
         enforce_pkce: public_clients_only
         cors:
           endpoints:
+            - userinfo
             - authorization
             - token
             - revocation

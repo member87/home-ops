@@ -55,7 +55,7 @@ metadata:
   namespace: netbird
 data:
   NETBIRD_MGMT_API_ENDPOINT: "https://netbird.lab.jackhumes.com"
-  NETBIRD_MGMT_GRPC_API_ENDPOINT: "https://netbird.lab.jackhumes.com"
+  NETBIRD_MGMT_GRPC_API: "https://netbird.lab.jackhumes.com"
   AUTH_AUDIENCE: "none"
   AUTH_CLIENT_ID: "netbird"
   AUTH_CLIENT_SECRET: ""

@@ -44,6 +44,11 @@ pages:
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
                 icon: si:kubernetes
+              - title: NetBird
+                url: https://netbird.lab.jackhumes.com
+                icon: si:wireguard
+                alt-status-codes:
+                  - 401
 
           - type: hacker-news
             limit: 15

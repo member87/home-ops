@@ -1,0 +1,95 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: netbird-cert
+  namespace: netbird
+spec:
+  secretName: netbird-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - netbird.lab.jackhumes.com
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: netbird
+  namespace: netbird
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # Dashboard routes (protected by Authelia)
+    - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: authelia-forwardauth
+      services:
+        - name: netbird-dashboard
+          port: 80
+    # Management API routes (no auth - needed for API clients)
+    - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/api/`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: netbird-management
+          port: 80
+    # OAuth routes (no auth - needed for login flow)
+    - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/oauth2/`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: netbird-management
+          port: 80
+    # Management gRPC
+    - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/management.ManagementService/`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: netbird-management
+          port: 80
+    # Signal WebSocket and gRPC
+    - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/signalexchange.SignalExchange/`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: netbird-signal
+          port: 80
+    - match: Host(`netbird.lab.jackhumes.com`) && PathPrefix(`/ws-proxy/signal`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: netbird-signal
+          port: 80
+  tls:
+    secretName: netbird-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: netbird-http
+  namespace: netbird
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`netbird.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: netbird-dashboard
+          port: 80
+      middlewares:
+        - name: redirect-https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: netbird
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

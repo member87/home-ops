@@ -29,6 +29,25 @@ spec:
       labels:
         app: netbird-management
     spec:
+      initContainers:
+      - name: config-init
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          sed "s/\"ClientSecret\": \"\"/\"ClientSecret\": \"$NETBIRD_CLIENT_SECRET\"/" /config-template/management.json > /config/management.json
+        env:
+        - name: NETBIRD_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: netbird-oidc-secret
+              key: client_secret
+        volumeMounts:
+        - name: config-template
+          mountPath: /config-template
+        - name: config
+          mountPath: /config
       containers:
       - name: management
         image: netbirdio/management:latest
@@ -82,9 +101,11 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 5
       volumes:
-      - name: config
+      - name: config-template
         configMap:
           name: netbird-management-config
+      - name: config
+        emptyDir: {}
       - name: data
         persistentVolumeClaim:
           claimName: netbird-management-data

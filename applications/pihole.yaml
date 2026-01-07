@@ -67,6 +67,7 @@ spec:
           # Environment variables
           extraEnvVars:
             TZ: "UTC"
+            WEBPASSWORD: ""
             FTLCONF_dns_listeningMode: "all"
             FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/10.0.0.200"
           

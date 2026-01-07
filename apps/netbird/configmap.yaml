@@ -24,6 +24,8 @@ data:
             "AuthAudience": "netbird",
             "AuthKeysLocation": "https://auth.lab.jackhumes.com/jwks.json",
             "AuthUserIDClaim": "",
+            "CertFile": "",
+            "CertKey": "",
             "IdpSignKeyRefreshEnabled": true,
             "OIDCConfigEndpoint": "https://auth.lab.jackhumes.com/.well-known/openid-configuration"
         },
@@ -33,7 +35,7 @@ data:
             "ProviderConfig": {
                 "Audience": "netbird",
                 "ClientID": "netbird",
-                "ClientSecret": "hHNTA0WplJRdxT9V3uUJz60r1N81Fz55vFgSHMZku4A=",
+                "ClientSecret": "",
                 "Domain": "",
                 "AuthorizationEndpoint": "https://auth.lab.jackhumes.com/api/oidc/authorization",
                 "TokenEndpoint": "https://auth.lab.jackhumes.com/api/oidc/token",
@@ -54,9 +56,9 @@ metadata:
 data:
   NETBIRD_MGMT_API_ENDPOINT: "https://netbird.lab.jackhumes.com"
   NETBIRD_MGMT_GRPC_API_ENDPOINT: "https://netbird.lab.jackhumes.com"
-  AUTH_AUDIENCE: "netbird"
+  AUTH_AUDIENCE: "none"
   AUTH_CLIENT_ID: "netbird"
-  AUTH_CLIENT_SECRET: "hHNTA0WplJRdxT9V3uUJz60r1N81Fz55vFgSHMZku4A="
+  AUTH_CLIENT_SECRET: ""
   AUTH_AUTHORITY: "https://auth.lab.jackhumes.com"
   USE_AUTH0: "false"
   AUTH_SUPPORTED_SCOPES: "openid email profile"

@@ -188,7 +188,7 @@ data:
             token_endpoint_auth_method: 'none'
           - client_id: 'netbird'
             client_name: 'NetBird'
-            client_secret: '$pbkdf2-sha512$310000$OIUkaHYO.mv6sykmSSrcAg$rc4jM.5uQn7UEFntHr.VN7bQTajw77oGr.oflvfYENv8hnJNwBoVmohUkGtboAx33T68LmFmfdt/zfaAk9Aynw'
+            client_secret: '$pbkdf2-sha512$310000$n9mPGXcsU95lON69asdHzQ$jdDZbun/p67Ey3Edlug9qm36Jwjw3xfZ7nM1hSEQdKLsPayB5kjwreZht6TgjUAf3e8Tdp6Hn26uZstiCla.kw'
             public: false
             authorization_policy: 'one_factor'
             require_pkce: false

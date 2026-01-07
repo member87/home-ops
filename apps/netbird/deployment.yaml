@@ -39,6 +39,12 @@ spec:
         - containerPort: 443
           name: grpc
           protocol: TCP
+        env:
+        - name: NETBIRD_IDP_MGMT_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: netbird-oidc-secret
+              key: client_secret
         volumeMounts:
         - name: config
           mountPath: /etc/netbird/management.json
@@ -144,6 +150,12 @@ spec:
         - containerPort: 80
           name: http
           protocol: TCP
+        env:
+        - name: AUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: netbird-oidc-secret
+              key: client_secret
         envFrom:
         - configMapRef:
             name: netbird-dashboard-config

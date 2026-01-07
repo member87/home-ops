@@ -47,6 +47,7 @@ spec:
           mountPath: /var/lib/netbird
         command:
           - "/go/bin/netbird-mgmt"
+          - "management"
           - "--port"
           - "80"
           - "--log-file"

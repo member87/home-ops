@@ -7,5 +7,12 @@
   },
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
-  }
+  },
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["traefik", "library/traefik"],
+      "sourceUrl": "https://github.com/traefik/traefik"
+    }
+  ]
 }

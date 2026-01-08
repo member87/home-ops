@@ -6,6 +6,10 @@ resources:
   - sealedsecret.yaml
   - configmap.yaml
   - datasources.yaml
+  - dashboards-provisioning.yaml
+  - dashboard-k8s-cluster.yaml
+  - dashboard-pods.yaml
+  - dashboard-logs.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml

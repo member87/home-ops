@@ -23,6 +23,154 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "text": "Not Ready"
+                    },
+                    "1": {
+                      "color": "green",
+                      "text": "Ready"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "id": 2,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "value_and_name"
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "expr": "kube_pod_container_status_ready{namespace=\"$namespace\",pod=\"$pod\"}",
+              "legendFormat": "{{container}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Container Status",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "id": 6,
+          "options": {
+            "legend": {
+              "calcs": ["last"],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "expr": "kube_pod_container_status_restarts_total{namespace=\"$namespace\",pod=\"$pod\"}",
+              "legendFormat": "{{container}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Container Restarts",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
                 "mode": "palette-classic"
               },
               "custom": {
@@ -70,10 +218,10 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
+            "x": 12,
             "y": 0
           },
-          "id": 2,
+          "id": 3,
           "options": {
             "legend": {
               "calcs": ["last"],
@@ -84,14 +232,20 @@ data:
               "mode": "single"
             }
           },
+          "pluginVersion": "9.0.0",
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=\"$pod\",container!=\"\",container!=\"POD\"}[5m])) by (container)",
-              "legendFormat": "{{container}}",
+              "expr": "kube_pod_container_resource_requests{namespace=\"$namespace\",pod=\"$pod\",resource=\"cpu\"}",
+              "legendFormat": "{{container}} - requests",
               "refId": "A"
+            },
+            {
+              "expr": "kube_pod_container_resource_limits{namespace=\"$namespace\",pod=\"$pod\",resource=\"cpu\"}",
+              "legendFormat": "{{container}} - limits",
+              "refId": "B"
             }
           ],
-          "title": "CPU Usage by Container",
+          "title": "CPU Resources (Requests & Limits)",
           "type": "timeseries"
         },
         {
@@ -146,84 +300,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 3,
-          "options": {
-            "legend": {
-              "calcs": ["last"],
-              "displayMode": "table",
-              "placement": "right"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "targets": [
-            {
-              "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\",pod=\"$pod\",container!=\"\",container!=\"POD\"}) by (container)",
-              "legendFormat": "{{container}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Memory Usage by Container",
-          "type": "timeseries"
-        },
-        {
-          "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": true,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "Bps"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
             "x": 0,
-            "y": 8
+            "y": 4
           },
           "id": 4,
           "options": {
@@ -236,96 +314,38 @@ data:
               "mode": "single"
             }
           },
+          "pluginVersion": "9.0.0",
           "targets": [
             {
-              "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"$namespace\",pod=\"$pod\"}[5m])) by (pod)",
-              "legendFormat": "Receive",
+              "expr": "kube_pod_container_resource_requests{namespace=\"$namespace\",pod=\"$pod\",resource=\"memory\"}",
+              "legendFormat": "{{container}} - requests",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"$namespace\",pod=\"$pod\"}[5m])) by (pod)",
-              "legendFormat": "Transmit",
+              "expr": "kube_pod_container_resource_limits{namespace=\"$namespace\",pod=\"$pod\",resource=\"memory\"}",
+              "legendFormat": "{{container}} - limits",
               "refId": "B"
             }
           ],
-          "title": "Network I/O",
+          "title": "Memory Resources (Requests & Limits)",
           "type": "timeseries"
         },
         {
           "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": true,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 4
           },
           "id": 5,
           "options": {
-            "legend": {
-              "calcs": ["last"],
-              "displayMode": "table",
-              "placement": "right"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
+            "content": "### Pod Information\n\n**Note:** Container usage metrics (CPU, Memory, Network) require cadvisor metrics which are not currently available.\n\nThis dashboard shows:\n- Container status (ready/not ready)\n- Container restart counts\n- Resource requests and limits\n\nTo enable usage metrics, ensure Prometheus is scraping cadvisor endpoints.",
+            "mode": "markdown"
           },
-          "targets": [
-            {
-              "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"$namespace\",pod=\"$pod\"}) by (container)",
-              "legendFormat": "{{container}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Container Restarts",
-          "type": "timeseries"
+          "pluginVersion": "9.0.0",
+          "title": "Dashboard Info",
+          "type": "text"
         }
       ],
       "schemaVersion": 36,

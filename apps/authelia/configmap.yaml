@@ -199,12 +199,12 @@ data:
               - 'netbird'
             redirect_uris:
               - 'https://netbird.lab.jackhumes.com/peers'
-              - 'https://netbird.lab.jackhumes.com/add-peers'
+              - 'https://netbird.lab.jackhumes.com/silent-auth'
               - 'http://localhost:53000'
             scopes:
               - 'openid'
-              - 'email'
               - 'profile'
+              - 'email'
               - 'offline_access'
             response_types:
               - 'code'

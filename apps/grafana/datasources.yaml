@@ -10,12 +10,14 @@ data:
     datasources:
       - name: Prometheus
         type: prometheus
+        uid: prometheus
         access: proxy
         url: http://prometheus.prometheus.svc.cluster.local:9090
         isDefault: true
         editable: true
       - name: Loki
         type: loki
+        uid: loki
         access: proxy
         url: http://loki.loki.svc.cluster.local:3100
         editable: true

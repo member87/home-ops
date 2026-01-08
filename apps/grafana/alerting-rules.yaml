@@ -1,0 +1,313 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting-rules
+  namespace: grafana
+data:
+  rules.yaml: |
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: kubernetes-alerts
+        folder: Kubernetes
+        interval: 1m
+        rules:
+          - uid: pod-not-ready
+            title: Pod Not Ready
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: kube_pod_status_phase{phase!="Running",phase!="Succeeded"} > 0
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - A
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: B
+                  refId: C
+                  type: threshold
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready
+              description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in {{ $labels.phase }} phase for more than 5 minutes
+            labels:
+              severity: warning
+          
+          - uid: node-memory-high
+            title: Node Memory Usage High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 85
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} memory usage is high
+              description: Node {{ $labels.instance }} memory usage is above 85% (current value {{ $value }}%)
+            labels:
+              severity: warning
+
+          - uid: node-cpu-high
+            title: Node CPU Usage High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 80
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} CPU usage is high
+              description: Node {{ $labels.instance }} CPU usage is above 80% (current value {{ $value }}%)
+            labels:
+              severity: warning
+
+          - uid: node-disk-high
+            title: Node Disk Usage High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/var",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/var",fstype!="tmpfs"}) * 100) > 80
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 80
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} disk usage is high
+              description: Node {{ $labels.instance }} disk usage on /var is above 80% (current value {{ $value }}%)
+            labels:
+              severity: warning
+
+          - uid: pod-restart-high
+            title: Pod Restarting Frequently
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(kube_pod_container_status_restarts_total[15m]) * 3600 > 5
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 5
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting frequently
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting more than 5 times per hour
+            labels:
+              severity: critical
+
+          - uid: node-temp-high
+            title: Node Temperature High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: node_hwmon_temp_celsius > 75
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 75
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} temperature is high
+              description: Temperature sensor {{ $labels.sensor }} on node {{ $labels.instance }} is above 75°C (current value {{ $value }}°C)
+            labels:
+              severity: warning

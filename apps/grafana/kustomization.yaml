@@ -4,12 +4,16 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - sealedsecret.yaml
+  - alerting-secret.yaml
   - configmap.yaml
   - datasources.yaml
   - dashboards-provisioning.yaml
   - dashboard-k8s-cluster.yaml
   - dashboard-pods.yaml
   - dashboard-logs.yaml
+  - alerting-contactpoints.yaml
+  - alerting-policies.yaml
+  - alerting-rules.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml

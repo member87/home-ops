@@ -25,6 +25,11 @@ spec:
               value: /etc/grafana/grafana.ini
             - name: GF_PATHS_PROVISIONING
               value: /etc/grafana/provisioning
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-alerting-secrets
+                  key: discord_webhook_url
           volumeMounts:
             - name: config
               mountPath: /etc/grafana
@@ -46,6 +51,15 @@ spec:
             - name: dashboard-logs
               mountPath: /var/lib/grafana/dashboards/logs.json
               subPath: logs.json
+            - name: alerting-contactpoints
+              mountPath: /etc/grafana/provisioning/alerting/contactpoints.yaml
+              subPath: contactpoints.yaml
+            - name: alerting-policies
+              mountPath: /etc/grafana/provisioning/alerting/policies.yaml
+              subPath: policies.yaml
+            - name: alerting-rules
+              mountPath: /etc/grafana/provisioning/alerting/rules.yaml
+              subPath: rules.yaml
           livenessProbe:
             httpGet:
               path: /api/health
@@ -90,3 +104,12 @@ spec:
         - name: dashboard-logs
           configMap:
             name: grafana-dashboard-logs
+        - name: alerting-contactpoints
+          configMap:
+            name: grafana-alerting-contactpoints
+        - name: alerting-policies
+          configMap:
+            name: grafana-alerting-policies
+        - name: alerting-rules
+          configMap:
+            name: grafana-alerting-rules

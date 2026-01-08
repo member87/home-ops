@@ -12,7 +12,7 @@
   "packageRules": [
     {
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["traefik", "library/traefik"],
+      "matchDepNames": ["traefik"],
       "sourceUrl": "https://github.com/traefik/traefik"
     }
   ]

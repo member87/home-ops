@@ -130,7 +130,7 @@ data:
           /jN1d+nJC5kaebUrWkXhAjdGOIcEyfTwicRd4IKd3aRzkqAfU7Vd6EoyMFU=
           -----END RSA PRIVATE KEY-----
         access_token_lifespan: 1h
-        authorize_code_lifespan: 1m
+        authorize_code_lifespan: 5m
         id_token_lifespan: 1h
         refresh_token_lifespan: 90m
         enable_client_debug_messages: false

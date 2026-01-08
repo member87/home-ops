@@ -19,7 +19,7 @@ spec:
       serviceAccountName: promtail
       containers:
         - name: promtail
-          image: grafana/promtail:2.9.17
+          image: grafana/promtail:3.6.3
           args:
             - -config.file=/etc/promtail/promtail.yaml
           ports:

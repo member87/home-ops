@@ -337,15 +337,25 @@ git push
 
 ### Setting Up Monitoring for Applications
 
-When deploying a new application, check if it exports Prometheus metrics and configure monitoring accordingly.
+**IMPORTANT:** Only set up Grafana monitoring if the application exports Prometheus metrics. If the application doesn't support Prometheus metrics, skip this entire section and rely on existing cluster-level monitoring (pod health, restarts, resource usage).
+
+When deploying a new application that supports Prometheus metrics, follow these steps to set up dashboards and alerts.
 
 #### 1. Check for Prometheus Metrics Support
 
-Determine if the application exports metrics:
+**Before proceeding, verify the application exports Prometheus metrics:**
 - Check application documentation for `/metrics` endpoint
 - Look for Prometheus exporter availability (e.g., postgres_exporter, redis_exporter)
 - Check if metrics port is documented
 - Test with port-forward: `kubectl port-forward -n <namespace> pod/<pod> 8080:<metrics-port>` then `curl http://localhost:8080/metrics`
+
+**If the application does NOT export Prometheus metrics:**
+- **STOP HERE** - Do not create Grafana dashboards or alerts
+- The application will still be monitored via existing cluster monitoring (pod status, restarts, resource usage)
+- Existing alerts like "Pod Not Ready" and "Pod Restarting Frequently" will cover basic health
+
+**If the application DOES export Prometheus metrics:**
+- Proceed to step 2 to configure scraping and set up monitoring
 
 #### 2. Configure Prometheus Scraping (if metrics available)
 
@@ -601,6 +611,23 @@ Skip Grafana monitoring configuration if:
 - Use existing "Pod Not Ready" and "Pod Restarting Frequently" alerts
 - Consider log-based monitoring with Loki queries if specific log patterns indicate issues
 - Use TCP health checks in deployment for basic service availability
+
+#### When to Add Critical Alerts
+
+If you've set up Grafana monitoring for an application with Prometheus metrics, only create alerts for **critical metrics that require immediate attention**:
+
+**Create alerts for:**
+- Service availability (service down, all replicas failing)
+- High error rates that indicate service degradation
+- Critical resource exhaustion (connection pool full, queue backup)
+- Data integrity issues (replication lag, backup failures)
+- Security issues (authentication failures spike, rate limit exceeded)
+
+**Do NOT create alerts for:**
+- Metrics already covered by existing cluster alerts (CPU, memory, disk, pod restarts)
+- Informational metrics that don't require action
+- Gradual trends that can be monitored in dashboards
+- Non-critical services where downtime is acceptable
 
 #### Monitoring Best Practices
 

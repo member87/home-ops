@@ -13,7 +13,5 @@ spec:
       services:
         - name: prometheus
           port: 9090
-      middlewares:
-        - name: argocd-authelia-forwardauth@kubernetescrd
   tls:
     secretName: prometheus-tls

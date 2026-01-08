@@ -20,6 +20,7 @@ rules:
       - services
       - secrets
       - nodes
+      - configmaps
     verbs:
       - get
       - list
@@ -49,6 +50,7 @@ rules:
     verbs:
       - update
   - apiGroups:
+      - traefik.io
       - traefik.containo.us
     resources:
       - ingressroutes
@@ -60,6 +62,7 @@ rules:
       - tlsstores
       - traefikservices
       - serverstransports
+      - serverstransporttcps
     verbs:
       - get
       - list

@@ -28,6 +28,10 @@ spec:
     metadata:
       labels:
         app: authelia
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+        prometheus.io/path: "/api/health"
     spec:
       containers:
       - name: authelia

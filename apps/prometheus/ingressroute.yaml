@@ -15,6 +15,5 @@ spec:
           port: 9090
       middlewares:
         - name: authelia-forwardauth
-          namespace: argocd
   tls:
-    certResolver: letsencrypt-production
+    secretName: prometheus-tls

@@ -14,4 +14,4 @@ spec:
         - name: grafana
           port: 3000
   tls:
-    certResolver: letsencrypt-production
+    secretName: grafana-tls

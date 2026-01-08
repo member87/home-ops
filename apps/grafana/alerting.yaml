@@ -127,7 +127,367 @@ data:
               description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in {{ $labels.phase }} phase for more than 5 minutes
             labels:
               severity: warning
-          
+
+          - uid: network-errors-high
+            title: Network Errors High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 0.01
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.01
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Network errors detected on {{ $labels.instance }}
+              description: Interface {{ $labels.device }} on node {{ $labels.instance }} is experiencing network errors (current rate {{ $value }}/s)
+            labels:
+              severity: warning
+
+          - uid: network-packet-drop-high
+            title: Network Packet Drops High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(node_network_receive_drop_total[5m]) + rate(node_network_transmit_drop_total[5m]) > 0.1
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.1
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: High packet drops on {{ $labels.instance }}
+              description: Interface {{ $labels.device }} on node {{ $labels.instance }} is dropping packets (current rate {{ $value }}/s). This may indicate network congestion or hardware issues.
+            labels:
+              severity: warning
+
+          - uid: tcp-retransmit-high
+            title: TCP Retransmits High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(node_netstat_Tcp_RetransSegs[5m]) / rate(node_netstat_Tcp_OutSegs[5m]) * 100 > 5
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 5
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: High TCP retransmit rate on {{ $labels.instance }}
+              description: Node {{ $labels.instance }} has a TCP retransmit rate of {{ $value }}%, indicating network quality issues or packet loss
+            labels:
+              severity: warning
+
+          - uid: pod-cpu-throttling
+            title: Pod CPU Throttling
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(container_cpu_cfs_throttled_seconds_total[5m]) > 0.1
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.1
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} experiencing CPU throttling
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is being CPU throttled. Consider increasing CPU limits.
+            labels:
+              severity: warning
+
+          - uid: pod-memory-near-limit
+            title: Pod Memory Near Limit
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100 > 90
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 90
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} memory usage near limit
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is using {{ $value }}% of its memory limit. Risk of OOM kill.
+            labels:
+              severity: warning
+
+          - uid: pod-oom-killed
+            title: Pod OOM Killed
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: kube_pod_container_status_terminated_reason{reason="OOMKilled"} > 0
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 1m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} was OOM killed
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} was killed due to Out Of Memory. Increase memory limits.
+            labels:
+              severity: critical
+
+          - uid: network-interface-down
+            title: Network Interface Down
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: node_network_up{device!~"veth.*|br.*|docker.*|virbr.*|lo"} == 0
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: eq
+            noDataState: OK
+            execErrState: OK
+            for: 2m
+            annotations:
+              summary: Network interface {{ $labels.device }} is down on {{ $labels.instance }}
+              description: Physical network interface {{ $labels.device }} on node {{ $labels.instance }} is down. Check network connectivity.
+            labels:
+              severity: critical
+
+          - uid: persistent-volume-full
+            title: Persistent Volume Nearly Full
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 85
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 85
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: PersistentVolume {{ $labels.persistentvolumeclaim }} is nearly full
+              description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value }}% full
+            labels:
+              severity: warning
+
           - uid: node-memory-high
             title: Node Memory Usage High
             condition: C

@@ -195,6 +195,8 @@ data:
             consent_mode: 'implicit'
             require_pkce: false
             pkce_challenge_method: ''
+            audience:
+              - 'netbird'
             redirect_uris:
               - 'https://netbird.lab.jackhumes.com/peers'
               - 'https://netbird.lab.jackhumes.com/add-peers'

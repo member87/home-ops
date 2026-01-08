@@ -49,6 +49,16 @@ pages:
                 icon: si:wireguard
                 alt-status-codes:
                   - 401
+              - title: Prometheus
+                url: https://prometheus.lab.jackhumes.com
+                icon: si:prometheus
+                alt-status-codes:
+                  - 401
+              - title: Grafana
+                url: https://grafana.lab.jackhumes.com
+                icon: si:grafana
+                alt-status-codes:
+                  - 401
 
           - type: hacker-news
             limit: 15

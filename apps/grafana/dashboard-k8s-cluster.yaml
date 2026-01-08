@@ -474,7 +474,7 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 8,
+            "w": 12,
             "x": 0,
             "y": 20
           },
@@ -551,8 +551,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 8,
-            "x": 8,
+            "w": 12,
+            "x": 12,
             "y": 20
           },
           "id": 11,
@@ -628,9 +628,9 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 20
+            "w": 12,
+            "x": 0,
+            "y": 28
           },
           "id": 12,
           "options": {
@@ -706,14 +706,14 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
+            "x": 12,
             "y": 28
           },
           "id": 7,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": ["last"],
+              "displayMode": "table",
               "placement": "bottom"
             },
             "tooltip": {
@@ -723,12 +723,89 @@ data:
           "pluginVersion": "9.0.0",
           "targets": [
             {
-              "expr": "sum(container_memory_usage_bytes{container!=\"\", container!=\"POD\"}) by (namespace)",
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\", unit=\"byte\"}) by (namespace)",
               "legendFormat": "{{namespace}}",
               "refId": "A"
             }
           ],
-          "title": "Memory Usage by Namespace",
+          "title": "Memory Requests by Namespace",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 36
+          },
+          "id": 8,
+          "options": {
+            "legend": {
+              "calcs": ["last"],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "expr": "count(kube_pod_info) by (namespace)",
+              "legendFormat": "{{namespace}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Pod Count by Namespace",
           "type": "timeseries"
         },
         {
@@ -784,13 +861,13 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 28
+            "y": 36
           },
-          "id": 8,
+          "id": 13,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": ["last"],
+              "displayMode": "table",
               "placement": "bottom"
             },
             "tooltip": {
@@ -800,12 +877,12 @@ data:
           "pluginVersion": "9.0.0",
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\", container!=\"POD\"}[5m])) by (namespace)",
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\", unit=\"core\"}) by (namespace)",
               "legendFormat": "{{namespace}}",
               "refId": "A"
             }
           ],
-          "title": "CPU Usage by Namespace",
+          "title": "CPU Requests by Namespace",
           "type": "timeseries"
         }
       ],

@@ -14,7 +14,7 @@ spec:
         - name: prometheus
           port: 9090
       middlewares:
-        - name: authelia
-          namespace: authelia
+        - name: authelia-forwardauth
+          namespace: argocd
   tls:
     certResolver: letsencrypt-production

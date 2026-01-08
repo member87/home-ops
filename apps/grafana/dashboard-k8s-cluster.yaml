@@ -383,7 +383,7 @@ data:
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "percent"
             },
             "overrides": []
           },
@@ -392,6 +392,83 @@ data:
             "w": 12,
             "x": 0,
             "y": 12
+          },
+          "id": 9,
+          "options": {
+            "legend": {
+              "calcs": ["last"],
+              "displayMode": "table",
+              "placement": "right"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "9.0.0",
+          "targets": [
+            {
+              "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/var\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/var\",fstype!=\"tmpfs\"}) * 100)",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Disk Usage by Node",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 20
           },
           "id": 7,
           "options": {
@@ -468,7 +545,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 12
+            "y": 20
           },
           "id": 8,
           "options": {

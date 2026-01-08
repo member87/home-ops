@@ -826,6 +826,44 @@ kubectl logs -n authelia -l app.kubernetes.io/name=authelia
 kubectl rollout restart deployment -n authelia authelia
 ```
 
+### Prometheus Not Scraping cAdvisor
+
+**Symptoms**: Container metrics (`container_memory_working_set_bytes`, `container_cpu_*`) are not available in Prometheus, resource monitoring alerts won't work.
+
+**Common Issues on Talos Linux**:
+
+1. **TLS Certificate Validation Errors**:
+   - Error: `x509: cannot validate certificate for <IP> because it doesn't contain any IP SANs`
+   - Solution: Add `insecure_skip_verify: true` to the `kubernetes-cadvisor` job's `tls_config` in Prometheus ConfigMap
+   - This is required because Talos kubelet certificates don't include IP SANs
+
+2. **RBAC Permission Errors**:
+   - Error: `server returned HTTP status 403 Forbidden`
+   - Solution: Ensure Prometheus ClusterRole includes:
+     ```yaml
+     resources:
+       - nodes/metrics
+     nonResourceURLs:
+       - /metrics/cadvisor
+     ```
+
+3. **Verify cAdvisor is working**:
+   ```bash
+   # Port forward to Prometheus
+   kubectl port-forward -n prometheus svc/prometheus 9090:9090
+   
+   # Check cAdvisor targets health
+   curl -s 'http://localhost:9090/api/v1/targets' | jq '.data.activeTargets[] | select(.labels.job == "kubernetes-cadvisor")'
+   
+   # Verify container metrics are available
+   curl -s 'http://localhost:9090/api/v1/query?query=container_memory_working_set_bytes' | jq '.data.result | length'
+   ```
+
+4. **Restart Prometheus after config changes**:
+   ```bash
+   kubectl rollout restart deployment -n prometheus prometheus
+   ```
+
 ### Ingress Not Working
 
 1. Check IngressRoute:

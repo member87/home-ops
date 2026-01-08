@@ -264,6 +264,16 @@ git push
    - Automatic TLS certificate management
    - ClusterIssuer: `letsencrypt-production`
 
+5. **Monitoring Stack** (Prometheus, Grafana, Loki)
+   - **Prometheus** (namespace: `prometheus`) - Metrics collection and storage
+   - **Grafana** (namespace: `grafana`) - Visualization and alerting
+   - **Loki** (namespace: `loki`) - Log aggregation
+   - **Promtail** - Log shipping DaemonSet
+   - **kube-state-metrics** - Kubernetes object metrics
+   - **node-exporter** - Node hardware metrics
+   - **Discord alerting** - Configured with webhook for critical alerts
+   - Grafana UI: `https://grafana.lab.jackhumes.com`
+
 ### Namespaces
 
 - `argocd` - ArgoCD deployment
@@ -324,6 +334,284 @@ git add applications/<app-name>.yaml apps/<app-name>/
 git commit -m "feat(<app-name>): add <description>"
 git push
 ```
+
+### Setting Up Monitoring for Applications
+
+When deploying a new application, check if it exports Prometheus metrics and configure monitoring accordingly.
+
+#### 1. Check for Prometheus Metrics Support
+
+Determine if the application exports metrics:
+- Check application documentation for `/metrics` endpoint
+- Look for Prometheus exporter availability (e.g., postgres_exporter, redis_exporter)
+- Check if metrics port is documented
+- Test with port-forward: `kubectl port-forward -n <namespace> pod/<pod> 8080:<metrics-port>` then `curl http://localhost:8080/metrics`
+
+#### 2. Configure Prometheus Scraping (if metrics available)
+
+**Option A: Pod Annotations (Simple)**
+
+Add annotations to the deployment's pod template:
+
+```yaml
+# In deployment.yaml pod template metadata
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+```
+
+Prometheus is configured to auto-discover pods with these annotations.
+
+**Option B: ServiceMonitor (Advanced)**
+
+For more control over scraping configuration:
+
+```yaml
+# apps/<app-name>/servicemonitor.yaml
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: <app-name>
+  namespace: <app-namespace>
+spec:
+  selector:
+    matchLabels:
+      app: <app-name>
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+```
+
+Add to kustomization.yaml and ensure the service has a `metrics` port defined.
+
+#### 3. Create Grafana Dashboard
+
+Create a dashboard ConfigMap in `apps/grafana/`:
+
+**File:** `apps/grafana/dashboard-<app-name>.yaml`
+
+```yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-<app-name>
+  namespace: grafana
+  labels:
+    grafana_dashboard: "1"
+data:
+  <app-name>.json: |
+    {
+      "title": "<App Display Name>",
+      "uid": "<app-name>-dashboard",
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "panels": [
+        {
+          "title": "Request Rate",
+          "type": "graph",
+          "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{namespace=\"<app-namespace>\"}[5m])",
+              "legendFormat": "{{method}} {{status}}"
+            }
+          ]
+        }
+      ]
+    }
+```
+
+**Common Metrics to Monitor:**
+- **Request rate**: `rate(http_requests_total[5m])`
+- **Error rate**: `rate(http_requests_total{status=~"5.."}[5m])`
+- **Latency (p95)**: `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))`
+- **Resource usage**: Available via kube-state-metrics
+  - CPU requests: `kube_pod_container_resource_requests{resource="cpu", namespace="<namespace>"}`
+  - Memory requests: `kube_pod_container_resource_requests{resource="memory", namespace="<namespace>"}`
+- **Custom application metrics**: Database connections, queue size, cache hits, etc.
+
+**Dashboard Panel Types:**
+- `stat` - Single value display
+- `graph` or `timeseries` - Line charts over time
+- `gauge` - Progress indicator (good for percentages)
+- `table` - Tabular data
+- `logs` - Log viewer (use Loki datasource)
+
+#### 4. Set Up Critical Alerts
+
+If there are critical metrics that require alerting, add rules to `apps/grafana/alerting.yaml`:
+
+```yaml
+# In the groups section, add new rules
+groups:
+  - name: <app-name>
+    interval: 1m
+    rules:
+      - uid: <app-name>-<metric>-high
+        title: <App Name> <Metric> High
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: <prometheus-query> > <threshold>
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              refId: C
+              type: classic_conditions
+        for: 5m
+        annotations:
+          summary: <App Name> <metric> is high
+          description: "<App Name> <metric> has been above <threshold> for 5 minutes. Current value: {{ $values.A.Value }}"
+        labels:
+          severity: warning  # or critical
+```
+
+**Common Alert Patterns:**
+- **High error rate**: `rate(http_requests_total{status=~"5..",namespace="<namespace>"}[5m]) > 10`
+- **Service down**: `up{job="<app-name>"} == 0`
+- **High latency**: `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1`
+- **Queue backed up**: `queue_size{namespace="<namespace>"} > 1000`
+- **Connection pool exhausted**: `connection_pool_active / connection_pool_max > 0.9`
+- **High memory usage**: `container_memory_usage_bytes{namespace="<namespace>"} / container_spec_memory_limit_bytes > 0.9`
+
+**Alert Severity Levels:**
+- `critical` - Immediate action required (service down, data loss risk)
+- `warning` - Investigate soon (high resource usage, degraded performance)
+- `info` - For awareness only (deployment events, scaling events)
+
+#### 5. Update Grafana Resources
+
+**Add dashboard to kustomization** (`apps/grafana/kustomization.yaml`):
+
+```yaml
+resources:
+  # ... existing resources
+  - dashboard-<app-name>.yaml
+```
+
+**Mount dashboard in deployment** (`apps/grafana/deployment.yaml`):
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: grafana
+          volumeMounts:
+            # ... existing mounts
+            - name: dashboard-<app-name>
+              mountPath: /var/lib/grafana/dashboards/<app-name>.json
+              subPath: <app-name>.json
+      volumes:
+        # ... existing volumes
+        - name: dashboard-<app-name>
+          configMap:
+            name: grafana-dashboard-<app-name>
+```
+
+#### 6. Commit and Deploy Monitoring
+
+```bash
+# Stage monitoring resources
+git add apps/grafana/dashboard-<app-name>.yaml \
+        apps/grafana/kustomization.yaml \
+        apps/grafana/deployment.yaml
+
+# If adding alerts
+git add apps/grafana/alerting.yaml
+
+# If adding ServiceMonitor
+git add apps/<app-name>/servicemonitor.yaml apps/<app-name>/kustomization.yaml
+
+# Commit
+git commit -m "feat(grafana): add monitoring dashboard and alerts for <app-name>"
+
+# Push
+git push
+```
+
+Grafana automatically reloads dashboards within 1-2 minutes. Check Grafana UI at `https://grafana.lab.jackhumes.com`.
+
+#### 7. Verify Monitoring Setup
+
+**Check Prometheus is scraping the target:**
+```bash
+# Port forward to Prometheus
+kubectl port-forward -n prometheus svc/prometheus 9090:9090
+
+# Check targets: http://localhost:9090/targets
+# Or query: http://localhost:9090/graph
+```
+
+**Check Grafana loaded the dashboard:**
+```bash
+# Check Grafana logs for dashboard provisioning
+kubectl logs -n grafana deployment/grafana | grep -i dashboard
+
+# Access Grafana UI and navigate to Dashboards
+```
+
+**Test alerts (if configured):**
+```bash
+# Check alert rules are loaded
+kubectl logs -n grafana deployment/grafana | grep -i alert
+
+# Verify in Grafana UI: Alerting > Alert rules
+```
+
+#### When NOT to Set Up Monitoring
+
+Skip Grafana monitoring configuration if:
+- Application doesn't export Prometheus metrics and no exporter exists
+- Application is internal-only with no critical SLAs (dev tools, one-off jobs)
+- Application already included in existing dashboards (e.g., all pods monitored by Cluster Overview)
+
+**Alternatives for non-Prometheus applications:**
+- Still monitor pod health via Kubernetes metrics (covered by existing cluster monitoring)
+- Use existing "Pod Not Ready" and "Pod Restarting Frequently" alerts
+- Consider log-based monitoring with Loki queries if specific log patterns indicate issues
+- Use TCP health checks in deployment for basic service availability
+
+#### Monitoring Best Practices
+
+1. **Start simple** - Begin with basic metrics (request rate, error rate, latency)
+2. **Add resource metrics** - Always monitor CPU and memory usage
+3. **Set meaningful thresholds** - Base alert thresholds on actual usage patterns, not arbitrary numbers
+4. **Avoid alert fatigue** - Only alert on actionable issues that require human intervention
+5. **Use appropriate severity** - Reserve `critical` for service-impacting issues
+6. **Test your alerts** - Verify alerts fire correctly before relying on them
+7. **Document dashboards** - Use text panels to explain metrics and add context
+8. **Keep dashboards focused** - Create separate dashboards for different purposes (overview vs. debugging)
 
 ### Configuring OIDC with Authelia
 

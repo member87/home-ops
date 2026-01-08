@@ -51,6 +51,18 @@ spec:
             - name: dashboard-logs
               mountPath: /var/lib/grafana/dashboards/logs.json
               subPath: logs.json
+            - name: dashboard-k8s-global
+              mountPath: /var/lib/grafana/dashboards/k8s-global.json
+              subPath: k8s-views-global.json
+            - name: dashboard-k8s-namespaces
+              mountPath: /var/lib/grafana/dashboards/k8s-namespaces.json
+              subPath: k8s-views-namespaces.json
+            - name: dashboard-k8s-pods
+              mountPath: /var/lib/grafana/dashboards/k8s-pods.json
+              subPath: k8s-views-pods.json
+            - name: dashboard-k8s-nodes
+              mountPath: /var/lib/grafana/dashboards/k8s-nodes.json
+              subPath: k8s-views-nodes.json
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
 
@@ -98,6 +110,18 @@ spec:
         - name: dashboard-logs
           configMap:
             name: grafana-dashboard-logs
+        - name: dashboard-k8s-global
+          configMap:
+            name: grafana-dashboard-k8s-global
+        - name: dashboard-k8s-namespaces
+          configMap:
+            name: grafana-dashboard-k8s-namespaces
+        - name: dashboard-k8s-pods
+          configMap:
+            name: grafana-dashboard-k8s-pods
+        - name: dashboard-k8s-nodes
+          configMap:
+            name: grafana-dashboard-k8s-nodes
         - name: alerting
           configMap:
             name: grafana-alerting

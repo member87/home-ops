@@ -11,6 +11,10 @@ resources:
   - dashboard-k8s-cluster.yaml
   - dashboard-pods.yaml
   - dashboard-logs.yaml
+  - dashboard-k8s-global.yaml
+  - dashboard-k8s-namespaces.yaml
+  - dashboard-k8s-pods.yaml
+  - dashboard-k8s-nodes.yaml
   - alerting.yaml
   - pvc.yaml
   - deployment.yaml

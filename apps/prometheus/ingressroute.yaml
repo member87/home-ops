@@ -1,0 +1,20 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prometheus
+  namespace: prometheus
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prometheus.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: prometheus
+          port: 9090
+      middlewares:
+        - name: authelia
+          namespace: authelia
+  tls:
+    certResolver: letsencrypt-production

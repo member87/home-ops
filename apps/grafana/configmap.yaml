@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: grafana
+data:
+  grafana.ini: |
+    [server]
+    domain = grafana.lab.jackhumes.com
+    root_url = https://grafana.lab.jackhumes.com
+    
+    [auth]
+    disable_login_form = false
+    oauth_auto_login = false
+    
+    [auth.generic_oauth]
+    enabled = true
+    name = Authelia
+    client_id = grafana
+    client_secret = $__file{/etc/secrets/client_secret}
+    scopes = openid profile email groups
+    auth_url = https://auth.lab.jackhumes.com/api/oidc/authorization
+    token_url = https://auth.lab.jackhumes.com/api/oidc/token
+    api_url = https://auth.lab.jackhumes.com/api/oidc/userinfo
+    use_pkce = false
+    use_refresh_token = true
+    role_attribute_path = contains(groups, 'admins') && 'Admin' || contains(groups, 'editors') && 'Editor' || 'Viewer'
+    allow_sign_up = true
+    
+    [users]
+    auto_assign_org = true
+    auto_assign_org_role = Viewer
+    
+    [security]
+    allow_embedding = true

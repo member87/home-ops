@@ -11,9 +11,7 @@ resources:
   - dashboard-k8s-cluster.yaml
   - dashboard-pods.yaml
   - dashboard-logs.yaml
-  - alerting-contactpoints.yaml
-  - alerting-policies.yaml
-  - alerting-rules.yaml
+  - alerting.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml

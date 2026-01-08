@@ -51,15 +51,9 @@ spec:
             - name: dashboard-logs
               mountPath: /var/lib/grafana/dashboards/logs.json
               subPath: logs.json
-            - name: alerting-contactpoints
-              mountPath: /etc/grafana/provisioning/alerting/contactpoints.yaml
-              subPath: contactpoints.yaml
-            - name: alerting-policies
-              mountPath: /etc/grafana/provisioning/alerting/policies.yaml
-              subPath: policies.yaml
-            - name: alerting-rules
-              mountPath: /etc/grafana/provisioning/alerting/rules.yaml
-              subPath: rules.yaml
+            - name: alerting
+              mountPath: /etc/grafana/provisioning/alerting
+
           livenessProbe:
             httpGet:
               path: /api/health
@@ -104,12 +98,6 @@ spec:
         - name: dashboard-logs
           configMap:
             name: grafana-dashboard-logs
-        - name: alerting-contactpoints
+        - name: alerting
           configMap:
-            name: grafana-alerting-contactpoints
-        - name: alerting-policies
-          configMap:
-            name: grafana-alerting-policies
-        - name: alerting-rules
-          configMap:
-            name: grafana-alerting-rules
+            name: grafana-alerting

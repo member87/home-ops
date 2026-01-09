@@ -2872,6 +2872,5 @@ data:
       },
       "timezone": "browser",
       "title": "UniFi-Poller: USW Insights - Prometheus",
-      "uid": "FsfxpWaZz",
       "version": 35
     }

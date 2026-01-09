@@ -2521,6 +2521,5 @@ data:
       },
       "timezone": "browser",
       "title": "UniFi-Poller: USG Insights - Prometheus",
-      "uid": "4Yo8IZ-Wk",
       "version": 36
     }

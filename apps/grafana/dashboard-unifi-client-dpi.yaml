@@ -3213,6 +3213,5 @@ data:
       },
       "timezone": "browser",
       "title": "UniFi-Poller: Client Insights - Prometheus",
-      "uid": "jMfvAjxWz",
       "version": 30
     }

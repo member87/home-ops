@@ -1519,6 +1519,5 @@ data:
       },
       "timezone": "browser",
       "title": "UniFi-Poller: Network Sites - Prometheus",
-      "uid": "9WaGWZaZk",
       "version": 9
     }

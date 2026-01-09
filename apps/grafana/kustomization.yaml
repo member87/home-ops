@@ -15,6 +15,12 @@ resources:
   - dashboard-k8s-namespaces.yaml
   - dashboard-k8s-pods.yaml
   - dashboard-k8s-nodes.yaml
+  - dashboard-unifi-client-insights.yaml
+  - dashboard-unifi-network-sites.yaml
+  - dashboard-unifi-uap-insights.yaml
+  - dashboard-unifi-usw-insights.yaml
+  - dashboard-unifi-usg-insights.yaml
+  - dashboard-unifi-client-dpi.yaml
   - alerting.yaml
   - pvc.yaml
   - deployment.yaml

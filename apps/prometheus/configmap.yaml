@@ -94,3 +94,7 @@ data:
           - source_labels: [__meta_kubernetes_endpoint_node_name]
             action: replace
             target_label: instance
+
+      - job_name: 'unpoller'
+        static_configs:
+          - targets: ['unpoller.unpoller.svc.cluster.local:9130']

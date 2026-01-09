@@ -63,6 +63,24 @@ spec:
             - name: dashboard-k8s-nodes
               mountPath: /var/lib/grafana/dashboards/k8s-nodes.json
               subPath: k8s-views-nodes.json
+            - name: dashboard-unifi-client-insights
+              mountPath: /var/lib/grafana/dashboards/unifi/client-insights.json
+              subPath: unifi-client-insights.json
+            - name: dashboard-unifi-network-sites
+              mountPath: /var/lib/grafana/dashboards/unifi/network-sites.json
+              subPath: unifi-network-sites.json
+            - name: dashboard-unifi-uap-insights
+              mountPath: /var/lib/grafana/dashboards/unifi/uap-insights.json
+              subPath: unifi-uap-insights.json
+            - name: dashboard-unifi-usw-insights
+              mountPath: /var/lib/grafana/dashboards/unifi/usw-insights.json
+              subPath: unifi-usw-insights.json
+            - name: dashboard-unifi-usg-insights
+              mountPath: /var/lib/grafana/dashboards/unifi/usg-insights.json
+              subPath: unifi-usg-insights.json
+            - name: dashboard-unifi-client-dpi
+              mountPath: /var/lib/grafana/dashboards/unifi/client-dpi.json
+              subPath: unifi-client-dpi.json
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
 
@@ -122,6 +140,24 @@ spec:
         - name: dashboard-k8s-nodes
           configMap:
             name: grafana-dashboard-k8s-nodes
+        - name: dashboard-unifi-client-insights
+          configMap:
+            name: grafana-dashboard-unifi-client-insights
+        - name: dashboard-unifi-network-sites
+          configMap:
+            name: grafana-dashboard-unifi-network-sites
+        - name: dashboard-unifi-uap-insights
+          configMap:
+            name: grafana-dashboard-unifi-uap-insights
+        - name: dashboard-unifi-usw-insights
+          configMap:
+            name: grafana-dashboard-unifi-usw-insights
+        - name: dashboard-unifi-usg-insights
+          configMap:
+            name: grafana-dashboard-unifi-usg-insights
+        - name: dashboard-unifi-client-dpi
+          configMap:
+            name: grafana-dashboard-unifi-client-dpi
         - name: alerting
           configMap:
             name: grafana-alerting

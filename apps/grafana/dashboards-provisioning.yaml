@@ -16,3 +16,11 @@ data:
         editable: true
         options:
           path: /var/lib/grafana/dashboards
+      - name: 'unifi'
+        orgId: 1
+        folder: 'UniFi'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/unifi

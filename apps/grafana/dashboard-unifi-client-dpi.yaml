@@ -6,6 +6,8 @@ metadata:
   namespace: grafana
   labels:
     grafana_dashboard: "1"
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
 data:
   unifi-client-dpi.json: |
     {

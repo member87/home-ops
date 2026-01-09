@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntopng-config
+  namespace: ntopng
+data:
+  # ntopng configuration file
+  ntopng.conf: |
+    # Network interface to capture from
+    # Change this to your mirrored port interface (e.g., eth1, enp2s0, etc.)
+    --interface=eth0
+    
+    # HTTP port for web UI
+    --http-port=3000
+    
+    # Enable HTTPS (disabled since we use Traefik for TLS)
+    --https-port=0
+    
+    # Redis connection for data persistence
+    --redis=127.0.0.1:6379
+    
+    # Local networks (adjust to your network ranges)
+    --local-networks=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
+    
+    # Enable Prometheus metrics export
+    --enable-prometheus-metrics
+    
+    # GeoIP database paths (MaxMind GeoLite2)
+    --geolocation-db=/var/lib/ntopng/GeoLite2-City.mmdb
+    --geolocation-asn-db=/var/lib/ntopng/GeoLite2-ASN.mmdb
+    
+    # Data directory
+    --data-dir=/var/lib/ntopng
+    
+    # Disable login (we use Authelia for auth)
+    --disable-login=1
+    
+    # DNS resolution
+    --dns-mode=1
+    
+    # Enable flow collection (for NetFlow/sFlow if configured later)
+    --collector-mode=1
+    
+    # Community mode (free features)
+    --community
+    
+    # Log level
+    --verbose=1

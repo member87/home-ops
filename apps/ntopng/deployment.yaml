@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntopng
+  namespace: ntopng
+  labels:
+    app: ntopng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ntopng
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ntopng
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/lua/rest/v2/get/system/metrics/prometheus.lua"
+    spec:
+      # Host network is required for packet capture from mirrored port
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      
+      # Pin to a specific node where the mirrored port is connected
+      # Uncomment and set the node name after configuring port mirroring
+      # nodeSelector:
+      #   kubernetes.io/hostname: talos-lox-1n1
+      
+      containers:
+        # Redis sidecar for ntopng data persistence
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+        
+        # ntopng container
+        - name: ntopng
+          image: ntop/ntopng:stable
+          ports:
+            - containerPort: 3000
+              name: http
+          securityContext:
+            # Required for packet capture
+            capabilities:
+              add:
+                - NET_RAW
+                - NET_ADMIN
+          volumeMounts:
+            - name: config
+              mountPath: /etc/ntopng
+            - name: ntopng-data
+              mountPath: /var/lib/ntopng
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /lua/rest/v2/get/system/stats.lua
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /lua/rest/v2/get/system/stats.lua
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+      
+      volumes:
+        - name: config
+          configMap:
+            name: ntopng-config
+        - name: ntopng-data
+          persistentVolumeClaim:
+            claimName: ntopng-data
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-data

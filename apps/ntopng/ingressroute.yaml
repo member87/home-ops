@@ -1,0 +1,20 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ntopng
+  namespace: ntopng
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`ntopng.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: authelia
+          namespace: authelia
+      services:
+        - name: ntopng
+          port: 3000
+  tls:
+    secretName: ntopng-tls

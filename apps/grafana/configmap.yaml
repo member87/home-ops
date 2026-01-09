@@ -37,6 +37,3 @@ data:
     
     [unified_alerting]
     enabled = true
-    
-    [alerting]
-    enabled = true

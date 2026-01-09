@@ -81,6 +81,9 @@ spec:
             - name: dashboard-unifi-client-insights
               mountPath: /var/lib/grafana/dashboards/unifi/unifi-client-insights.json
               subPath: unifi-client-insights.json
+            - name: dashboard-unifi-clients-overview
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-clients-overview.json
+              subPath: unifi-clients-overview.json
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
 
@@ -158,6 +161,9 @@ spec:
         - name: dashboard-unifi-client-insights
           configMap:
             name: grafana-dashboard-unifi-client-insights
+        - name: dashboard-unifi-clients-overview
+          configMap:
+            name: grafana-dashboard-unifi-clients-overview
         - name: alerting
           configMap:
             name: grafana-alerting

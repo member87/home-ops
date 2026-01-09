@@ -1,0 +1,1025 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-unifi-clients-overview
+  namespace: grafana
+  labels:
+    grafana_dashboard: "1"
+data:
+  unifi-clients-overview.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "description": "Comprehensive overview of all UniFi network clients with bandwidth, connection details, and device insights",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [
+        {
+          "asDropdown": true,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": ["unifi-poller"],
+          "title": "UniFi Poller",
+          "type": "dashboards"
+        }
+      ],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 100,
+          "panels": [],
+          "title": "Network Overview",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null}
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count(unpoller_client_receive_bytes_total{site_name=~\"$site\"})",
+              "legendFormat": "Total Clients",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Clients",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "blue", "value": null}
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count(unpoller_client_receive_bytes_total{wired=\"true\", site_name=~\"$site\"})",
+              "legendFormat": "Wired",
+              "refId": "A"
+            }
+          ],
+          "title": "Wired Clients",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "purple", "value": null}
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count(unpoller_client_receive_bytes_total{wired=\"false\", site_name=~\"$site\"})",
+              "legendFormat": "Wireless",
+              "refId": "A"
+            }
+          ],
+          "title": "Wireless Clients",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null}
+                ]
+              },
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "sum(unpoller_client_receive_rate_bytes{site_name=~\"$site\"})",
+              "legendFormat": "Download",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Download Rate",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "yellow", "value": null}
+                ]
+              },
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "sum(unpoller_client_transmit_rate_bytes{site_name=~\"$site\"})",
+              "legendFormat": "Upload",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Upload Rate",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "orange", "value": null}
+                ]
+              },
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "sum(unpoller_client_receive_bytes_total{site_name=~\"$site\"}) + sum(unpoller_client_transmit_bytes_total{site_name=~\"$site\"})",
+              "legendFormat": "Total",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Data Transferred",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+          "id": 101,
+          "panels": [],
+          "title": "All Clients Table",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "custom": {
+                "align": "auto",
+                "cellOptions": {"type": "auto"},
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Name"},
+                "properties": [{"id": "custom.width", "value": 180}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "IP"},
+                "properties": [{"id": "custom.width", "value": 120}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "MAC"},
+                "properties": [{"id": "custom.width", "value": 140}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Network"},
+                "properties": [{"id": "custom.width", "value": 100}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Connection"},
+                "properties": [{"id": "custom.width", "value": 140}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "VLAN"},
+                "properties": [{"id": "custom.width", "value": 60}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Download"},
+                "properties": [{"id": "unit", "value": "decbytes"}, {"id": "custom.width", "value": 100}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Upload"},
+                "properties": [{"id": "unit", "value": "decbytes"}, {"id": "custom.width", "value": 100}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Download Rate"},
+                "properties": [{"id": "unit", "value": "Bps"}, {"id": "custom.width", "value": 110}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Upload Rate"},
+                "properties": [{"id": "unit", "value": "Bps"}, {"id": "custom.width", "value": 110}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Uptime"},
+                "properties": [{"id": "unit", "value": "s"}, {"id": "custom.width", "value": 100}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Vendor"},
+                "properties": [{"id": "custom.width", "value": 200}]
+              }
+            ]
+          },
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 6},
+          "id": 10,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false},
+            "showHeader": true,
+            "sortBy": [{"desc": true, "displayName": "Download"}]
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "unpoller_client_receive_bytes_total{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "",
+              "refId": "A"
+            },
+            {
+              "expr": "unpoller_client_transmit_bytes_total{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "",
+              "refId": "B"
+            },
+            {
+              "expr": "unpoller_client_receive_rate_bytes{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "",
+              "refId": "C"
+            },
+            {
+              "expr": "unpoller_client_transmit_rate_bytes{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "",
+              "refId": "D"
+            },
+            {
+              "expr": "unpoller_client_uptime_seconds{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "",
+              "refId": "E"
+            }
+          ],
+          "title": "All Connected Clients",
+          "transformations": [
+            {"id": "merge", "options": {}},
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "app": true,
+                  "gw_mac": true,
+                  "gw_name": true,
+                  "instance": true,
+                  "job": true,
+                  "kubernetes_namespace": true,
+                  "kubernetes_pod_name": true,
+                  "pod_template_hash": true,
+                  "radio": true,
+                  "radio_name": true,
+                  "radio_proto": true,
+                  "site_name": true,
+                  "source": true,
+                  "sw_mac": true,
+                  "sw_name": true,
+                  "sw_port": true,
+                  "wired": true,
+                  "ap_mac": true,
+                  "ap_name": true
+                },
+                "indexByName": {
+                  "name": 0,
+                  "ip": 1,
+                  "mac": 2,
+                  "network": 3,
+                  "vlan": 4,
+                  "oui": 5,
+                  "Value #A": 6,
+                  "Value #B": 7,
+                  "Value #C": 8,
+                  "Value #D": 9,
+                  "Value #E": 10
+                },
+                "renameByName": {
+                  "Value #A": "Download",
+                  "Value #B": "Upload",
+                  "Value #C": "Download Rate",
+                  "Value #D": "Upload Rate",
+                  "Value #E": "Uptime",
+                  "ip": "IP",
+                  "mac": "MAC",
+                  "name": "Name",
+                  "network": "Network",
+                  "oui": "Vendor",
+                  "vlan": "VLAN"
+                }
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18},
+          "id": 102,
+          "panels": [],
+          "title": "Bandwidth by Client",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Download bandwidth per client over time",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "smooth",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 10, "w": 12, "x": 0, "y": 19},
+          "id": 20,
+          "options": {
+            "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "unpoller_client_receive_rate_bytes{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Download Rate by Client",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Upload bandwidth per client over time",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "smooth",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 10, "w": 12, "x": 12, "y": 19},
+          "id": 21,
+          "options": {
+            "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "unpoller_client_transmit_rate_bytes{site_name=~\"$site\", name=~\"$client\", network=~\"$network\"}",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Upload Rate by Client",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 29},
+          "id": 103,
+          "panels": [],
+          "title": "Data Usage",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Top clients by total data downloaded",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+              },
+              "mappings": [],
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 10, "w": 8, "x": 0, "y": 30},
+          "id": 30,
+          "options": {
+            "displayLabels": ["name", "percent"],
+            "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
+            "pieType": "pie",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "tooltip": {"mode": "single", "sort": "none"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "topk(10, unpoller_client_receive_bytes_total{site_name=~\"$site\", network=~\"$network\"})",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Top 10 Clients by Download",
+          "type": "piechart"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Top clients by total data uploaded",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+              },
+              "mappings": [],
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 10, "w": 8, "x": 8, "y": 30},
+          "id": 31,
+          "options": {
+            "displayLabels": ["name", "percent"],
+            "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
+            "pieType": "pie",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "tooltip": {"mode": "single", "sort": "none"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "topk(10, unpoller_client_transmit_bytes_total{site_name=~\"$site\", network=~\"$network\"})",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Top 10 Clients by Upload",
+          "type": "piechart"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Data usage by network/VLAN",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+              },
+              "mappings": [],
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 10, "w": 8, "x": 16, "y": 30},
+          "id": 32,
+          "options": {
+            "displayLabels": ["name", "percent"],
+            "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
+            "pieType": "donut",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "tooltip": {"mode": "single", "sort": "none"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "sum by (network) (unpoller_client_receive_bytes_total{site_name=~\"$site\"} + unpoller_client_transmit_bytes_total{site_name=~\"$site\"})",
+              "legendFormat": "{{network}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Data by Network",
+          "type": "piechart"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 40},
+          "id": 104,
+          "panels": [],
+          "title": "Client Distribution",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Number of clients per network/VLAN",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineWidth": 1,
+                "scaleDistribution": {"type": "linear"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 41},
+          "id": 40,
+          "options": {
+            "barRadius": 0,
+            "barWidth": 0.6,
+            "groupWidth": 0.7,
+            "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+            "orientation": "horizontal",
+            "showValue": "always",
+            "stacking": "none",
+            "tooltip": {"mode": "single", "sort": "none"},
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count by (network) (unpoller_client_receive_bytes_total{site_name=~\"$site\"})",
+              "legendFormat": "{{network}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Clients per Network",
+          "type": "barchart"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Number of clients per switch port",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineWidth": 1,
+                "scaleDistribution": {"type": "linear"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 41},
+          "id": 41,
+          "options": {
+            "barRadius": 0,
+            "barWidth": 0.6,
+            "groupWidth": 0.7,
+            "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+            "orientation": "horizontal",
+            "showValue": "always",
+            "stacking": "none",
+            "tooltip": {"mode": "single", "sort": "none"},
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count by (sw_name, sw_port) (unpoller_client_receive_bytes_total{site_name=~\"$site\", wired=\"true\"})",
+              "legendFormat": "{{sw_name}} Port {{sw_port}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Clients per Switch Port",
+          "type": "barchart"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Clients by manufacturer",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false}
+              },
+              "mappings": [],
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 41},
+          "id": 42,
+          "options": {
+            "displayLabels": ["name", "value"],
+            "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
+            "pieType": "pie",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "tooltip": {"mode": "single", "sort": "none"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count by (oui) (unpoller_client_receive_bytes_total{site_name=~\"$site\"})",
+              "legendFormat": "{{oui}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Clients by Manufacturer",
+          "type": "piechart"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 49},
+          "id": 105,
+          "panels": [],
+          "title": "Historical Data",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Total bandwidth over time by network",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 30,
+                "gradientMode": "opacity",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "normal"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 50},
+          "id": 50,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "sum by (network) (unpoller_client_receive_rate_bytes{site_name=~\"$site\"})",
+              "legendFormat": "{{network}} Download",
+              "refId": "A"
+            },
+            {
+              "expr": "sum by (network) (unpoller_client_transmit_rate_bytes{site_name=~\"$site\"})",
+              "legendFormat": "{{network}} Upload",
+              "refId": "B"
+            }
+          ],
+          "title": "Network Bandwidth Over Time",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "description": "Client count over time",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 60},
+          "id": 51,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "expr": "count(unpoller_client_receive_bytes_total{site_name=~\"$site\"})",
+              "legendFormat": "Total Clients",
+              "refId": "A"
+            },
+            {
+              "expr": "count(unpoller_client_receive_bytes_total{site_name=~\"$site\", wired=\"true\"})",
+              "legendFormat": "Wired Clients",
+              "refId": "B"
+            },
+            {
+              "expr": "count(unpoller_client_receive_bytes_total{site_name=~\"$site\", wired=\"false\"})",
+              "legendFormat": "Wireless Clients",
+              "refId": "C"
+            }
+          ],
+          "title": "Client Count Over Time",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["unifi-poller", "unifi", "clients"],
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "datasource": "Prometheus",
+            "definition": "label_values(unpoller_client_receive_bytes_total, site_name)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Site",
+            "multi": false,
+            "name": "site",
+            "options": [],
+            "query": {
+              "query": "label_values(unpoller_client_receive_bytes_total, site_name)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": "Prometheus",
+            "definition": "label_values(unpoller_client_receive_bytes_total{site_name=~\"$site\"}, network)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Network",
+            "multi": true,
+            "name": "network",
+            "options": [],
+            "query": {
+              "query": "label_values(unpoller_client_receive_bytes_total{site_name=~\"$site\"}, network)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": "Prometheus",
+            "definition": "label_values(unpoller_client_receive_bytes_total{site_name=~\"$site\", network=~\"$network\"}, name)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Client",
+            "multi": true,
+            "name": "client",
+            "options": [],
+            "query": {
+              "query": "label_values(unpoller_client_receive_bytes_total{site_name=~\"$site\", network=~\"$network\"}, name)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          }
+        ]
+      },
+      "time": {"from": "now-3h", "to": "now"},
+      "timepicker": {
+        "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+      },
+      "timezone": "browser",
+      "title": "UniFi Clients Overview",
+      "uid": "unifi-clients-overview",
+      "version": 1,
+      "weekStart": ""
+    }

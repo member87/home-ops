@@ -10,23 +10,8 @@ data:
     contactPoints:
       - orgId: 1
         name: discord
-        receivers:
-          - uid: discord-webhook
-            type: discord
-            settings:
-              url: $DISCORD_WEBHOOK_URL
-              title: "{{ .CommonLabels.alertname }}"
-              message: |
-                **Status:** {{ .Status }}
-                **Summary:** {{ .CommonAnnotations.summary }}
-                
-                **Details:**
-                {{ range .Alerts }}
-                - **{{ .Labels.alertname }}**: {{ .Annotations.description }}
-                  Severity: {{ .Labels.severity }}
-                {{ end }}
-              use_discord_username: true
-            disableResolveMessage: false
+        receivers: []
+          # Discord webhook disabled - all notifications suppressed
   
   policies.yaml: |
     apiVersion: 1
@@ -37,14 +22,9 @@ data:
         group_wait: 30s
         group_interval: 5m
         repeat_interval: 4h
-        routes:
-          - receiver: discord
-            matchers:
-              - severity =~ "critical|warning"
-            continue: false
-            group_wait: 10s
-            group_interval: 5m
-            repeat_interval: 12h
+        mute_time_intervals: []
+        routes: []
+          # Notification routes disabled - all alerts are suppressed
   
   rules.yaml: |
     apiVersion: 1

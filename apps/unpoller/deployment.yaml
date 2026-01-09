@@ -25,14 +25,27 @@ spec:
             - containerPort: 9130
               name: metrics
           env:
-            - name: UNIFI_PASSWORD
+            - name: UP_UNIFI_DEFAULT_URL
+              value: "https://192.168.1.1"
+            - name: UP_UNIFI_DEFAULT_USER
+              value: "unpoller"
+            - name: UP_UNIFI_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
                   name: unpoller-secret
                   key: password
-          volumeMounts:
-            - name: config
-              mountPath: /etc/unpoller
+            - name: UP_UNIFI_DEFAULT_VERIFY_SSL
+              value: "false"
+            - name: UP_UNIFI_DEFAULT_SAVE_SITES
+              value: "true"
+            - name: UP_UNIFI_DEFAULT_SAVE_DPI
+              value: "true"
+            - name: UP_PROMETHEUS_HTTP_LISTEN
+              value: "0.0.0.0:9130"
+            - name: UP_PROMETHEUS_DISABLE
+              value: "false"
+            - name: UP_INFLUXDB_DISABLE
+              value: "true"
           resources:
             requests:
               cpu: 50m
@@ -52,7 +65,3 @@ spec:
               port: metrics
             initialDelaySeconds: 10
             periodSeconds: 5
-      volumes:
-        - name: config
-          configMap:
-            name: unpoller-config

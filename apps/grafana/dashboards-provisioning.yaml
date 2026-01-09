@@ -17,3 +17,12 @@ data:
         updateIntervalSeconds: 30
         options:
           path: /var/lib/grafana/dashboards
+      - name: 'unifi'
+        orgId: 1
+        folder: 'UniFi'
+        type: file
+        disableDeletion: false
+        editable: false
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/unifi

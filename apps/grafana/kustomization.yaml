@@ -20,6 +20,7 @@ resources:
   - dashboard-unifi-usw-insights.yaml
   - dashboard-unifi-usg-insights.yaml
   - dashboard-unifi-client-dpi.yaml
+  - dashboard-unifi-client-insights.yaml
   - alerting.yaml
   - pvc.yaml
   - deployment.yaml

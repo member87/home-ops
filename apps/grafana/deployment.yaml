@@ -64,20 +64,23 @@ spec:
               mountPath: /var/lib/grafana/dashboards/k8s-nodes.json
               subPath: k8s-views-nodes.json
             - name: dashboard-unifi-network-sites
-              mountPath: /var/lib/grafana/dashboards/unifi-network-sites.json
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-network-sites.json
               subPath: unifi-network-sites.json
             - name: dashboard-unifi-uap-insights
-              mountPath: /var/lib/grafana/dashboards/unifi-uap-insights.json
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-uap-insights.json
               subPath: unifi-uap-insights.json
             - name: dashboard-unifi-usw-insights
-              mountPath: /var/lib/grafana/dashboards/unifi-usw-insights.json
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-usw-insights.json
               subPath: unifi-usw-insights.json
             - name: dashboard-unifi-usg-insights
-              mountPath: /var/lib/grafana/dashboards/unifi-usg-insights.json
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-usg-insights.json
               subPath: unifi-usg-insights.json
             - name: dashboard-unifi-client-dpi
-              mountPath: /var/lib/grafana/dashboards/unifi-client-dpi.json
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-client-dpi.json
               subPath: unifi-client-dpi.json
+            - name: dashboard-unifi-client-insights
+              mountPath: /var/lib/grafana/dashboards/unifi/unifi-client-insights.json
+              subPath: unifi-client-insights.json
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
 
@@ -152,6 +155,9 @@ spec:
         - name: dashboard-unifi-client-dpi
           configMap:
             name: grafana-dashboard-unifi-client-dpi
+        - name: dashboard-unifi-client-insights
+          configMap:
+            name: grafana-dashboard-unifi-client-insights
         - name: alerting
           configMap:
             name: grafana-alerting

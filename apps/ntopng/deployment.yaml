@@ -34,7 +34,7 @@ spec:
       containers:
         # Redis sidecar for ntopng data persistence
         - name: redis
-          image: redis:7-alpine
+          image: redis:8-alpine
           ports:
             - containerPort: 6379
               name: redis

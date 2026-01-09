@@ -34,3 +34,9 @@ data:
     
     [security]
     allow_embedding = true
+    
+    [unified_alerting]
+    enabled = true
+    
+    [alerting]
+    enabled = true

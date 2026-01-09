@@ -273,7 +273,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: rate(container_cpu_cfs_throttled_seconds_total[5m]) > 0.1
+                  expr: rate(container_cpu_cfs_throttled_seconds_total{namespace!="podinfo"}[5m]) > 0.1
                   refId: A
               - refId: B
                 relativeTimeRange:
@@ -318,7 +318,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: (container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100 > 90
+                  expr: (container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100 > 90 < Inf
                   refId: A
               - refId: B
                 relativeTimeRange:
@@ -408,7 +408,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: node_network_up{device!~"veth.*|br.*|docker.*|virbr.*|lo"} == 0
+                  expr: node_network_up{device!~"veth.*|br.*|docker.*|virbr.*|lo|bond0|dummy0|flannel\\.1|ip6tnl0|sit0|teql0|tunl0"} == 0
                   refId: A
               - refId: B
                 relativeTimeRange:
@@ -633,7 +633,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: rate(kube_pod_container_status_restarts_total[15m]) * 3600 > 5
+                  expr: rate(kube_pod_container_status_restarts_total{namespace!="longhorn-system"}[15m]) * 3600 > 5
                   refId: A
               - refId: B
                 relativeTimeRange:
@@ -678,7 +678,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: node_hwmon_temp_celsius > 75
+                  expr: node_hwmon_temp_celsius{sensor!="temp5"} > 75
                   refId: A
               - refId: B
                 relativeTimeRange:

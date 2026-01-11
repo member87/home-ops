@@ -491,15 +491,12 @@ data:
               "refId": "A",
               "query": "server.geo.location:*",
               "metrics": [
-                {"type": "sum", "field": "network.bytes", "id": "1"},
-                {"type": "count", "id": "2"}
-              ],
-              "bucketAggs": [
-                {"type": "geohash_grid", "field": "server.geo.location", "id": "3", "settings": {"precision": "5"}}
+                {"type": "raw_data", "id": "1", "settings": {"size": "500"}}
               ],
               "timeField": "@timestamp"
             }
           ],
+          "transformations": [],
           "options": {
             "view": {
               "id": "coords",
@@ -521,22 +518,27 @@ data:
             },
             "layers": [
               {
-                "type": "heatmap",
-                "name": "Traffic Heatmap",
+                "type": "markers",
+                "name": "Traffic Markers",
                 "config": {
-                  "weight": {
-                    "field": "Sum network.bytes",
-                    "fixed": 1,
-                    "min": 0,
-                    "max": 1
+                  "size": {
+                    "field": "network.bytes",
+                    "fixed": 5,
+                    "min": 3,
+                    "max": 20
                   },
-                  "radius": 30,
-                  "blur": 20,
-                  "opacity": 0.8
+                  "color": {
+                    "field": "network.bytes",
+                    "fixed": "dark-green"
+                  },
+                  "fillOpacity": 0.6,
+                  "shape": "circle",
+                  "showLegend": true
                 },
                 "location": {
-                  "mode": "geohash",
-                  "geohash": "server.geo.location"
+                  "mode": "coords",
+                  "latitude": "server.geo.location.lat",
+                  "longitude": "server.geo.location.lon"
                 }
               }
             ],

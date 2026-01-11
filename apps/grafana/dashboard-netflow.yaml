@@ -264,6 +264,179 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Geographic location of flow exporters (UniFi devices). Note: Full flow-level GeoIP visualization requires a database backend like ClickHouse.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "id": 15,
+          "options": {
+            "basemap": {
+              "config": {},
+              "name": "Layer 0",
+              "type": "default"
+            },
+            "controls": {
+              "mouseWheelZoom": true,
+              "showAttribution": true,
+              "showDebug": false,
+              "showMeasure": false,
+              "showScale": false,
+              "showZoom": true
+            },
+            "layers": [
+              {
+                "config": {
+                  "showLegend": true,
+                  "style": {
+                    "color": {
+                      "fixed": "dark-green"
+                    },
+                    "opacity": 0.8,
+                    "rotation": {
+                      "fixed": 0,
+                      "max": 360,
+                      "min": -360,
+                      "mode": "mod"
+                    },
+                    "size": {
+                      "fixed": 15,
+                      "max": 30,
+                      "min": 2,
+                      "mode": "linear"
+                    },
+                    "symbol": {
+                      "fixed": "img/icons/marker/circle.svg",
+                      "mode": "fixed"
+                    },
+                    "symbolAlign": {
+                      "horizontal": "center",
+                      "vertical": "center"
+                    },
+                    "text": {
+                      "field": "",
+                      "fixed": "",
+                      "mode": "field"
+                    },
+                    "textConfig": {
+                      "fontSize": 12,
+                      "offsetX": 0,
+                      "offsetY": 0,
+                      "textAlign": "center",
+                      "textBaseline": "middle"
+                    }
+                  }
+                },
+                "filterData": {
+                  "id": "",
+                  "options": {}
+                },
+                "location": {
+                  "mode": "coords",
+                  "latitude": "latitude",
+                  "longitude": "longitude"
+                },
+                "name": "Flow Exporters",
+                "tooltip": true,
+                "type": "markers"
+              }
+            ],
+            "tooltip": {
+              "mode": "details"
+            },
+            "view": {
+              "allLayers": true,
+              "id": "coords",
+              "lat": 40,
+              "lon": -100,
+              "zoom": 4
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "label_replace(goflow2_flow_process_nf_total, \"latitude\", \"0\", \"router\", \".*\") * 0 + 40",
+              "format": "table",
+              "legendFormat": "__auto",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "label_replace(goflow2_flow_process_nf_total, \"longitude\", \"0\", \"router\", \".*\") * 0 - 100",
+              "format": "table",
+              "hide": false,
+              "legendFormat": "__auto",
+              "refId": "B"
+            }
+          ],
+          "title": "Flow Exporter Locations",
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "container": true,
+                  "endpoint": true,
+                  "instance": true,
+                  "job": true,
+                  "namespace": true,
+                  "pod": true,
+                  "service": true,
+                  "version": true
+                },
+                "indexByName": {},
+                "renameByName": {
+                  "Value #A": "latitude",
+                  "Value #B": "longitude",
+                  "router": "Exporter IP"
+                }
+              }
+            }
+          ],
+          "type": "geomap"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "description": "Rate of NetFlow packets received over time",
           "fieldConfig": {
             "defaults": {
@@ -317,7 +490,7 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
+            "x": 12,
             "y": 4
           },
           "id": 5,
@@ -406,8 +579,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 4
+            "x": 0,
+            "y": 12
           },
           "id": 6,
           "options": {
@@ -494,8 +667,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 24,
-            "x": 0,
+            "w": 12,
+            "x": 12,
             "y": 12
           },
           "id": 7,
@@ -550,7 +723,7 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 8,
+            "w": 12,
             "x": 0,
             "y": 20
           },
@@ -622,8 +795,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 16,
-            "x": 8,
+            "w": 12,
+            "x": 12,
             "y": 20
           },
           "id": 9,

@@ -477,14 +477,146 @@ data:
         },
         {
           "type": "row",
-          "title": "External Traffic",
+          "title": "Geographic Distribution",
           "gridPos": {"h": 1, "w": 24, "x": 0, "y": 52},
+          "collapsed": false
+        },
+        {
+          "type": "geomap",
+          "title": "Traffic by Destination Country",
+          "gridPos": {"h": 14, "w": 24, "x": 0, "y": 53},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "refId": "A",
+              "query": "server.geo.country_iso_code:*",
+              "metrics": [
+                {"type": "sum", "field": "network.bytes", "id": "1"},
+                {"type": "count", "id": "2"}
+              ],
+              "bucketAggs": [
+                {"type": "terms", "field": "server.geo.country_iso_code", "id": "3", "settings": {"size": "100", "order": "desc", "orderBy": "1"}}
+              ],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "view": {
+              "id": "coords",
+              "lat": 51.5074,
+              "lon": -0.1278,
+              "zoom": 2
+            },
+            "basemap": {
+              "type": "default",
+              "name": "Layer 0",
+              "config": {}
+            },
+            "controls": {
+              "showZoom": true,
+              "showAttribution": true,
+              "showScale": true,
+              "showMeasure": false,
+              "showDebug": false
+            },
+            "layers": [
+              {
+                "type": "markers",
+                "name": "Traffic",
+                "config": {
+                  "style": {
+                    "size": {
+                      "fixed": 5,
+                      "min": 2,
+                      "max": 30,
+                      "field": "Sum network.bytes"
+                    },
+                    "color": {
+                      "fixed": "dark-green",
+                      "field": "Sum network.bytes"
+                    },
+                    "opacity": 0.7,
+                    "symbol": "circle",
+                    "symbolAlign": {
+                      "horizontal": "center",
+                      "vertical": "center"
+                    }
+                  },
+                  "showLegend": true
+                },
+                "location": {
+                  "mode": "lookup",
+                  "lookup": "server.geo.country_iso_code",
+                  "gazetteer": "public/gazetteer/countries.json"
+                }
+              }
+            ]
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "continuous-GrYlRd"
+              }
+            }
+          }
+        },
+        {
+          "type": "piechart",
+          "title": "Traffic by Country",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 67},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "refId": "A",
+              "query": "server.geo.country_name:*",
+              "metrics": [{"type": "sum", "field": "network.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "terms", "field": "server.geo.country_name", "id": "2", "settings": {"size": "15", "order": "desc", "orderBy": "1"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "legend": {"displayMode": "list", "placement": "right"},
+            "pieType": "pie",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": true}
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"}
+          }
+        },
+        {
+          "type": "piechart",
+          "title": "Traffic by City",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 67},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "refId": "A",
+              "query": "server.geo.city_name:*",
+              "metrics": [{"type": "sum", "field": "network.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "terms", "field": "server.geo.city_name", "id": "2", "settings": {"size": "15", "order": "desc", "orderBy": "1"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "legend": {"displayMode": "list", "placement": "right"},
+            "pieType": "pie",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": true}
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"}
+          }
+        },
+        {
+          "type": "row",
+          "title": "External Traffic Details",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 75},
           "collapsed": false
         },
         {
           "type": "table",
           "title": "Top External Destinations",
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 53},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 76},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
             {
@@ -496,7 +628,9 @@ data:
               ],
               "bucketAggs": [
                 {"type": "terms", "field": "server.ip", "id": "3", "settings": {"size": "20", "order": "desc", "orderBy": "1"}},
-                {"type": "terms", "field": "server.domain", "id": "4", "settings": {"size": "1", "order": "desc", "orderBy": "1"}}
+                {"type": "terms", "field": "server.domain", "id": "4", "settings": {"size": "1", "order": "desc", "orderBy": "1"}},
+                {"type": "terms", "field": "server.geo.country_name", "id": "5", "settings": {"size": "1", "order": "desc", "orderBy": "1"}},
+                {"type": "terms", "field": "server.geo.city_name", "id": "6", "settings": {"size": "1", "order": "desc", "orderBy": "1"}}
               ],
               "timeField": "@timestamp"
             }
@@ -506,7 +640,9 @@ data:
               {"matcher": {"id": "byName", "options": "Sum network.bytes"}, "properties": [{"id": "unit", "value": "bytes"}, {"id": "displayName", "value": "Bytes"}]},
               {"matcher": {"id": "byName", "options": "Count"}, "properties": [{"id": "displayName", "value": "Connections"}]},
               {"matcher": {"id": "byName", "options": "server.ip"}, "properties": [{"id": "displayName", "value": "Server IP"}]},
-              {"matcher": {"id": "byName", "options": "server.domain"}, "properties": [{"id": "displayName", "value": "Hostname"}]}
+              {"matcher": {"id": "byName", "options": "server.domain"}, "properties": [{"id": "displayName", "value": "Hostname"}]},
+              {"matcher": {"id": "byName", "options": "server.geo.country_name"}, "properties": [{"id": "displayName", "value": "Country"}]},
+              {"matcher": {"id": "byName", "options": "server.geo.city_name"}, "properties": [{"id": "displayName", "value": "City"}]}
             ]
           }
         }

@@ -19,7 +19,7 @@ data:
         dst_addr IPv4,
         src_port UInt16,
         dst_port UInt16,
-        proto UInt8,
+        proto String,
         bytes UInt64,
         packets UInt64,
         tcp_flags UInt8,

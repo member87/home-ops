@@ -39,7 +39,7 @@ data:
           # Ensure numeric fields are correct types
           .src_port = to_int!(.src_port)
           .dst_port = to_int!(.dst_port)
-          .proto = to_int!(.proto)
+          .proto = .proto
           .bytes = to_int!(.bytes)
           .packets = to_int!(.packets)
           .tcp_flags = to_int!(.tcp_flags)

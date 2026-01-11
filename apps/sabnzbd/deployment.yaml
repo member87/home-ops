@@ -37,7 +37,7 @@ spec:
           - "8.8.8.8"
       containers:
         - name: sabnzbd
-          image: lscr.io/linuxserver/sabnzbd:4.4.1
+          image: lscr.io/linuxserver/sabnzbd:4.5.5
           ports:
             - containerPort: 8080
               name: http

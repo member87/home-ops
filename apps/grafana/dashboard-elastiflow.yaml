@@ -500,11 +500,20 @@ data:
               "timeField": "@timestamp"
             }
           ],
+          "transformations": [
+            {
+              "id": "renameByRegex",
+              "options": {
+                "regex": "server.geo.country_iso_code",
+                "renamePattern": "lookup"
+              }
+            }
+          ],
           "options": {
             "view": {
               "id": "coords",
-              "lat": 51.5074,
-              "lon": -0.1278,
+              "lat": 30,
+              "lon": 0,
               "zoom": 2
             },
             "basemap": {
@@ -527,8 +536,8 @@ data:
                   "style": {
                     "size": {
                       "fixed": 5,
-                      "min": 4,
-                      "max": 40,
+                      "min": 5,
+                      "max": 50,
                       "field": "Sum network.bytes"
                     },
                     "color": {
@@ -546,7 +555,7 @@ data:
                 },
                 "location": {
                   "mode": "lookup",
-                  "lookup": "server.geo.country_iso_code",
+                  "lookup": "lookup",
                   "gazetteer": "public/gazetteer/countries.json"
                 }
               }

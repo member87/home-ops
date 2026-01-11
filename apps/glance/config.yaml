@@ -80,16 +80,16 @@ pages:
                 icon: si:radarr
               - title: Prowlarr
                 url: https://prowlarr.lab.jackhumes.com
-                icon: si:prowlarr
+                icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png
               - title: Bazarr
                 url: https://bazarr.lab.jackhumes.com
-                icon: si:bazarr
+                icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/bazarr.png
               - title: qBittorrent
                 url: https://qbittorrent.lab.jackhumes.com
                 icon: si:qbittorrent
               - title: SABnzbd
                 url: https://sabnzbd.lab.jackhumes.com
-                icon: si:sabnzbd
+                icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sabnzbd.png
               - title: Qui (qBittorrent UI)
                 url: https://qui.lab.jackhumes.com
                 icon: si:qbittorrent

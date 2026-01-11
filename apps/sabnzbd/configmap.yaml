@@ -16,16 +16,10 @@ data:
       if grep -q "host_whitelist.*$HOSTNAME" "$INI_FILE"; then
         echo "Host whitelist already contains $HOSTNAME"
       else
-        # Check if host_whitelist exists
+        # Check if host_whitelist exists and replace it entirely
         if grep -q "^host_whitelist" "$INI_FILE"; then
-          # Append to existing whitelist
-          CURRENT=$(grep "^host_whitelist" "$INI_FILE" | cut -d'=' -f2 | xargs)
-          if [ -z "$CURRENT" ]; then
-            sed -i "s/^host_whitelist.*/host_whitelist = $HOSTNAME/" "$INI_FILE"
-          else
-            sed -i "s/^host_whitelist.*/host_whitelist = $CURRENT, $HOSTNAME/" "$INI_FILE"
-          fi
-          echo "Added $HOSTNAME to existing host_whitelist"
+          sed -i "s/^host_whitelist.*/host_whitelist = $HOSTNAME/" "$INI_FILE"
+          echo "Set host_whitelist to $HOSTNAME"
         else
           # Add host_whitelist to [misc] section
           sed -i "/^\[misc\]/a host_whitelist = $HOSTNAME" "$INI_FILE"

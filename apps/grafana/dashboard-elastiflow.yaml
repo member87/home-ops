@@ -496,7 +496,26 @@ data:
               "timeField": "@timestamp"
             }
           ],
-          "transformations": [],
+          "transformations": [
+            {
+              "id": "extractFields",
+              "options": {
+                "source": "server.geo.location",
+                "format": "regex",
+                "regex": "^(?<latitude>[^,]+),(?<longitude>.+)$",
+                "replace": false
+              }
+            },
+            {
+              "id": "convertFieldType",
+              "options": {
+                "conversions": [
+                  {"targetField": "latitude", "destinationType": "number"},
+                  {"targetField": "longitude", "destinationType": "number"}
+                ]
+              }
+            }
+          ],
           "options": {
             "view": {
               "id": "coords",
@@ -537,8 +556,8 @@ data:
                 },
                 "location": {
                   "mode": "coords",
-                  "latitude": "server.geo.location.lat",
-                  "longitude": "server.geo.location.lon"
+                  "latitude": "latitude",
+                  "longitude": "longitude"
                 }
               }
             ],

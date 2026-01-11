@@ -37,7 +37,7 @@ spec:
           - "8.8.8.8"
       containers:
         - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:5.1.4
+          image: lscr.io/linuxserver/qbittorrent:20.04.1
           ports:
             - containerPort: 8080
               name: http

@@ -17,7 +17,7 @@ spec:
       containers:
         # Redis for ntopng data storage
         - name: redis
-          image: redis:7.4-alpine
+          image: redis:8.4-alpine
           ports:
             - containerPort: 6379
               name: redis

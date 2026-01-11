@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: elastiflow
-          image: elastiflow/flow-collector:7.3.2
+          image: elastiflow/flow-collector:7.20.0
           envFrom:
             - configMapRef:
                 name: elastiflow-config

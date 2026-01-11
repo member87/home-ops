@@ -12,45 +12,13 @@ data:
         include:
           - /data/flows.json
         read_from: beginning
-        decoding:
-          codec: json
-
-    transforms:
-      parse_flows:
-        type: remap
-        inputs:
-          - goflow2_file
-        source: |
-          # Parse GoFlow2 JSON format and map to ClickHouse schema
-          .time_received = to_unix_timestamp!(now())
-          .time_flow_start = to_unix_timestamp(.TimeFlowStart, unit: "milliseconds") ?? .time_received
-          .time_flow_end = to_unix_timestamp(.TimeFlowEnd, unit: "milliseconds") ?? .time_received
-          .sampler_address = .SamplerAddress ?? "0.0.0.0"
-          .src_addr = .SrcAddr ?? "0.0.0.0"
-          .dst_addr = .DstAddr ?? "0.0.0.0"
-          .src_port = to_int!(.SrcPort) ?? 0
-          .dst_port = to_int!(.DstPort) ?? 0
-          .proto = to_int!(.Proto) ?? 0
-          .bytes = to_int!(.Bytes) ?? 0
-          .packets = to_int!(.Packets) ?? 0
-          .tcp_flags = to_int!(.TCPFlags) ?? 0
-          .ip_tos = to_int!(.IPTos) ?? 0
-          .in_if = to_int!(.InIf) ?? 0
-          .out_if = to_int!(.OutIf) ?? 0
-          .src_mac = .SrcMac ?? ""
-          .dst_mac = .DstMac ?? ""
-          .vlan_id = to_int!(.VlanId) ?? 0
-          .etype = .Etype ?? ""
-          .next_hop = .NextHop ?? "0.0.0.0"
-          .src_as = to_int!(.SrcAS) ?? 0
-          .dst_as = to_int!(.DstAS) ?? 0
-          .forwarding_status = to_int!(.ForwardingStatus) ?? 0
+        line_delimiter: "\n"
 
     sinks:
       clickhouse:
         type: clickhouse
         inputs:
-          - parse_flows
+          - goflow2_file
         endpoint: http://clickhouse.clickhouse.svc.cluster.local:8123
         database: netflow
         table: flows
@@ -60,7 +28,7 @@ data:
           password: "${CLICKHOUSE_PASSWORD}"
         compression: gzip
         batch:
-          max_bytes: 10485760  # 10MB
+          max_bytes: 10485760
           timeout_secs: 5
         buffer:
           type: memory

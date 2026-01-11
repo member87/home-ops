@@ -67,10 +67,8 @@ spec:
             - "netflow://:2055,sflow://:6343"
             - "-addr"
             - ":8080"
-            - "-transport"
-            - "file"
-            - "-transport.file"
-            - "/dev/null"
+            - "-format"
+            - "json"
           ports:
             - containerPort: 2055
               name: netflow

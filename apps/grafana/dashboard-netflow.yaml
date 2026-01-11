@@ -20,6 +20,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Total NetFlow packets received from UniFi controller",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -35,7 +36,7 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "pps"
             },
             "overrides": []
           },
@@ -65,12 +66,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_nf_count[5m]))",
-              "legendFormat": "Flows/sec",
+              "expr": "sum(rate(goflow2_flow_process_nf_total[5m]))",
+              "legendFormat": "NetFlow/sec",
               "refId": "A"
             }
           ],
-          "title": "NetFlow Rate",
+          "title": "NetFlow Packet Rate",
           "type": "stat"
         },
         {
@@ -78,6 +79,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Total flow records received in FlowSets",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -123,12 +125,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_sflow_count[5m]))",
-              "legendFormat": "Samples/sec",
+              "expr": "sum(goflow2_flow_process_nf_flowset_records_total)",
+              "legendFormat": "Flow Records",
               "refId": "A"
             }
           ],
-          "title": "sFlow Rate",
+          "title": "Total Flow Records Received",
           "type": "stat"
         },
         {
@@ -136,6 +138,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Templates received from UniFi (IPFIX v10)",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -164,7 +167,7 @@ data:
           "id": 3,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
@@ -181,12 +184,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(flow_process_nf_count[24h]))",
-              "legendFormat": "Total Flows",
+              "expr": "count(goflow2_flow_process_nf_templates_total)",
+              "legendFormat": "Templates",
               "refId": "A"
             }
           ],
-          "title": "Flows (24h)",
+          "title": "IPFIX Templates Registered",
           "type": "stat"
         },
         {
@@ -194,6 +197,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Processing errors (template not found is normal initially)",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -209,11 +213,11 @@ data:
                   },
                   {
                     "color": "yellow",
-                    "value": 100
+                    "value": 10
                   },
                   {
                     "color": "red",
-                    "value": 1000
+                    "value": 100
                   }
                 ]
               },
@@ -247,8 +251,8 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_nf_errors_count[5m]))",
-              "legendFormat": "Errors/sec",
+              "expr": "sum(goflow2_flow_process_nf_errors_total)",
+              "legendFormat": "Errors",
               "refId": "A"
             }
           ],
@@ -260,6 +264,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Rate of NetFlow packets received over time",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -268,7 +273,7 @@ data:
               "custom": {
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
-                "axisLabel": "",
+                "axisLabel": "packets/sec",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
@@ -305,7 +310,7 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "pps"
             },
             "overrides": []
           },
@@ -318,7 +323,7 @@ data:
           "id": 5,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": ["mean", "max", "last"],
               "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
@@ -335,12 +340,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_nf_count[5m])) by (remote_addr)",
-              "legendFormat": "{{remote_addr}}",
+              "expr": "sum(rate(goflow2_flow_process_nf_total{version=\"10\"}[5m])) by (router)",
+              "legendFormat": "{{router}}",
               "refId": "A"
             }
           ],
-          "title": "NetFlow Rate by Exporter",
+          "title": "NetFlow Packet Rate by Router",
           "type": "timeseries"
         },
         {
@@ -348,6 +353,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Network traffic received by the collector",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -356,7 +362,7 @@ data:
               "custom": {
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
-                "axisLabel": "",
+                "axisLabel": "bytes/sec",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
@@ -393,7 +399,7 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "Bps"
             },
             "overrides": []
           },
@@ -406,7 +412,7 @@ data:
           "id": 6,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": ["mean", "max", "last"],
               "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
@@ -423,12 +429,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_nf_count[5m])) by (type)",
-              "legendFormat": "{{type}}",
+              "expr": "sum(rate(goflow2_flow_traffic_bytes_total{type=\"netflow\"}[5m])) by (remote_ip)",
+              "legendFormat": "{{remote_ip}}",
               "refId": "A"
             }
           ],
-          "title": "Flow Rate by Protocol Type",
+          "title": "Network Traffic from Exporters",
           "type": "timeseries"
         },
         {
@@ -436,6 +442,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "FlowSet records processed over time",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -444,7 +451,7 @@ data:
               "custom": {
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
-                "axisLabel": "",
+                "axisLabel": "records/sec",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
@@ -511,21 +518,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_nf_count[5m]))",
-              "legendFormat": "NetFlow",
+              "expr": "sum(rate(goflow2_flow_process_nf_flowset_records_total[5m])) by (type)",
+              "legendFormat": "{{type}}",
               "refId": "A"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(rate(flow_process_sflow_count[5m]))",
-              "legendFormat": "sFlow",
-              "refId": "B"
             }
           ],
-          "title": "Total Flow Processing Rate",
+          "title": "FlowSet Records by Type",
           "type": "timeseries"
         },
         {
@@ -533,6 +531,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Distribution of flow exporters",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -582,12 +581,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(flow_process_nf_count[1h])) by (remote_addr)",
-              "legendFormat": "{{remote_addr}}",
+              "expr": "sum(goflow2_flow_process_nf_total) by (router)",
+              "legendFormat": "{{router}}",
               "refId": "A"
             }
           ],
-          "title": "Flows by Exporter (1h)",
+          "title": "Flows by Router",
           "type": "piechart"
         },
         {
@@ -595,73 +594,19 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "mappings": []
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 8,
-            "y": 20
-          },
-          "id": 9,
-          "options": {
-            "displayLabels": ["name", "percent"],
-            "legend": {
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true,
-              "values": ["value", "percent"]
-            },
-            "pieType": "pie",
-            "reduceOptions": {
-              "calcs": ["lastNotNull"],
-              "fields": "",
-              "values": false
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(increase(flow_process_nf_count[1h])) by (type)",
-              "legendFormat": "{{type}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Flows by Type (1h)",
-          "type": "piechart"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "description": "IPFIX template information",
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
               },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
@@ -669,39 +614,28 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 10
-                  },
-                  {
-                    "color": "red",
-                    "value": 100
                   }
                 ]
-              },
-              "unit": "short"
+              }
             },
             "overrides": []
           },
           "gridPos": {
             "h": 8,
-            "w": 8,
-            "x": 16,
+            "w": 16,
+            "x": 8,
             "y": 20
           },
-          "id": 10,
+          "id": 9,
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": ["lastNotNull"],
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
               "fields": "",
-              "values": false
+              "reducer": ["sum"],
+              "show": false
             },
-            "textMode": "auto"
+            "showHeader": true
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -710,101 +644,41 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(flow_process_nf_errors_count[5m])) by (error)",
-              "legendFormat": "{{error}}",
+              "expr": "goflow2_flow_process_nf_templates_total",
+              "format": "table",
+              "legendFormat": "__auto",
               "refId": "A"
             }
           ],
-          "title": "Errors by Type",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 80,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
+          "title": "IPFIX Templates",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "container": true,
+                  "endpoint": true,
+                  "instance": true,
+                  "job": true,
+                  "namespace": true,
+                  "pod": true,
+                  "service": true
                 },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "normal"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
+                "indexByName": {},
+                "renameByName": {
+                  "Value": "Count",
+                  "obs_domain_id": "Domain ID",
+                  "router": "Router",
+                  "template_id": "Template ID",
+                  "type": "Type",
+                  "version": "Version"
                 }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "decbytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 28
-          },
-          "id": 11,
-          "options": {
-            "legend": {
-              "calcs": ["sum"],
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(rate(flow_decode_nf_flowset_sum[5m])) by (remote_addr)",
-              "legendFormat": "{{remote_addr}}",
-              "refId": "A"
+              }
             }
           ],
-          "title": "Data Volume by Exporter",
-          "type": "timeseries"
+          "type": "table"
         },
         {
           "collapsed": false,
@@ -812,9 +686,9 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 36
+            "y": 28
           },
-          "id": 12,
+          "id": 10,
           "panels": [],
           "title": "Collector Health",
           "type": "row"
@@ -824,6 +698,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "GoFlow2 container memory usage",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -877,12 +752,12 @@ data:
             "h": 6,
             "w": 12,
             "x": 0,
-            "y": 37
+            "y": 29
           },
-          "id": 13,
+          "id": 11,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": ["mean", "max", "last"],
               "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
@@ -912,6 +787,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "GoFlow2 container CPU usage",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -965,12 +841,12 @@ data:
             "h": 6,
             "w": 12,
             "x": 12,
-            "y": 37
+            "y": 29
           },
-          "id": 14,
+          "id": 12,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": ["mean", "max", "last"],
               "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
@@ -994,11 +870,100 @@ data:
           ],
           "title": "Collector CPU Usage",
           "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Errors broken down by type",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "errors/sec",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 35
+          },
+          "id": 13,
+          "options": {
+            "legend": {
+              "calcs": ["sum"],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(rate(goflow2_flow_process_nf_errors_total[5m])) by (error)",
+              "legendFormat": "{{error}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Processing Errors by Type",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",
       "schemaVersion": 38,
-      "tags": ["network", "flow", "goflow2", "ipfix", "netflow"],
+      "tags": ["network", "flow", "goflow2", "ipfix", "netflow", "unifi"],
       "templating": {
         "list": []
       },
@@ -1008,7 +973,7 @@ data:
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Network Flow Analysis",
+      "title": "Network Flow Collector (GoFlow2)",
       "uid": "goflow2-netflow",
-      "version": 1
+      "version": 2
     }

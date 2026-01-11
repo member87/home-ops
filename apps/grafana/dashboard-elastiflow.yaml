@@ -483,19 +483,19 @@ data:
         },
         {
           "type": "geomap",
-          "title": "Traffic by Destination Country",
-          "gridPos": {"h": 14, "w": 24, "x": 0, "y": 53},
+          "title": "Traffic Destinations World Map",
+          "gridPos": {"h": 18, "w": 24, "x": 0, "y": 53},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
             {
               "refId": "A",
-              "query": "server.geo.country_iso_code:*",
+              "query": "server.geo.location:*",
               "metrics": [
                 {"type": "sum", "field": "network.bytes", "id": "1"},
                 {"type": "count", "id": "2"}
               ],
               "bucketAggs": [
-                {"type": "terms", "field": "server.geo.country_iso_code", "id": "3", "settings": {"size": "100", "order": "desc", "orderBy": "1"}}
+                {"type": "geohash_grid", "field": "server.geo.location", "id": "3", "settings": {"precision": "4"}}
               ],
               "timeField": "@timestamp"
             }
@@ -522,18 +522,16 @@ data:
             "layers": [
               {
                 "type": "markers",
-                "name": "Traffic",
+                "name": "Traffic Destinations",
                 "config": {
                   "style": {
                     "size": {
                       "fixed": 5,
-                      "min": 2,
-                      "max": 30,
-                      "field": "Sum network.bytes"
+                      "min": 4,
+                      "max": 40
                     },
                     "color": {
-                      "fixed": "dark-green",
-                      "field": "Sum network.bytes"
+                      "fixed": "dark-green"
                     },
                     "opacity": 0.7,
                     "symbol": "circle",
@@ -545,12 +543,13 @@ data:
                   "showLegend": true
                 },
                 "location": {
-                  "mode": "lookup",
-                  "lookup": "server.geo.country_iso_code",
-                  "gazetteer": "public/gazetteer/countries.json"
+                  "mode": "auto"
                 }
               }
-            ]
+            ],
+            "tooltip": {
+              "mode": "details"
+            }
           },
           "fieldConfig": {
             "defaults": {
@@ -564,7 +563,7 @@ data:
         {
           "type": "piechart",
           "title": "Traffic by Country",
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 67},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 71},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
             {
@@ -587,7 +586,7 @@ data:
         {
           "type": "piechart",
           "title": "Traffic by City",
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 67},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 71},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
             {
@@ -610,13 +609,13 @@ data:
         {
           "type": "row",
           "title": "External Traffic Details",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 75},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 79},
           "collapsed": false
         },
         {
           "type": "table",
           "title": "Top External Destinations",
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 76},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 80},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
             {

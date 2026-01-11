@@ -22,7 +22,6 @@ resources:
   - dashboard-unifi-client-dpi.yaml
   - dashboard-unifi-client-insights.yaml
   - dashboard-unifi-clients-overview.yaml
-  - dashboard-netflow.yaml
   - alerting.yaml
   - pvc.yaml
   - deployment.yaml

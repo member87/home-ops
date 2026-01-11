@@ -84,9 +84,6 @@ spec:
             - name: dashboard-unifi-clients-overview
               mountPath: /var/lib/grafana/dashboards/unifi/unifi-clients-overview.json
               subPath: unifi-clients-overview.json
-            - name: dashboard-netflow
-              mountPath: /var/lib/grafana/dashboards/netflow.json
-              subPath: netflow.json
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
 
@@ -167,9 +164,6 @@ spec:
         - name: dashboard-unifi-clients-overview
           configMap:
             name: grafana-dashboard-unifi-clients-overview
-        - name: dashboard-netflow
-          configMap:
-            name: grafana-dashboard-netflow
         - name: alerting
           configMap:
             name: grafana-alerting

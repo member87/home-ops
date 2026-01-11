@@ -2,17 +2,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: goflow2
+  name: ntopng
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/member87/home-ops.git
     targetRevision: HEAD
-    path: apps/goflow2
+    path: apps/ntopng
   destination:
     server: https://kubernetes.default.svc
-    namespace: goflow2
+    namespace: ntopng
   syncPolicy:
     automated:
       prune: true

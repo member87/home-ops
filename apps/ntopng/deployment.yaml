@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntopng
+  namespace: ntopng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ntopng
+  template:
+    metadata:
+      labels:
+        app: ntopng
+    spec:
+      containers:
+        # Redis for ntopng data storage
+        - name: redis
+          image: redis:7.4-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+
+        # nProbe for NetFlow/IPFIX collection
+        - name: nprobe
+          image: ntop/nprobe:stable
+          args:
+            - "--collector-port=2055"
+            - "--zmq=tcp://127.0.0.1:5556"
+            - "-i=none"
+            - "-n=none"
+            - "--disable-cache"
+          ports:
+            - containerPort: 2055
+              name: netflow
+              protocol: UDP
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+        # ntopng main application
+        - name: ntopng
+          image: ntop/ntopng:stable
+          args:
+            - "-r=127.0.0.1:6379"
+            - "-w=3000"
+            - "--disable-login=1"
+            - "-G=/var/run/ntopng/ntopng.pid"
+            - "-d=/var/lib/ntopng"
+            - "-i=tcp://127.0.0.1:5556"
+            - "-n=1"
+            - "--local-networks=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12"
+          ports:
+            - containerPort: 3000
+              name: http
+          volumeMounts:
+            - name: ntopng-data
+              mountPath: /var/lib/ntopng
+            - name: ntopng-run
+              mountPath: /var/run/ntopng
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+        - name: ntopng-data
+          persistentVolumeClaim:
+            claimName: ntopng-data
+        - name: ntopng-run
+          emptyDir: {}

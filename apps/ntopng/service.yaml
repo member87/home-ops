@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntopng
+  namespace: ntopng
+spec:
+  selector:
+    app: ntopng
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntopng-netflow
+  namespace: ntopng
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "10.0.0.203"
+spec:
+  type: LoadBalancer
+  selector:
+    app: ntopng
+  ports:
+    - name: netflow
+      port: 2055
+      targetPort: 2055
+      protocol: UDP

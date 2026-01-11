@@ -12,7 +12,7 @@ data:
         include:
           - /data/flows.json
         read_from: beginning
-        encoding:
+        decoding:
           codec: json
 
     transforms:

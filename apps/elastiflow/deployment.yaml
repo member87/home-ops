@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
         - name: download-geoip
-          image: curlimages/curl:8.5.0
+          image: curlimages/curl:8.18.0
           env:
             - name: MAXMIND_LICENSE_KEY
               valueFrom:

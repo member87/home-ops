@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: goflow2-config
+  namespace: goflow2
+data:
+  # GeoIP ASN database URL (MaxMind GeoLite2 - requires license key)
+  # You can get a free license key at https://www.maxmind.com/en/geolite2/signup
+  GEOIP_ASN_URL: ""
+  GEOIP_COUNTRY_URL: ""

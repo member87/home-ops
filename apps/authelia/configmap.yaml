@@ -52,7 +52,7 @@ data:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
             - "prometheus.lab.jackhumes.com"
-            - "ntopng.lab.jackhumes.com"
+            - "goflow2.lab.jackhumes.com"
           policy: one_factor
     
     session:

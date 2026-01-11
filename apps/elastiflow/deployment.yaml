@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastiflow
+  namespace: elastiflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elastiflow
+  template:
+    metadata:
+      labels:
+        app: elastiflow
+    spec:
+      containers:
+        - name: elastiflow
+          image: elastiflow/flow-collector:7.3.2
+          envFrom:
+            - configMapRef:
+                name: elastiflow-config
+          ports:
+            - containerPort: 2055
+              name: netflow
+              protocol: UDP
+            - containerPort: 6343
+              name: sflow
+              protocol: UDP
+            - containerPort: 8080
+              name: metrics
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5

@@ -1,0 +1,362 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-elastiflow
+  namespace: grafana
+data:
+  elastiflow.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "type": "row",
+          "title": "Overview",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "collapsed": false
+        },
+        {
+          "type": "stat",
+          "title": "Total Flows",
+          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "count", "id": "1"}],
+              "bucketAggs": [],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "colorMode": "value",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}]}}
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Total Bytes",
+          "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.bytes", "id": "1"}],
+              "bucketAggs": [],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "colorMode": "value",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "blue"}]}}
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Total Packets",
+          "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.packets", "id": "1"}],
+              "bucketAggs": [],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "colorMode": "value",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "purple"}]}}
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Unique Sources",
+          "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "cardinality", "field": "source.ip", "id": "1"}],
+              "bucketAggs": [],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "colorMode": "value",
+            "graphMode": "none"
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "orange"}]}}
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Unique Destinations",
+          "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "cardinality", "field": "destination.ip", "id": "1"}],
+              "bucketAggs": [],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "colorMode": "value",
+            "graphMode": "none"
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "yellow"}]}}
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Unique Ports",
+          "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "cardinality", "field": "destination.port", "id": "1"}],
+              "bucketAggs": [],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "colorMode": "value",
+            "graphMode": "none"
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "red"}]}}
+          }
+        },
+        {
+          "type": "row",
+          "title": "Traffic Over Time",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+          "collapsed": false
+        },
+        {
+          "type": "timeseries",
+          "title": "Bytes Over Time",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "date_histogram", "field": "@timestamp", "id": "2", "settings": {"interval": "auto"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 20, "gradientMode": "scheme"}}
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Packets Over Time",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.packets", "id": "1"}],
+              "bucketAggs": [{"type": "date_histogram", "field": "@timestamp", "id": "2", "settings": {"interval": "auto"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {"unit": "short", "custom": {"lineWidth": 1, "fillOpacity": 20, "gradientMode": "scheme"}}
+          }
+        },
+        {
+          "type": "row",
+          "title": "Top Talkers",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+          "collapsed": false
+        },
+        {
+          "type": "piechart",
+          "title": "Top Source IPs by Bytes",
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 15},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "terms", "field": "source.ip", "id": "2", "settings": {"size": "10", "order": "desc", "orderBy": "1"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "legend": {"displayMode": "list", "placement": "right"}
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"}
+          }
+        },
+        {
+          "type": "piechart",
+          "title": "Top Destination IPs by Bytes",
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 15},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "terms", "field": "destination.ip", "id": "2", "settings": {"size": "10", "order": "desc", "orderBy": "1"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "legend": {"displayMode": "list", "placement": "right"}
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"}
+          }
+        },
+        {
+          "type": "piechart",
+          "title": "Top Destination Ports by Bytes",
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 15},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [{"type": "sum", "field": "flow.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "terms", "field": "destination.port", "id": "2", "settings": {"size": "10", "order": "desc", "orderBy": "1"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "legend": {"displayMode": "list", "placement": "right"}
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"}
+          }
+        },
+        {
+          "type": "row",
+          "title": "Flow Details",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+          "collapsed": false
+        },
+        {
+          "type": "table",
+          "title": "Top Conversations",
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 24},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "*",
+              "metrics": [
+                {"type": "sum", "field": "flow.bytes", "id": "bytes"},
+                {"type": "sum", "field": "flow.packets", "id": "packets"},
+                {"type": "count", "id": "flows"}
+              ],
+              "bucketAggs": [
+                {"type": "terms", "field": "source.ip", "id": "src", "settings": {"size": "20", "order": "desc", "orderBy": "bytes"}},
+                {"type": "terms", "field": "destination.ip", "id": "dst", "settings": {"size": "1", "order": "desc", "orderBy": "bytes"}},
+                {"type": "terms", "field": "destination.port", "id": "port", "settings": {"size": "1", "order": "desc", "orderBy": "bytes"}}
+              ],
+              "timeField": "@timestamp"
+            }
+          ],
+          "fieldConfig": {
+            "overrides": [
+              {"matcher": {"id": "byName", "options": "Sum flow.bytes"}, "properties": [{"id": "unit", "value": "bytes"}, {"id": "displayName", "value": "Bytes"}]},
+              {"matcher": {"id": "byName", "options": "Sum flow.packets"}, "properties": [{"id": "displayName", "value": "Packets"}]},
+              {"matcher": {"id": "byName", "options": "Count"}, "properties": [{"id": "displayName", "value": "Flows"}]},
+              {"matcher": {"id": "byName", "options": "source.ip"}, "properties": [{"id": "displayName", "value": "Source IP"}]},
+              {"matcher": {"id": "byName", "options": "destination.ip"}, "properties": [{"id": "displayName", "value": "Destination IP"}]},
+              {"matcher": {"id": "byName", "options": "destination.port"}, "properties": [{"id": "displayName", "value": "Port"}]}
+            ]
+          }
+        },
+        {
+          "type": "row",
+          "title": "Geographic Distribution",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+          "collapsed": false
+        },
+        {
+          "type": "geomap",
+          "title": "Traffic by Destination Country",
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 35},
+          "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
+          "targets": [
+            {
+              "query": "destination.geo.country_iso_code:*",
+              "metrics": [{"type": "sum", "field": "flow.bytes", "id": "1"}],
+              "bucketAggs": [{"type": "terms", "field": "destination.geo.country_iso_code", "id": "2", "settings": {"size": "50", "order": "desc", "orderBy": "1"}}],
+              "timeField": "@timestamp"
+            }
+          ],
+          "options": {
+            "view": {
+              "id": "coords",
+              "lat": 51.5074,
+              "lon": -0.1278,
+              "zoom": 2
+            },
+            "basemap": {
+              "type": "default",
+              "name": "World"
+            },
+            "layers": [
+              {
+                "type": "markers",
+                "config": {
+                  "showLegend": true
+                }
+              }
+            ]
+          },
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"}
+          }
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["elastiflow", "netflow", "network"],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "ElastiFlow - Network Traffic",
+      "uid": "elastiflow-traffic",
+      "version": 1
+    }

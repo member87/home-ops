@@ -2,30 +2,33 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ntopng
-  namespace: ntopng
+  name: elastiflow
+  namespace: elastiflow
 spec:
   selector:
-    app: ntopng
+    app: elastiflow
   ports:
-    - name: http
-      port: 3000
-      targetPort: 3000
-      protocol: TCP
+    - name: metrics
+      port: 8080
+      targetPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ntopng-netflow
-  namespace: ntopng
+  name: elastiflow-netflow
+  namespace: elastiflow
   annotations:
     metallb.universe.tf/loadBalancerIPs: "10.0.0.203"
 spec:
   type: LoadBalancer
   selector:
-    app: ntopng
+    app: elastiflow
   ports:
     - name: netflow
       port: 2055
       targetPort: 2055
+      protocol: UDP
+    - name: sflow
+      port: 6343
+      targetPort: 6343
       protocol: UDP

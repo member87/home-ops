@@ -23,12 +23,12 @@ data:
           # Parse JSON line
           . = parse_json!(.message)
           
-          # Convert nanosecond timestamps
-          # time_received as DateTime (for TTL compatibility)
-          .time_received = to_timestamp(floor(to_float!(.time_received_ns) / 1000000000), unit: "seconds")
-          # Other timestamps as DateTime64(9) to preserve nanosecond precision
-          .time_flow_start = to_timestamp(to_float!(.time_flow_start_ns) / 1000000000, unit: "seconds")
-          .time_flow_end = to_timestamp(to_float!(.time_flow_end_ns) / 1000000000, unit: "seconds")
+          # Convert nanosecond timestamps to Unix epoch seconds
+          # time_received as DateTime (for TTL compatibility) - seconds precision
+          .time_received = to_int!(.time_received_ns) / 1000000000
+          # Other timestamps as DateTime64(9) - nanosecond precision (as float for fractional seconds)
+          .time_flow_start = to_float!(.time_flow_start_ns) / 1000000000.0
+          .time_flow_end = to_float!(.time_flow_end_ns) / 1000000000.0
           
           # Parse IPv4 addresses (convert string to proper IPv4 format)
           .sampler_address = .sampler_address

@@ -11,7 +11,7 @@ data:
   02-create-flows-table.sql: |
     CREATE TABLE IF NOT EXISTS netflow.flows
     (
-        time_received DateTime64(9),
+        time_received DateTime,
         time_flow_start DateTime64(9),
         time_flow_end DateTime64(9),
         sampler_address IPv4,

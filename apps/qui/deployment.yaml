@@ -1,0 +1,89 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qui-config
+  namespace: qui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qui
+  namespace: qui
+  labels:
+    app: qui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qui
+  template:
+    metadata:
+      labels:
+        app: qui
+    spec:
+      containers:
+        - name: qui
+          image: ghcr.io/autobrr/qui:v1.12.0
+          args:
+            - serve
+          ports:
+            - containerPort: 7476
+              name: http
+              protocol: TCP
+          env:
+            - name: QUI__HOST
+              value: "0.0.0.0"
+            - name: QUI__PORT
+              value: "7476"
+            - name: QUI__LOG_LEVEL
+              value: "INFO"
+            # OIDC Configuration
+            - name: QUI__OIDC_ENABLED
+              value: "true"
+            - name: QUI__OIDC_ISSUER
+              value: "https://auth.lab.jackhumes.com"
+            - name: QUI__OIDC_CLIENT_ID
+              value: "qui"
+            - name: QUI__OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: qui-secrets
+                  key: OIDC_CLIENT_SECRET
+            - name: QUI__OIDC_REDIRECT_URL
+              value: "https://qui.lab.jackhumes.com/api/auth/oidc/callback"
+            - name: QUI__OIDC_DISABLE_BUILT_IN_LOGIN
+              value: "true"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 7476
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7476
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: qui-config

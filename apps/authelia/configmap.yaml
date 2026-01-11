@@ -52,6 +52,14 @@ data:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
             - "prometheus.lab.jackhumes.com"
+            - "prowlarr.lab.jackhumes.com"
+            - "sonarr.lab.jackhumes.com"
+            - "radarr.lab.jackhumes.com"
+            - "bazarr.lab.jackhumes.com"
+            - "qbittorrent.lab.jackhumes.com"
+            - "sabnzbd.lab.jackhumes.com"
+            - "jellyfin.lab.jackhumes.com"
+            - "qui.lab.jackhumes.com"
           policy: one_factor
     
     session:
@@ -235,6 +243,27 @@ data:
             grant_types:
               - 'authorization_code'
               - 'refresh_token'
+            access_token_signed_response_alg: 'none'
+            userinfo_signed_response_alg: 'none'
+            token_endpoint_auth_method: 'client_secret_post'
+          - client_id: 'qui'
+            client_name: 'qui'
+            client_secret: '$pbkdf2-sha512$310000$NBHsdT8oxkbn2EgQmYKiwg$0usy6TOoUKv4GasDhGXAE8vVdm5DTISarrJbRsYGjun1q7mOIasIUUly7KbrvrS5FHQRcJzuZngJHlgmEThQ2w'
+            public: false
+            authorization_policy: 'one_factor'
+            require_pkce: false
+            pkce_challenge_method: ''
+            redirect_uris:
+              - 'https://qui.lab.jackhumes.com/api/auth/oidc/callback'
+            scopes:
+              - 'openid'
+              - 'profile'
+              - 'email'
+              - 'groups'
+            response_types:
+              - 'code'
+            grant_types:
+              - 'authorization_code'
             access_token_signed_response_alg: 'none'
             userinfo_signed_response_alg: 'none'
             token_endpoint_auth_method: 'client_secret_post'

@@ -489,24 +489,15 @@ data:
           "targets": [
             {
               "refId": "A",
-              "query": "server.geo.country_iso_code:*",
+              "query": "server.geo.location:*",
               "metrics": [
                 {"type": "sum", "field": "network.bytes", "id": "1"},
                 {"type": "count", "id": "2"}
               ],
               "bucketAggs": [
-                {"type": "terms", "field": "server.geo.country_iso_code", "id": "3", "settings": {"size": "50", "order": "desc", "orderBy": "1"}}
+                {"type": "geohash_grid", "field": "server.geo.location", "id": "3", "settings": {"precision": "5"}}
               ],
               "timeField": "@timestamp"
-            }
-          ],
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "server.geo.country_iso_code",
-                "renamePattern": "lookup"
-              }
             }
           ],
           "options": {
@@ -530,33 +521,22 @@ data:
             },
             "layers": [
               {
-                "type": "markers",
-                "name": "Traffic Destinations",
+                "type": "heatmap",
+                "name": "Traffic Heatmap",
                 "config": {
-                  "style": {
-                    "size": {
-                      "fixed": 5,
-                      "min": 5,
-                      "max": 50,
-                      "field": "Sum network.bytes"
-                    },
-                    "color": {
-                      "fixed": "semi-dark-red",
-                      "field": "Sum network.bytes"
-                    },
-                    "opacity": 0.8,
-                    "symbol": "circle",
-                    "symbolAlign": {
-                      "horizontal": "center",
-                      "vertical": "center"
-                    }
+                  "weight": {
+                    "field": "Sum network.bytes",
+                    "fixed": 1,
+                    "min": 0,
+                    "max": 1
                   },
-                  "showLegend": true
+                  "radius": 30,
+                  "blur": 20,
+                  "opacity": 0.8
                 },
                 "location": {
-                  "mode": "lookup",
-                  "lookup": "lookup",
-                  "gazetteer": "public/gazetteer/countries.json"
+                  "mode": "geohash",
+                  "geohash": "server.geo.location"
                 }
               }
             ],

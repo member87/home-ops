@@ -42,27 +42,33 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: dashboards-provisioning
               mountPath: /etc/grafana/provisioning/dashboards
+            # Kubernetes dashboards
             - name: dashboard-k8s-cluster
-              mountPath: /var/lib/grafana/dashboards/k8s-cluster.json
+              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-cluster.json
               subPath: k8s-cluster.json
+            - name: dashboard-k8s-global
+              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-global.json
+              subPath: k8s-views-global.json
+            - name: dashboard-k8s-namespaces
+              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-namespaces.json
+              subPath: k8s-views-namespaces.json
+            - name: dashboard-k8s-pods
+              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-pods.json
+              subPath: k8s-views-pods.json
+            - name: dashboard-k8s-nodes
+              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-nodes.json
+              subPath: k8s-views-nodes.json
             - name: dashboard-pods
-              mountPath: /var/lib/grafana/dashboards/pods.json
+              mountPath: /var/lib/grafana/dashboards/kubernetes/pods.json
               subPath: pods.json
+            # General dashboards
             - name: dashboard-logs
               mountPath: /var/lib/grafana/dashboards/logs.json
               subPath: logs.json
-            - name: dashboard-k8s-global
-              mountPath: /var/lib/grafana/dashboards/k8s-global.json
-              subPath: k8s-views-global.json
-            - name: dashboard-k8s-namespaces
-              mountPath: /var/lib/grafana/dashboards/k8s-namespaces.json
-              subPath: k8s-views-namespaces.json
-            - name: dashboard-k8s-pods
-              mountPath: /var/lib/grafana/dashboards/k8s-pods.json
-              subPath: k8s-views-pods.json
-            - name: dashboard-k8s-nodes
-              mountPath: /var/lib/grafana/dashboards/k8s-nodes.json
-              subPath: k8s-views-nodes.json
+            - name: dashboard-elastiflow
+              mountPath: /var/lib/grafana/dashboards/elastiflow.json
+              subPath: elastiflow.json
+            # UniFi dashboards
             - name: dashboard-unifi-network-sites
               mountPath: /var/lib/grafana/dashboards/unifi/unifi-network-sites.json
               subPath: unifi-network-sites.json
@@ -84,9 +90,6 @@ spec:
             - name: dashboard-unifi-clients-overview
               mountPath: /var/lib/grafana/dashboards/unifi/unifi-clients-overview.json
               subPath: unifi-clients-overview.json
-            - name: dashboard-elastiflow
-              mountPath: /var/lib/grafana/dashboards/elastiflow.json
-              subPath: elastiflow.json
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
 

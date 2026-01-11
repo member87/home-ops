@@ -17,6 +17,15 @@ data:
         updateIntervalSeconds: 30
         options:
           path: /var/lib/grafana/dashboards
+      - name: 'kubernetes'
+        orgId: 1
+        folder: 'Kubernetes'
+        type: file
+        disableDeletion: false
+        editable: false
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/kubernetes
       - name: 'unifi'
         orgId: 1
         folder: 'UniFi'

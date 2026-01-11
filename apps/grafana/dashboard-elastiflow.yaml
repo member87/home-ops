@@ -33,12 +33,21 @@ data:
               "refId": "A",
               "query": "*",
               "metrics": [{"type": "count", "id": "1"}],
-              "bucketAggs": [],
+              "bucketAggs": [
+                {
+                  "type": "date_histogram",
+                  "field": "@timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto"
+                  }
+                }
+              ],
               "timeField": "@timestamp"
             }
           ],
           "options": {
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false},
             "colorMode": "value",
             "graphMode": "area"
           },
@@ -56,12 +65,21 @@ data:
               "refId": "A",
               "query": "*",
               "metrics": [{"type": "sum", "field": "network.bytes", "id": "1"}],
-              "bucketAggs": [],
+              "bucketAggs": [
+                {
+                  "type": "date_histogram",
+                  "field": "@timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto"
+                  }
+                }
+              ],
               "timeField": "@timestamp"
             }
           ],
           "options": {
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false},
             "colorMode": "value",
             "graphMode": "area"
           },
@@ -79,12 +97,21 @@ data:
               "refId": "A",
               "query": "*",
               "metrics": [{"type": "sum", "field": "network.packets", "id": "1"}],
-              "bucketAggs": [],
+              "bucketAggs": [
+                {
+                  "type": "date_histogram",
+                  "field": "@timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto"
+                  }
+                }
+              ],
               "timeField": "@timestamp"
             }
           ],
           "options": {
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false},
             "colorMode": "value",
             "graphMode": "area"
           },
@@ -102,12 +129,21 @@ data:
               "refId": "A",
               "query": "*",
               "metrics": [{"type": "cardinality", "field": "source.ip", "id": "1"}],
-              "bucketAggs": [],
+              "bucketAggs": [
+                {
+                  "type": "date_histogram",
+                  "field": "@timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto"
+                  }
+                }
+              ],
               "timeField": "@timestamp"
             }
           ],
           "options": {
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "reduceOptions": {"calcs": ["max"], "fields": "", "values": false},
             "colorMode": "value",
             "graphMode": "none"
           },
@@ -125,12 +161,21 @@ data:
               "refId": "A",
               "query": "*",
               "metrics": [{"type": "cardinality", "field": "destination.ip", "id": "1"}],
-              "bucketAggs": [],
+              "bucketAggs": [
+                {
+                  "type": "date_histogram",
+                  "field": "@timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto"
+                  }
+                }
+              ],
               "timeField": "@timestamp"
             }
           ],
           "options": {
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "reduceOptions": {"calcs": ["max"], "fields": "", "values": false},
             "colorMode": "value",
             "graphMode": "none"
           },
@@ -148,12 +193,21 @@ data:
               "refId": "A",
               "query": "*",
               "metrics": [{"type": "cardinality", "field": "destination.port", "id": "1"}],
-              "bucketAggs": [],
+              "bucketAggs": [
+                {
+                  "type": "date_histogram",
+                  "field": "@timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto"
+                  }
+                }
+              ],
               "timeField": "@timestamp"
             }
           ],
           "options": {
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "reduceOptions": {"calcs": ["max"], "fields": "", "values": false},
             "colorMode": "value",
             "graphMode": "none"
           },
@@ -232,8 +286,8 @@ data:
               "query": "*",
               "metrics": [{"type": "sum", "field": "network.bytes", "id": "1"}],
               "bucketAggs": [
-                {"type": "date_histogram", "field": "@timestamp", "id": "2", "settings": {"interval": "auto"}},
-                {"type": "terms", "field": "network.transport", "id": "3", "settings": {"size": "5", "order": "desc", "orderBy": "1"}}
+                {"type": "terms", "field": "network.transport", "id": "3", "settings": {"size": "5", "order": "desc", "orderBy": "1"}},
+                {"type": "date_histogram", "field": "@timestamp", "id": "2", "settings": {"interval": "auto"}}
               ],
               "timeField": "@timestamp"
             }
@@ -292,7 +346,7 @@ data:
         },
         {
           "type": "piechart",
-          "title": "Top Destination Ports",
+          "title": "Top Services",
           "gridPos": {"h": 8, "w": 8, "x": 16, "y": 23},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
@@ -423,51 +477,37 @@ data:
         },
         {
           "type": "row",
-          "title": "Geographic Distribution",
+          "title": "External Traffic",
           "gridPos": {"h": 1, "w": 24, "x": 0, "y": 52},
           "collapsed": false
         },
         {
-          "type": "geomap",
-          "title": "Traffic by Destination (External IPs)",
-          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 53},
+          "type": "table",
+          "title": "Top External Destinations",
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 53},
           "datasource": {"type": "elasticsearch", "uid": "elasticsearch"},
           "targets": [
             {
               "refId": "A",
               "query": "flow.locality:public",
-              "metrics": [{"type": "sum", "field": "network.bytes", "id": "1"}],
-              "bucketAggs": [{"type": "terms", "field": "server.ip", "id": "2", "settings": {"size": "100", "order": "desc", "orderBy": "1"}}],
+              "metrics": [
+                {"type": "sum", "field": "network.bytes", "id": "1"},
+                {"type": "count", "id": "2"}
+              ],
+              "bucketAggs": [
+                {"type": "terms", "field": "server.ip", "id": "3", "settings": {"size": "20", "order": "desc", "orderBy": "1"}},
+                {"type": "terms", "field": "server.domain", "id": "4", "settings": {"size": "1", "order": "desc", "orderBy": "1"}}
+              ],
               "timeField": "@timestamp"
             }
           ],
-          "options": {
-            "view": {
-              "id": "coords",
-              "lat": 51.5074,
-              "lon": -0.1278,
-              "zoom": 2
-            },
-            "basemap": {
-              "type": "default",
-              "name": "World"
-            },
-            "layers": [
-              {
-                "type": "markers",
-                "config": {
-                  "showLegend": true,
-                  "style": {
-                    "size": {"fixed": 5, "min": 2, "max": 15},
-                    "color": {"fixed": "dark-green"},
-                    "opacity": 0.6
-                  }
-                }
-              }
-            ]
-          },
           "fieldConfig": {
-            "defaults": {"unit": "bytes"}
+            "overrides": [
+              {"matcher": {"id": "byName", "options": "Sum network.bytes"}, "properties": [{"id": "unit", "value": "bytes"}, {"id": "displayName", "value": "Bytes"}]},
+              {"matcher": {"id": "byName", "options": "Count"}, "properties": [{"id": "displayName", "value": "Connections"}]},
+              {"matcher": {"id": "byName", "options": "server.ip"}, "properties": [{"id": "displayName", "value": "Server IP"}]},
+              {"matcher": {"id": "byName", "options": "server.domain"}, "properties": [{"id": "displayName", "value": "Hostname"}]}
+            ]
           }
         }
       ],

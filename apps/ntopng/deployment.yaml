@@ -60,7 +60,7 @@ spec:
 
         # ntopng main application
         - name: ntopng
-          image: ntop/ntopng:5.6
+          image: ntop/ntopng:latest
           volumeMounts:
             - name: config
               mountPath: /etc/ntopng

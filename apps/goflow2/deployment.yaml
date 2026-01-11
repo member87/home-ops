@@ -67,8 +67,28 @@ spec:
             - "netflow://:2055,sflow://:6343"
             - "-addr"
             - ":8080"
-            - "-format"
-            - "json"
+            - "-transport"
+            - "clickhouse"
+            - "-transport.clickhouse.addr"
+            - "clickhouse.clickhouse.svc.cluster.local:9000"
+            - "-transport.clickhouse.database"
+            - "netflow"
+            - "-transport.clickhouse.table"
+            - "flows"
+            - "-transport.clickhouse.user"
+            - "default"
+            - "-transport.clickhouse.password"
+            - "$(CLICKHOUSE_PASSWORD)"
+            - "-geoip2.asn"
+            - "/geoip/GeoLite2-ASN.mmdb"
+            - "-geoip2.country"
+            - "/geoip/GeoLite2-Country.mmdb"
+          env:
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: goflow2-secrets
+                  key: clickhouse_password
           ports:
             - containerPort: 2055
               name: netflow

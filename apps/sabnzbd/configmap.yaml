@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sabnzbd-scripts
+  namespace: sabnzbd
+data:
+  01-set-host-whitelist.sh: |
+    #!/bin/bash
+    # Add hostname to SABnzbd whitelist to fix "Hostname verification failed" error
+    INI_FILE="/config/sabnzbd.ini"
+    HOSTNAME="sabnzbd.lab.jackhumes.com"
+    
+    if [ -f "$INI_FILE" ]; then
+      # Check if host_whitelist already contains our hostname
+      if grep -q "host_whitelist.*$HOSTNAME" "$INI_FILE"; then
+        echo "Host whitelist already contains $HOSTNAME"
+      else
+        # Check if host_whitelist exists
+        if grep -q "^host_whitelist" "$INI_FILE"; then
+          # Append to existing whitelist
+          CURRENT=$(grep "^host_whitelist" "$INI_FILE" | cut -d'=' -f2 | xargs)
+          if [ -z "$CURRENT" ]; then
+            sed -i "s/^host_whitelist.*/host_whitelist = $HOSTNAME/" "$INI_FILE"
+          else
+            sed -i "s/^host_whitelist.*/host_whitelist = $CURRENT, $HOSTNAME/" "$INI_FILE"
+          fi
+          echo "Added $HOSTNAME to existing host_whitelist"
+        else
+          # Add host_whitelist to [misc] section
+          sed -i "/^\[misc\]/a host_whitelist = $HOSTNAME" "$INI_FILE"
+          echo "Created host_whitelist with $HOSTNAME"
+        fi
+      fi
+    else
+      echo "SABnzbd config file not found, will be created on first run"
+    fi

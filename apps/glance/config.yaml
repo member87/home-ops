@@ -90,6 +90,9 @@ pages:
               - title: SABnzbd
                 url: https://sabnzbd.lab.jackhumes.com
                 icon: si:sabnzbd
+              - title: Qui (qBittorrent UI)
+                url: https://qui.lab.jackhumes.com
+                icon: si:qbittorrent
 
           - type: hacker-news
             limit: 15

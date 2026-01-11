@@ -61,6 +61,8 @@ spec:
               mountPath: /config
             - name: media
               mountPath: /data
+            - name: custom-scripts
+              mountPath: /custom-cont-init.d
           livenessProbe:
             httpGet:
               path: /
@@ -87,3 +89,7 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: media-data
+        - name: custom-scripts
+          configMap:
+            name: sabnzbd-scripts
+            defaultMode: 0755

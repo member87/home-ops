@@ -37,7 +37,7 @@ spec:
           - "8.8.8.8"
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:1.31.2
+          image: lscr.io/linuxserver/prowlarr:1.37.0
           ports:
             - containerPort: 9696
               name: http

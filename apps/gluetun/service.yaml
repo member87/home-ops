@@ -19,8 +19,8 @@ spec:
       targetPort: 8388
       protocol: TCP
     - name: control
-      port: 8080
-      targetPort: 8080
+      port: 8000
+      targetPort: 8000
       protocol: TCP
     - name: prowlarr
       port: 9696

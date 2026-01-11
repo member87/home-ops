@@ -46,7 +46,7 @@ spec:
             - containerPort: 8388
               name: shadowsocks-udp
               protocol: UDP
-            - containerPort: 8080
+            - containerPort: 8000
               name: control
               protocol: TCP
             # Prowlarr port
@@ -101,14 +101,14 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: 8000
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
           resources:

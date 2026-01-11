@@ -49,14 +49,12 @@ spec:
             - name: media
               mountPath: /data
           livenessProbe:
-            httpGet:
-              path: /api/system/health
+            tcpSocket:
               port: 6767
             initialDelaySeconds: 60
             periodSeconds: 30
           readinessProbe:
-            httpGet:
-              path: /api/system/health
+            tcpSocket:
               port: 6767
             initialDelaySeconds: 30
             periodSeconds: 10

@@ -14,4 +14,4 @@ spec:
         - name: sonarr
           port: 8989
   tls:
-    certResolver: letsencrypt-production
+    secretName: sonarr-tls

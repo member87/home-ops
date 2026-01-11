@@ -14,4 +14,4 @@ spec:
         - name: bazarr
           port: 6767
   tls:
-    certResolver: letsencrypt-production
+    secretName: bazarr-tls

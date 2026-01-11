@@ -14,4 +14,4 @@ spec:
         - name: radarr
           port: 7878
   tls:
-    certResolver: letsencrypt-production
+    secretName: radarr-tls

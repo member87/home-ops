@@ -62,8 +62,6 @@ data:
         batch:
           max_bytes: 10485760  # 10MB
           timeout_secs: 5
-        encoding:
-          codec: json
         buffer:
           type: memory
           max_events: 10000

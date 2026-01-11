@@ -73,10 +73,6 @@ spec:
             - "/data/flows.json"
             - "-format"
             - "json"
-            - "-geoip2.asn"
-            - "/geoip/GeoLite2-ASN.mmdb"
-            - "-geoip2.country"
-            - "/geoip/GeoLite2-Country.mmdb"
           ports:
             - containerPort: 2055
               name: netflow

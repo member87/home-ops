@@ -25,23 +25,31 @@ spec:
             - /bin/sh
             - -c
             - |
-              if [ -n "$MAXMIND_LICENSE_KEY" ]; then
-                apk add --no-cache curl
+              if [ -n "$MAXMIND_LICENSE_KEY" ] && [ -n "$MAXMIND_ACCOUNT_ID" ]; then
+                apk add --no-cache curl tar
                 mkdir -p /geoip
                 echo "Downloading GeoLite2-ASN..."
-                curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz" | tar -xz -C /tmp
-                mv /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /geoip/
+                curl -sL "https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz" \
+                  -u "${MAXMIND_ACCOUNT_ID}:${MAXMIND_LICENSE_KEY}" | tar -xz -C /tmp --strip-components=1
+                mv /tmp/GeoLite2-ASN.mmdb /geoip/ || echo "Failed to download ASN database"
                 echo "Downloading GeoLite2-Country..."
-                curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz" | tar -xz -C /tmp
-                mv /tmp/GeoLite2-Country_*/GeoLite2-Country.mmdb /geoip/
+                curl -sL "https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz" \
+                  -u "${MAXMIND_ACCOUNT_ID}:${MAXMIND_LICENSE_KEY}" | tar -xz -C /tmp --strip-components=1
+                mv /tmp/GeoLite2-Country.mmdb /geoip/ || echo "Failed to download Country database"
                 echo "GeoIP databases downloaded successfully"
                 ls -la /geoip/
               else
-                echo "MAXMIND_LICENSE_KEY not set, skipping GeoIP download"
+                echo "MAXMIND credentials not set, skipping GeoIP download"
                 mkdir -p /geoip
                 touch /geoip/.skip
               fi
           env:
+            - name: MAXMIND_ACCOUNT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: goflow2-secrets
+                  key: maxmind_account_id
+                  optional: true
             - name: MAXMIND_LICENSE_KEY
               valueFrom:
                 secretKeyRef:

@@ -20,7 +20,7 @@ spec:
     spec:
       initContainers:
         - name: download-geoip
-          image: alpine:3.19
+          image: alpine:3.23
           command:
             - /bin/sh
             - -c

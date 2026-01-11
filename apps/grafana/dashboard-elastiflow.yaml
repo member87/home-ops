@@ -489,13 +489,13 @@ data:
           "targets": [
             {
               "refId": "A",
-              "query": "server.geo.location:*",
+              "query": "server.geo.country_iso_code:*",
               "metrics": [
                 {"type": "sum", "field": "network.bytes", "id": "1"},
                 {"type": "count", "id": "2"}
               ],
               "bucketAggs": [
-                {"type": "geohash_grid", "field": "server.geo.location", "id": "3", "settings": {"precision": "4"}}
+                {"type": "terms", "field": "server.geo.country_iso_code", "id": "3", "settings": {"size": "50", "order": "desc", "orderBy": "1"}}
               ],
               "timeField": "@timestamp"
             }
@@ -528,12 +528,14 @@ data:
                     "size": {
                       "fixed": 5,
                       "min": 4,
-                      "max": 40
+                      "max": 40,
+                      "field": "Sum network.bytes"
                     },
                     "color": {
-                      "fixed": "dark-green"
+                      "fixed": "semi-dark-red",
+                      "field": "Sum network.bytes"
                     },
-                    "opacity": 0.7,
+                    "opacity": 0.8,
                     "symbol": "circle",
                     "symbolAlign": {
                       "horizontal": "center",
@@ -543,7 +545,9 @@ data:
                   "showLegend": true
                 },
                 "location": {
-                  "mode": "auto"
+                  "mode": "lookup",
+                  "lookup": "server.geo.country_iso_code",
+                  "gazetteer": "public/gazetteer/countries.json"
                 }
               }
             ],

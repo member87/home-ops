@@ -57,7 +57,7 @@ spec:
           args:
             - "-listen"
             - "netflow://:2055,sflow://:6343"
-            - "-metrics.addr"
+            - "-addr"
             - ":8080"
             - "-transport"
             - "file"

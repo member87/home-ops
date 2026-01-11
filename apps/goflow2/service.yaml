@@ -30,8 +30,11 @@ metadata:
   namespace: goflow2
   labels:
     app: goflow2
+  annotations:
+    metallb.universe.tf/allow-shared-ip: goflow2-svc
 spec:
   type: LoadBalancer
+  loadBalancerIP: "10.0.0.203"
   selector:
     app: goflow2
   ports:

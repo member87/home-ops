@@ -1,0 +1,15 @@
+---
+# Shared media storage PVC for all media services
+# This should be mounted at /data in all containers
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-data
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 100Gi

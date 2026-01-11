@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gluetun-data
+  namespace: gluetun
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gluetun
+  namespace: gluetun
+  labels:
+    app: gluetun
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gluetun
+  template:
+    metadata:
+      labels:
+        app: gluetun
+    spec:
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:v3.41.0
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          ports:
+            - containerPort: 8888
+              name: http-proxy
+              protocol: TCP
+            - containerPort: 8388
+              name: shadowsocks-tcp
+              protocol: TCP
+            - containerPort: 8388
+              name: shadowsocks-udp
+              protocol: UDP
+            - containerPort: 8080
+              name: control
+              protocol: TCP
+            # Prowlarr port
+            - containerPort: 9696
+              name: prowlarr
+              protocol: TCP
+            # qBittorrent ports
+            - containerPort: 8081
+              name: qbittorrent
+              protocol: TCP
+            # SABnzbd port
+            - containerPort: 8082
+              name: sabnzbd
+              protocol: TCP
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "protonvpn"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: SERVER_COUNTRIES
+              value: "Netherlands"
+            - name: VPN_PORT_FORWARDING
+              value: "on"
+            - name: PORT_FORWARD_ONLY
+              value: "on"
+            - name: FIREWALL_VPN_INPUT_PORTS
+              value: "9696,8081,8082"
+            - name: TZ
+              value: "Europe/London"
+            - name: HTTPPROXY
+              value: "on"
+            - name: SHADOWSOCKS
+              value: "on"
+            - name: DOT
+              value: "on"
+            - name: DOT_PROVIDERS
+              value: "cloudflare"
+            - name: HEALTH_VPN_DURATION_INITIAL
+              value: "30s"
+            - name: HEALTH_SUCCESS_WAIT_DURATION
+              value: "10s"
+          volumeMounts:
+            - name: tun
+              mountPath: /dev/net/tun
+            - name: data
+              mountPath: /gluetun
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: data
+          persistentVolumeClaim:
+            claimName: gluetun-data

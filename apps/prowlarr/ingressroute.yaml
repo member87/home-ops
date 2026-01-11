@@ -1,0 +1,17 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prowlarr
+  namespace: prowlarr
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prowlarr.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: prowlarr
+          port: 9696
+  tls:
+    certResolver: letsencrypt-production

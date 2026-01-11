@@ -65,6 +65,32 @@ pages:
                 alt-status-codes:
                   - 401
 
+          - type: monitor
+            cache: 1m
+            title: Media Stack
+            sites:
+              - title: Jellyfin
+                url: https://jellyfin.lab.jackhumes.com
+                icon: si:jellyfin
+              - title: Sonarr
+                url: https://sonarr.lab.jackhumes.com
+                icon: si:sonarr
+              - title: Radarr
+                url: https://radarr.lab.jackhumes.com
+                icon: si:radarr
+              - title: Prowlarr
+                url: https://prowlarr.lab.jackhumes.com
+                icon: si:prowlarr
+              - title: Bazarr
+                url: https://bazarr.lab.jackhumes.com
+                icon: si:bazarr
+              - title: qBittorrent
+                url: https://qbittorrent.lab.jackhumes.com
+                icon: si:qbittorrent
+              - title: SABnzbd
+                url: https://sabnzbd.lab.jackhumes.com
+                icon: si:sabnzbd
+
           - type: hacker-news
             limit: 15
             collapse-after: 5

@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gluetun
+  namespace: gluetun
+  labels:
+    app: gluetun
+spec:
+  selector:
+    app: gluetun
+  ports:
+    - name: http-proxy
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: shadowsocks-tcp
+      port: 8388
+      targetPort: 8388
+      protocol: TCP
+    - name: control
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: prowlarr
+      port: 9696
+      targetPort: 9696
+      protocol: TCP
+    - name: qbittorrent
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+    - name: sabnzbd
+      port: 8082
+      targetPort: 8082
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gluetun-shadowsocks-udp
+  namespace: gluetun
+  labels:
+    app: gluetun
+spec:
+  selector:
+    app: gluetun
+  ports:
+    - name: shadowsocks-udp
+      port: 8388
+      targetPort: 8388
+      protocol: UDP
+  type: ClusterIP

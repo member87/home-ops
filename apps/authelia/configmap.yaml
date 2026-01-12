@@ -204,6 +204,8 @@ data:
               - 'http://localhost'
             audience:
               - 'netbird'
+            requested_audience_mode: 'implicit'
+            consent_mode: 'implicit'
             scopes:
               - 'openid'
               - 'email'

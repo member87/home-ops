@@ -201,6 +201,7 @@ data:
               - 'https://netbird.lab.jackhumes.com/peers'
               - 'https://netbird.lab.jackhumes.com/add-peers'
               - 'http://localhost:53000'
+              - 'http://localhost'
             scopes:
               - 'openid'
               - 'email'

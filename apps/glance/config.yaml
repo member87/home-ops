@@ -47,11 +47,6 @@ pages:
               - title: Headscale
                 url: https://headscale.lab.jackhumes.com/health
                 icon: si:tailscale
-              - title: Headscale Admin
-                url: https://headscale-admin.lab.jackhumes.com
-                icon: si:tailscale
-                alt-status-codes:
-                  - 401
               - title: Prometheus
                 url: https://prometheus.lab.jackhumes.com
                 icon: si:prometheus

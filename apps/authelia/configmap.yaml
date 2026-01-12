@@ -54,7 +54,6 @@ data:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
             - "prometheus.lab.jackhumes.com"
-            - "headscale-admin.lab.jackhumes.com"
           policy: one_factor
     
     session:
@@ -201,7 +200,8 @@ data:
             client_secret: '$pbkdf2-sha512$310000$rgCAKvrnAEiQtSuHNbC3jg$.r5phwMBX1d.AiswdDsvn5oYYgNL0AgPtyBaBdQ4xvLY92epC5NU4Zs6He5BD4ZCKL.dmv56Gn7lQ6o0lfHyLA'
             claims_policy: 'headscale'
             public: false
-            authorization_policy: 'two_factor'
+            authorization_policy: 'one_factor'
+            consent_mode: 'implicit'
             require_pkce: true
             pkce_challenge_method: 'S256'
             redirect_uris:

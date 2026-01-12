@@ -24,6 +24,7 @@ data:
     maxretry = 3
     findtime = 300
     bantime = 3600
+    ignoreip = 127.0.0.1/8 10.244.0.0/16 10.96.0.0/12
 
   filter.d-authelia.conf: |
     [Definition]

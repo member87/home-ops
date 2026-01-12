@@ -58,7 +58,7 @@ data:
     
     session:
       name: authelia_session
-      domain: lab.jackhumes.com
+      domain: jackhumes.com
       expiration: 1h
       inactivity: 15m
       remember_me: 1M
@@ -205,7 +205,7 @@ data:
             require_pkce: true
             pkce_challenge_method: 'S256'
             redirect_uris:
-              - 'https://headscale.lab.jackhumes.com/oidc/callback'
+              - 'https://headscale.jackhumes.com/oidc/callback'
             scopes:
               - 'openid'
               - 'email'

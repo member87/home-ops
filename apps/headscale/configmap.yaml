@@ -7,7 +7,7 @@ metadata:
 data:
   config.yaml: |
     ---
-    server_url: https://headscale.lab.jackhumes.com
+    server_url: https://headscale.jackhumes.com
     listen_addr: 0.0.0.0:8080
     metrics_listen_addr: 0.0.0.0:9090
     grpc_listen_addr: 0.0.0.0:50443
@@ -51,7 +51,7 @@ data:
 
     oidc:
       only_start_if_oidc_is_available: true
-      issuer: https://auth.lab.jackhumes.com
+      issuer: https://auth.jackhumes.com
       client_id: headscale
       client_secret_path: /etc/headscale/secrets/client_secret
       scope:

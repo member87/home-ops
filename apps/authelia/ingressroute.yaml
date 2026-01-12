@@ -9,7 +9,7 @@ spec:
     name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
-    - auth.lab.jackhumes.com
+    - auth.jackhumes.com
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -20,7 +20,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`auth.lab.jackhumes.com`)
+    - match: Host(`auth.jackhumes.com`)
       kind: Rule
       services:
         - name: authelia
@@ -37,7 +37,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`auth.lab.jackhumes.com`)
+    - match: Host(`auth.jackhumes.com`)
       kind: Rule
       services:
         - name: authelia

@@ -8,7 +8,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`headscale.lab.jackhumes.com`)
+    - match: Host(`headscale.jackhumes.com`)
       kind: Rule
       services:
         - name: headscale

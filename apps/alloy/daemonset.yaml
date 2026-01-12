@@ -14,6 +14,30 @@ spec:
         app: alloy
     spec:
       serviceAccountName: alloy
+      initContainers:
+        - name: download-geoip
+          image: curlimages/curl:8.11.0
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Downloading GeoLite2-City database..."
+              curl -L -o /geoip/GeoLite2-City.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
+              tar -xzf /geoip/GeoLite2-City.tar.gz -C /geoip
+              find /geoip -name "GeoLite2-City.mmdb" -exec cp {} /geoip/GeoLite2-City.mmdb \;
+              rm -rf /geoip/GeoLite2-City_* /geoip/GeoLite2-City.tar.gz
+              echo "GeoIP database downloaded successfully:"
+              ls -la /geoip/*.mmdb
+          env:
+            - name: MAXMIND_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: maxmind-license
+                  key: license_key
+          volumeMounts:
+            - name: geoip
+              mountPath: /geoip
       containers:
         - name: alloy
           image: grafana/alloy:v1.5.1
@@ -36,6 +60,9 @@ spec:
               readOnly: true
             - name: data
               mountPath: /var/lib/alloy
+            - name: geoip
+              mountPath: /etc/alloy/geoip
+              readOnly: true
           env:
             - name: HOSTNAME
               valueFrom:
@@ -64,6 +91,8 @@ spec:
         - name: data
           hostPath:
             path: /var/lib/alloy
+        - name: geoip
+          emptyDir: {}
       tolerations:
         - effect: NoSchedule
           operator: Exists

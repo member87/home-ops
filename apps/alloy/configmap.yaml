@@ -127,6 +127,23 @@ data:
         stage.regex {
           expression = ".*?(?P<remote_addr>\\d+\\.\\d+\\.\\d+\\.\\d+).*"
         }
+
+        // Add GeoIP enrichment for extracted IP addresses
+        stage.geoip {
+          db          = "/etc/alloy/geoip/GeoLite2-City.mmdb"
+          source      = "remote_addr"
+          db_type     = "city"
+        }
+
+        // Add GeoIP labels for Grafana geomap
+        stage.labels {
+          values = {
+            geoip_latitude  = "",
+            geoip_longitude = "",
+            geoip_city      = "",
+            geoip_country   = "",
+          }
+        }
       }
 
       // Extract fail2ban specific fields from Authelia logs

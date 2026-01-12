@@ -13,3 +13,14 @@ spec:
       - Remote-Groups
       - Remote-Name
       - Remote-Email
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-admin
+  namespace: headscale-admin
+spec:
+  redirectRegex:
+    regex: "^https://headscale-admin.lab.jackhumes.com/$"
+    replacement: "https://headscale-admin.lab.jackhumes.com/admin/"
+    permanent: false

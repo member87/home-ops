@@ -15,5 +15,6 @@ spec:
           port: 80
       middlewares:
         - name: authelia-forwardauth
+        - name: redirect-to-admin
   tls:
     secretName: headscale-admin-tls

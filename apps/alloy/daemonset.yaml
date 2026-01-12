@@ -16,7 +16,7 @@ spec:
       serviceAccountName: alloy
       initContainers:
         - name: download-geoip
-          image: curlimages/curl:8.11.0
+          image: curlimages/curl:8.18.0
           command:
             - sh
             - -c

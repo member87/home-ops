@@ -12,199 +12,572 @@ data:
       "title": "Fail2ban",
       "uid": "fail2ban-dashboard",
       "timezone": "browser",
-      "schemaVersion": 38,
+      "schemaVersion": 40,
       "version": 1,
       "refresh": "30s",
       "templating": {
         "list": [
           {
+            "name": "lokiInstance",
+            "label": "Loki",
+            "type": "datasource",
+            "query": "loki",
+            "multi": false,
+            "current": {
+              "text": "Loki",
+              "value": "loki"
+            }
+          },
+          {
             "name": "namespace",
             "label": "Namespace",
             "type": "constant",
-            "query": "authelia"
+            "query": "authelia",
+            "current": {
+              "text": "authelia",
+              "value": "authelia"
+            }
           }
         ]
       },
       "panels": [
         {
-          "title": "Total Ban Count",
-          "type": "stat",
-          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
-          "targets": [
-            {
-              "expr": "count_over_time({namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" [$__range])",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
-            }
-          ],
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiInstance}"
+          },
           "fieldConfig": {
             "defaults": {
-              "color": {"mode": "thresholds"},
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "neutral": 1
+              },
+              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 10},
-                  {"color": "red", "value": 50}
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 25
+                  },
+                  {
+                    "color": "red",
+                    "value": 50
+                  }
                 ]
-              }
-            }
-          }
-        },
-        {
-          "title": "Ban Rate (15m)",
-          "type": "stat",
-          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 4,
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "pluginVersion": "11.3.0",
           "targets": [
             {
-              "expr": "rate({namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" [15m])",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
+              "datasource": {
+                "type": "loki",
+                "uid": "${lokiInstance}"
+              },
+              "editorMode": "code",
+              "expr": "sum(count_over_time({namespace=\"${namespace}\",container=\"fail2ban\"} |= \"Ban\" [$__range]))",
+              "queryType": "range",
+              "refId": "A"
             }
           ],
+          "title": "Ban Count",
+          "type": "gauge"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiInstance}"
+          },
           "fieldConfig": {
             "defaults": {
-              "color": {"mode": "thresholds"},
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 3},
-                  {"color": "red", "value": 10}
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
                 ]
               }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 2,
+          "options": {
+            "basemap": {
+              "config": {},
+              "name": "Layer 0",
+              "type": "default"
+            },
+            "controls": {
+              "mouseWheelZoom": true,
+              "showAttribution": true,
+              "showDebug": false,
+              "showMeasure": false,
+              "showScale": false,
+              "showZoom": true
+            },
+            "layers": [
+              {
+                "config": {
+                  "blur": 15,
+                  "radius": 5,
+                  "weight": {
+                    "fixed": 1,
+                    "max": 1,
+                    "min": 0
+                  }
+                },
+                "location": {
+                  "latitude": "geoip_location_latitude",
+                  "longitude": "geoip_location_longitude",
+                  "mode": "coords"
+                },
+                "name": "Layer 1",
+                "tooltip": true,
+                "type": "heatmap"
+              }
+            ],
+            "tooltip": {
+              "mode": "details"
+            },
+            "view": {
+              "allLayers": true,
+              "id": "coords",
+              "lat": 24.948855,
+              "lon": 5.804702,
+              "zoom": 2
             }
-          }
-        },
-        {
-          "title": "Unban Rate (15m)",
-          "type": "stat",
-          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          },
+          "pluginVersion": "11.3.0",
           "targets": [
             {
-              "expr": "rate({namespace=\"authelia\",container=\"fail2ban\"} |= \"Unban\" [15m])",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
+              "datasource": {
+                "type": "loki",
+                "uid": "${lokiInstance}"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=\"${namespace}\",container=\"fail2ban\"} |= \"Ban\"",
+              "queryType": "range",
+              "refId": "A"
             }
           ],
-          "fieldConfig": {
-            "defaults": {
-              "color": {"mode": "thresholds"},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null}
-                ]
+          "title": "Geomap (requires GeoIP labels)",
+          "transformations": [
+            {
+              "id": "extractFields",
+              "options": {
+                "source": "labels"
               }
-            }
-          }
-        },
-        {
-          "title": "Active Jails",
-          "type": "stat",
-          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
-          "targets": [
-            {
-              "expr": "{namespace=\"authelia\",container=\"fail2ban\"} | json | jail != \"\" | label_format jail=\"{{.jail}}\" | count by (jail)",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
-            }
-          ]
-        },
-        {
-          "title": "Ban Events Over Time",
-          "type": "timeseries",
-          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
-          "targets": [
-            {
-              "expr": "sum(count_over_time({namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" [5m]))",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"},
-              "legendFormat": "Bans"
             },
             {
-              "expr": "sum(count_over_time({namespace=\"authelia\",container=\"fail2ban\"} |= \"Unban\" [5m]))",
-              "refId": "B",
-              "datasource": {"type": "loki", "uid": "loki"},
-              "legendFormat": "Unbans"
+              "id": "convertFieldType",
+              "options": {
+                "conversions": [
+                  {
+                    "destinationType": "number",
+                    "targetField": "geoip_location_latitude"
+                  },
+                  {
+                    "destinationType": "number",
+                    "targetField": "geoip_location_longitude"
+                  }
+                ],
+                "fields": {}
+              }
             }
           ],
+          "type": "geomap"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "id": 8,
+          "panels": [],
+          "title": "Ban Stats",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiInstance}"
+          },
           "fieldConfig": {
             "defaults": {
-              "color": {"mode": "palette-classic"},
-              "custom": {
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "showPoints": "auto"
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 3
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
               }
-            }
-          }
-        },
-        {
-          "title": "Banned IPs",
-          "type": "table",
-          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
-          "targets": [
-            {
-              "expr": "{namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" | regexp \"(?P<ip>\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+)\"",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
-            }
-          ],
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {"Time": false},
-                "includeByName": {},
-                "indexByName": {},
-                "renameByName": {"Line": "Ban Event"}
-              }
-            }
-          ]
-        },
-        {
-          "title": "Fail2ban Error Logs",
-          "type": "table",
-          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
-          "targets": [
-            {
-              "expr": "{namespace=\"authelia\",container=\"fail2ban\",priority=\"ERROR\"}",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
-            }
-          ],
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {"id": true, "labels": true, "tsNs": true},
-                "renameByName": {"Line": "Error Message"}
-              }
-            }
-          ]
-        },
-        {
-          "title": "All Fail2ban Logs",
-          "type": "logs",
-          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
-          "targets": [
-            {
-              "expr": "{namespace=\"authelia\",container=\"fail2ban\"}",
-              "refId": "A",
-              "datasource": {"type": "loki", "uid": "loki"}
-            }
-          ],
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 9
+          },
+          "id": 3,
           "options": {
-            "showTime": true,
-            "showLabels": false,
-            "showCommonLabels": false,
-            "wrapLogMessage": true,
-            "sortOrder": "Descending"
-          }
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "${lokiInstance}"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate({namespace=\"${namespace}\",container=\"fail2ban\"} |= \"Ban\" [15m]))",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Ban / 15m",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiInstance}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "match": "null+nan",
+                    "result": {
+                      "index": 0,
+                      "text": "0"
+                    }
+                  },
+                  "type": "special"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 9
+          },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "${lokiInstance}"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate({namespace=\"${namespace}\",container=\"fail2ban\"} |= \"Unban\" [15m]))",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Unban / 15m",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "id": 7,
+          "panels": [],
+          "title": "Logging",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiInstance}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "id": 6,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "${lokiInstance}"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=\"${namespace}\",container=\"fail2ban\",priority=\"ERROR\"}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Error",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "id": true,
+                  "labels": true,
+                  "tsNs": true
+                },
+                "renameByName": {
+                  "Line": "Message"
+                }
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiInstance}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 18
+          },
+          "id": 1,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "${lokiInstance}"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=\"${namespace}\",container=\"fail2ban\"}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Fail2Ban Log",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "id": true,
+                  "labels": true,
+                  "tsNs": true
+                }
+              }
+            }
+          ],
+          "type": "table"
         }
-      ]
+      ],
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "tags": [],
+      "gnetId": 22741,
+      "description": "Dashboard to have a Overview of the Fail2Ban logs collected via Alloy/Loki"
     }

@@ -10,13 +10,14 @@ data:
     bantime = 3600
     findtime = 600
     maxretry = 3
-    backend = systemd
+    backend = polling
     usedns = no
     banaction = iptables-allports
-    action = %(action_mwl)s
+    action = %(action_)s
 
     [authelia]
     enabled = true
+    backend = polling
     port = http,https
     filter = authelia
     logpath = /var/log/authelia/authelia.log

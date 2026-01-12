@@ -40,7 +40,7 @@ spec:
               mountPath: /geoip
       containers:
         - name: alloy
-          image: grafana/alloy:v1.5.1
+          image: grafana/alloy:v1.12.2
           args:
             - run
             - /etc/alloy/config.alloy

@@ -122,7 +122,8 @@ feat(monitoring): add Grafana with Authelia SSO integration
 1. **NEVER commit plaintext secrets** to the repository
 2. **ALWAYS use Sealed Secrets** for sensitive data
 3. **Regenerate any secrets** that were accidentally exposed
-4. **Image Tags** should always be set to a specific version and NEVER lastest
+4. **Image Tags** should always be set to a specific version and NEVER lastest. Always check the latest image when adding new services
+5. **Glance dashboard** icons and links will need to be updated when removing/adding new applications
 
 ### Using Sealed Secrets
 

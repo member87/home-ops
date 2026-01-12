@@ -28,7 +28,7 @@ pages:
                 alt-status-codes:
                   - 401
               - title: Authelia
-                url: https://auth.lab.jackhumes.com
+                url: https://auth.jackhumes.com
                 icon: si:authelia
               - title: LLDAP
                 url: https://lldap.lab.jackhumes.com
@@ -45,7 +45,7 @@ pages:
                 url: https://podinfo.lab.jackhumes.com
                 icon: si:kubernetes
               - title: Headscale
-                url: https://headscale.lab.jackhumes.com/health
+                url: https://headscale.jackhumes.com/health
                 icon: si:tailscale
               - title: Prometheus
                 url: https://prometheus.lab.jackhumes.com

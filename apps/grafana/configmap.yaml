@@ -20,9 +20,9 @@ data:
     client_id = grafana
     client_secret = $__file{/etc/secrets/client_secret}
     scopes = openid profile email groups
-    auth_url = https://auth.lab.jackhumes.com/api/oidc/authorization
-    token_url = https://auth.lab.jackhumes.com/api/oidc/token
-    api_url = https://auth.lab.jackhumes.com/api/oidc/userinfo
+    auth_url = https://auth.jackhumes.com/api/oidc/authorization
+    token_url = https://auth.jackhumes.com/api/oidc/token
+    api_url = https://auth.jackhumes.com/api/oidc/userinfo
     use_pkce = false
     use_refresh_token = true
     role_attribute_path = contains(groups, 'admins') && 'Admin' || contains(groups, 'editors') && 'Editor' || 'Viewer'

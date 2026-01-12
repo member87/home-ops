@@ -6,7 +6,7 @@ metadata:
   namespace: authelia
 spec:
   forwardAuth:
-    address: http://authelia.authelia.svc.cluster.local:9091/api/verify?rd=https://auth.lab.jackhumes.com/
+    address: http://authelia.authelia.svc.cluster.local:9091/api/verify?rd=https://auth.jackhumes.com/
     trustForwardHeader: true
     authResponseHeaders:
       - Remote-User

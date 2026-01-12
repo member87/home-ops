@@ -20,7 +20,7 @@ data:
   url: https://argocd.lab.jackhumes.com
   oidc.config: |
     name: Authelia
-    issuer: https://auth.lab.jackhumes.com
+    issuer: https://auth.jackhumes.com
     clientID: argocd
     clientSecret: TqLynrmOo6GR4ocpE0wJY87amKLQykOxyaciyMVtjJo=
     requestedScopes:

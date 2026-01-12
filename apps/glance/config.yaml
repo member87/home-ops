@@ -44,9 +44,12 @@ pages:
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
                 icon: si:kubernetes
-              - title: NetBird
-                url: https://netbird.lab.jackhumes.com
-                icon: si:wireguard
+              - title: Headscale
+                url: https://headscale.lab.jackhumes.com/health
+                icon: si:tailscale
+              - title: Headscale Admin
+                url: https://headscale-admin.lab.jackhumes.com
+                icon: si:tailscale
                 alt-status-codes:
                   - 401
               - title: Prometheus

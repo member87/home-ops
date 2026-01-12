@@ -14,7 +14,7 @@ spec:
         - name: headscale-admin
           port: 80
       middlewares:
-        - name: authelia
+        - name: authelia-forwardauth
           namespace: authelia
   tls:
     secretName: headscale-admin-tls

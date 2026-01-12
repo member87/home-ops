@@ -54,7 +54,7 @@ metadata:
   name: netbird-dashboard-config
   namespace: netbird
 data:
-  NETBIRD_MGMT_API_ENDPOINT: "https://netbird.lab.jackhumes.com"
+  NETBIRD_MGMT_API_ENDPOINT: "https://netbird.lab.jackhumes.com/api"
   NETBIRD_MGMT_GRPC_API: "https://netbird.lab.jackhumes.com"
   AUTH_AUDIENCE: "netbird"
   AUTH_CLIENT_ID: "netbird"

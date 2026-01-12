@@ -2,38 +2,40 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: promtail
-  namespace: promtail
+  name: alloy
+  namespace: alloy
 spec:
   selector:
     matchLabels:
-      app: promtail
+      app: alloy
   template:
     metadata:
       labels:
-        app: promtail
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9080"
+        app: alloy
     spec:
-      serviceAccountName: promtail
+      serviceAccountName: alloy
       containers:
-        - name: promtail
-          image: grafana/promtail:3.6.3
+        - name: alloy
+          image: grafana/alloy:v1.5.1
           args:
-            - -config.file=/etc/promtail/promtail.yaml
+            - run
+            - /etc/alloy/config.alloy
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --storage.path=/var/lib/alloy/data
           ports:
-            - containerPort: 9080
+            - containerPort: 12345
               name: http-metrics
           volumeMounts:
             - name: config
-              mountPath: /etc/promtail
+              mountPath: /etc/alloy
             - name: varlog
               mountPath: /var/log
               readOnly: true
             - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
               readOnly: true
+            - name: data
+              mountPath: /var/lib/alloy
           env:
             - name: HOSTNAME
               valueFrom:
@@ -41,21 +43,27 @@ spec:
                   fieldPath: spec.nodeName
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 200m
+              cpu: 100m
               memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            privileged: true
+            runAsUser: 0
       volumes:
         - name: config
           configMap:
-            name: promtail-config
+            name: alloy-config
         - name: varlog
           hostPath:
             path: /var/log
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
+        - name: data
+          hostPath:
+            path: /var/lib/alloy
       tolerations:
         - effect: NoSchedule
           operator: Exists

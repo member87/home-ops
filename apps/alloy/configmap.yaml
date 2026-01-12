@@ -1,0 +1,280 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: alloy
+data:
+  config.alloy: |
+    // Logging configuration
+    logging {
+      level  = "info"
+      format = "logfmt"
+    }
+
+    // Discover Kubernetes pods for log collection
+    discovery.kubernetes "pods" {
+      role = "pod"
+    }
+
+    // Discover Kubernetes nodes for metrics
+    discovery.kubernetes "nodes" {
+      role = "node"
+    }
+
+    // Relabel pods for log collection
+    discovery.relabel "pod_logs" {
+      targets = discovery.kubernetes.pods.targets
+
+      // Add namespace label
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      // Add pod name label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      // Add container name label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+
+      // Add app label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        target_label  = "app"
+      }
+
+      // Add node name label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node_name"
+      }
+
+      // Set the log path
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+
+    // Collect logs from discovered pods
+    loki.source.kubernetes "pods" {
+      targets    = discovery.relabel.pod_logs.output
+      forward_to = [loki.process.pod_logs.receiver]
+    }
+
+    // Process logs (parse CRI format)
+    loki.process "pod_logs" {
+      stage.cri {}
+
+      // Parse fail2ban logs specifically
+      stage.match {
+        selector = "{container=\"fail2ban\"}"
+        
+        stage.multiline {
+          firstline     = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"
+          max_wait_time = "10s"
+        }
+
+        stage.regex {
+          expression = "^(?s)(?P<time>\\S+? \\S+?) (fail2ban\\.)(?P<component>\\S+)\\s* \\[(?P<pid>\\S+)\\]: (?P<priority>\\S+)\\s* (?P<message>.*?)$"
+        }
+
+        stage.timestamp {
+          source = "time"
+          format = "2006-01-02 15:04:05,000"
+        }
+
+        stage.labels {
+          values = {
+            component = "",
+            priority  = "",
+          }
+        }
+
+        stage.output {
+          source = "message"
+        }
+
+        // Extract jail information
+        stage.match {
+          selector = "{container=\"fail2ban\"} |~ \"\\\\[\\\\S+\\\\] .*\""
+          
+          stage.regex {
+            expression = "(\\[(?P<jail>\\S+)\\] )?(?P<message>.*?)$"
+          }
+
+          stage.labels {
+            values = {
+              jail = "",
+            }
+          }
+
+          stage.output {
+            source = "message"
+          }
+        }
+
+        // Extract IP addresses for bans
+        stage.regex {
+          expression = ".*?(?P<remote_addr>\\d+\\.\\d+\\.\\d+\\.\\d+).*"
+        }
+      }
+
+      // Extract fail2ban specific fields from Authelia logs
+      stage.regex {
+        expression = ".*level=(?P<level>\\w+).*msg=\"(?P<msg>.*)\".*"
+      }
+
+      // Add labels for fail2ban
+      stage.labels {
+        values = {
+          level = "",
+        }
+      }
+
+      forward_to = [loki.write.loki.receiver]
+    }
+
+    // Write logs to Loki
+    loki.write "loki" {
+      endpoint {
+        url = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"
+      }
+    }
+
+    // Scrape Prometheus metrics from annotated pods
+    discovery.relabel "pod_metrics" {
+      targets = discovery.kubernetes.pods.targets
+
+      // Keep only pods with prometheus.io/scrape annotation
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+        action        = "keep"
+        regex         = "true"
+      }
+
+      // Get port from annotation or default to 80
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port"]
+        action        = "replace"
+        target_label  = "__meta_kubernetes_pod_container_port_number"
+        regex         = "(.+)"
+      }
+
+      // Get path from annotation or default to /metrics
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+        action        = "replace"
+        target_label  = "__metrics_path__"
+        regex         = "(.+)"
+      }
+
+      // Set address
+      rule {
+        source_labels = ["__meta_kubernetes_pod_ip", "__meta_kubernetes_pod_container_port_number"]
+        action        = "replace"
+        regex         = "([^:]+)(?::\\d+)?;(\\d+)"
+        replacement   = "$1:$2"
+        target_label  = "__address__"
+      }
+
+      // Add namespace label
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      // Add pod label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      // Add container label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+
+      // Add app label
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        target_label  = "app"
+      }
+    }
+
+    // Scrape metrics from annotated pods
+    prometheus.scrape "pods" {
+      targets    = discovery.relabel.pod_metrics.output
+      forward_to = [prometheus.remote_write.prometheus.receiver]
+    }
+
+    // Scrape kubelet metrics
+    discovery.relabel "kubelet" {
+      targets = discovery.kubernetes.nodes.targets
+
+      rule {
+        target_label = "__address__"
+        replacement  = "kubernetes.default.svc:443"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_node_name"]
+        regex         = "(.+)"
+        replacement   = "/api/v1/nodes/$1/proxy/metrics"
+        target_label  = "__metrics_path__"
+      }
+    }
+
+    prometheus.scrape "kubelet" {
+      targets      = discovery.relabel.kubelet.output
+      scheme       = "https"
+      bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+      tls_config {
+        insecure_skip_verify = true
+      }
+      forward_to   = [prometheus.remote_write.prometheus.receiver]
+    }
+
+    // Scrape cAdvisor metrics
+    discovery.relabel "cadvisor" {
+      targets = discovery.kubernetes.nodes.targets
+
+      rule {
+        target_label = "__address__"
+        replacement  = "kubernetes.default.svc:443"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_node_name"]
+        regex         = "(.+)"
+        replacement   = "/api/v1/nodes/$1/proxy/metrics/cadvisor"
+        target_label  = "__metrics_path__"
+      }
+    }
+
+    prometheus.scrape "cadvisor" {
+      targets      = discovery.relabel.cadvisor.output
+      scheme       = "https"
+      bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+      tls_config {
+        insecure_skip_verify = true
+      }
+      forward_to   = [prometheus.remote_write.prometheus.receiver]
+    }
+
+    // Write metrics to Prometheus
+    prometheus.remote_write "prometheus" {
+      endpoint {
+        url = "http://prometheus.prometheus.svc.cluster.local:9090/api/v1/write"
+      }
+    }

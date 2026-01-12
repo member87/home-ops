@@ -16,6 +16,8 @@ data:
     log:
       level: info
       format: text
+      file_path: /var/log/authelia/authelia.log
+      keep_stdout: true
     
     totp:
       disable: true

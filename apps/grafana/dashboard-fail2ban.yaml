@@ -1,0 +1,210 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-fail2ban
+  namespace: grafana
+  labels:
+    grafana_dashboard: "1"
+data:
+  fail2ban.json: |
+    {
+      "title": "Fail2ban",
+      "uid": "fail2ban-dashboard",
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "constant",
+            "query": "authelia"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "title": "Total Ban Count",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "targets": [
+            {
+              "expr": "count_over_time({namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" [$__range])",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 10},
+                  {"color": "red", "value": 50}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Ban Rate (15m)",
+          "type": "stat",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "targets": [
+            {
+              "expr": "rate({namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" [15m])",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 3},
+                  {"color": "red", "value": 10}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Unban Rate (15m)",
+          "type": "stat",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "targets": [
+            {
+              "expr": "rate({namespace=\"authelia\",container=\"fail2ban\"} |= \"Unban\" [15m])",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Active Jails",
+          "type": "stat",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "targets": [
+            {
+              "expr": "{namespace=\"authelia\",container=\"fail2ban\"} | json | jail != \"\" | label_format jail=\"{{.jail}}\" | count by (jail)",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ]
+        },
+        {
+          "title": "Ban Events Over Time",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "sum(count_over_time({namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" [5m]))",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"},
+              "legendFormat": "Bans"
+            },
+            {
+              "expr": "sum(count_over_time({namespace=\"authelia\",container=\"fail2ban\"} |= \"Unban\" [5m]))",
+              "refId": "B",
+              "datasource": {"type": "loki", "uid": "loki"},
+              "legendFormat": "Unbans"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "showPoints": "auto"
+              }
+            }
+          }
+        },
+        {
+          "title": "Banned IPs",
+          "type": "table",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "{namespace=\"authelia\",container=\"fail2ban\"} |= \"Ban\" | regexp \"(?P<ip>\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+)\"",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {"Time": false},
+                "includeByName": {},
+                "indexByName": {},
+                "renameByName": {"Line": "Ban Event"}
+              }
+            }
+          ]
+        },
+        {
+          "title": "Fail2ban Error Logs",
+          "type": "table",
+          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "{namespace=\"authelia\",container=\"fail2ban\",priority=\"ERROR\"}",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {"id": true, "labels": true, "tsNs": true},
+                "renameByName": {"Line": "Error Message"}
+              }
+            }
+          ]
+        },
+        {
+          "title": "All Fail2ban Logs",
+          "type": "logs",
+          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "targets": [
+            {
+              "expr": "{namespace=\"authelia\",container=\"fail2ban\"}",
+              "refId": "A",
+              "datasource": {"type": "loki", "uid": "loki"}
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "showCommonLabels": false,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          }
+        }
+      ]
+    }

@@ -13,5 +13,9 @@ spec:
     targetPort: 9091
     protocol: TCP
     name: http
+  - port: 9191
+    targetPort: 9191
+    protocol: TCP
+    name: metrics
   selector:
     app: authelia

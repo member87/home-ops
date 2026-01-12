@@ -68,6 +68,9 @@ spec:
             - name: dashboard-elastiflow
               mountPath: /var/lib/grafana/dashboards/elastiflow.json
               subPath: elastiflow.json
+            - name: dashboard-fail2ban
+              mountPath: /var/lib/grafana/dashboards/fail2ban.json
+              subPath: fail2ban.json
             # UniFi dashboards
             - name: dashboard-unifi-network-sites
               mountPath: /var/lib/grafana/dashboards/unifi/unifi-network-sites.json
@@ -173,6 +176,9 @@ spec:
         - name: dashboard-elastiflow
           configMap:
             name: grafana-dashboard-elastiflow
+        - name: dashboard-fail2ban
+          configMap:
+            name: grafana-dashboard-fail2ban
         - name: alerting
           configMap:
             name: grafana-alerting

@@ -195,25 +195,20 @@ data:
             client_secret: '$pbkdf2-sha512$310000$7.ZSykJh5JXUxHulsq4Tow$.EUeduX8AX28K7NEz3fHHB0Rdy532lv38sa9HqpYlB6OH/2j.QI.0pZ8HCYsyKjqVBa9c.cWRE5M6jaaD2nsqg'
             public: false
             authorization_policy: 'one_factor'
-            consent_mode: 'implicit'
             require_pkce: false
             pkce_challenge_method: ''
-            audience:
-              - 'netbird'
             redirect_uris:
               - 'https://netbird.lab.jackhumes.com/peers'
-              - 'https://netbird.lab.jackhumes.com/silent-auth'
+              - 'https://netbird.lab.jackhumes.com/add-peers'
               - 'http://localhost:53000'
             scopes:
               - 'openid'
-              - 'profile'
               - 'email'
-              - 'offline_access'
+              - 'profile'
             response_types:
               - 'code'
             grant_types:
               - 'authorization_code'
-              - 'refresh_token'
             access_token_signed_response_alg: 'none'
             userinfo_signed_response_alg: 'none'
             token_endpoint_auth_method: 'client_secret_post'

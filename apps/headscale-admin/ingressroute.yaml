@@ -1,0 +1,20 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: headscale-admin
+  namespace: headscale-admin
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`headscale-admin.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: headscale-admin
+          port: 80
+      middlewares:
+        - name: authelia
+          namespace: authelia
+  tls:
+    secretName: headscale-admin-tls

@@ -54,6 +54,7 @@ data:
             - "pihole.lab.jackhumes.com"
             - "lldap.lab.jackhumes.com"
             - "prometheus.lab.jackhumes.com"
+            - "headscale-admin.lab.jackhumes.com"
           policy: one_factor
     
     session:
@@ -80,6 +81,11 @@ data:
     identity_providers:
       oidc:
         hmac_secret: /Vxio7ih/F/MmU7e6FoPApkiltAQTr+jLMMuGQ90Cfk=
+        claims_policies:
+          headscale:
+            id_token:
+              - email
+              - groups
         issuer_private_key: |
           -----BEGIN RSA PRIVATE KEY-----
           MIIJKAIBAAKCAgEAoRm2kf+84+JfP9IyXG7l7REraLk/lmERWUbI2ftt49TudBUo
@@ -190,33 +196,28 @@ data:
             access_token_signed_response_alg: 'none'
             userinfo_signed_response_alg: 'none'
             token_endpoint_auth_method: 'none'
-          - client_id: 'netbird'
-            client_name: 'NetBird'
-            client_secret: '$pbkdf2-sha512$310000$wo7pclnv8gDvH5cOy2yvYQ$OUGbUPGeHpZ7MfKFnCciQE08RYygdbdj7nMJ7YJR.5ddtqR//qHgfLfyiFIF4fxz8zquywx/Pr5swprtBUItYg'
+          - client_id: 'headscale'
+            client_name: 'Headscale'
+            client_secret: '$pbkdf2-sha512$310000$rgCAKvrnAEiQtSuHNbC3jg$.r5phwMBX1d.AiswdDsvn5oYYgNL0AgPtyBaBdQ4xvLY92epC5NU4Zs6He5BD4ZCKL.dmv56Gn7lQ6o0lfHyLA'
+            claims_policy: 'headscale'
             public: false
-            authorization_policy: 'one_factor'
-            require_pkce: false
-            pkce_challenge_method: ''
+            authorization_policy: 'two_factor'
+            require_pkce: true
+            pkce_challenge_method: 'S256'
             redirect_uris:
-              - 'https://netbird.lab.jackhumes.com/peers'
-              - 'https://netbird.lab.jackhumes.com/add-peers'
-              - 'http://localhost:53000'
-              - 'http://localhost'
-            audience:
-              - 'netbird'
-            requested_audience_mode: 'implicit'
-            consent_mode: 'implicit'
+              - 'https://headscale.lab.jackhumes.com/oidc/callback'
             scopes:
               - 'openid'
               - 'email'
               - 'profile'
+              - 'groups'
             response_types:
               - 'code'
             grant_types:
               - 'authorization_code'
             access_token_signed_response_alg: 'none'
             userinfo_signed_response_alg: 'none'
-            token_endpoint_auth_method: 'client_secret_post'
+            token_endpoint_auth_method: 'client_secret_basic'
           - client_id: 'grafana'
             client_name: 'Grafana'
             client_secret: '$pbkdf2-sha512$310000$GMJ3.6E2Cw8RXpFFpaUsyg$QVzgfckr8LmygfGsu09XM8D68Ggra0yl0hNpTg7B/OtEdZ8O9bd1CNA507.2lIsXS47pB.juGxB425P.blHz2Q'

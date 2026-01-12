@@ -58,6 +58,18 @@ spec:
           mountPath: /data
         - name: logs
           mountPath: /var/log/authelia
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 9091
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 9091
+          initialDelaySeconds: 10
+          periodSeconds: 5
       - name: fail2ban
         image: crazymax/fail2ban:1.1.0
         env:
@@ -93,24 +105,6 @@ spec:
           readOnly: true
         - name: fail2ban-data
           mountPath: /data
-        securityContext:
-          capabilities:
-            add:
-            - NET_ADMIN
-            - NET_RAW
-          privileged: true
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 9091
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 9091
-          initialDelaySeconds: 10
-          periodSeconds: 5
       volumes:
       - name: config
         configMap:

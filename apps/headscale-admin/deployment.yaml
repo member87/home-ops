@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: headscale-admin
-          image: goodieshq/headscale-admin:0.1.12b
+          image: goodieshq/headscale-admin:0.26.0
           ports:
             - containerPort: 80
               name: http

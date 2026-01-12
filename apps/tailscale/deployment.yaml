@@ -28,6 +28,8 @@ spec:
               value: /var/lib/tailscale
             - name: TS_USERSPACE
               value: "true"
+            - name: TS_HOSTNAME
+              value: headscale-funnel
             - name: TS_SERVE_CONFIG
               value: /config/serve-config.json
           volumeMounts:

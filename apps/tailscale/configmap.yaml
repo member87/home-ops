@@ -13,7 +13,7 @@ data:
         }
       },
       "Web": {
-        "${TS_CERT_DOMAIN}:443": {
+        "headscale-funnel.taila62ed.ts.net:443": {
           "Handlers": {
             "/": {
               "Proxy": "http://headscale.headscale.svc.cluster.local:8080"
@@ -22,6 +22,6 @@ data:
         }
       },
       "AllowFunnel": {
-        "${TS_CERT_DOMAIN}:443": true
+        "headscale-funnel.taila62ed.ts.net:443": true
       }
     }

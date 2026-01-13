@@ -332,6 +332,159 @@ git push
    - **Discord alerting** - Configured with webhook for critical alerts
    - Grafana UI: `https://grafana.lab.jackhumes.com`
 
+6. **Headscale** (namespace: `headscale`)
+   - Self-hosted Tailscale control plane
+   - Image: `headscale/headscale:v0.27.1`
+   - Internal URL: `https://headscale.lab.jackhumes.com`
+   - External URL: `https://headscale.jackhumes.com` (via FRP tunnel)
+   - OIDC integration with Authelia
+   - SQLite database with persistent storage
+
+7. **Headplane** (namespace: `headplane`)
+   - Web-based admin UI for Headscale
+   - Image: `ghcr.io/tale/headplane:0.6.1`
+   - Accessible at: `https://headscale.lab.jackhumes.com/admin`
+
+8. **Tailscale Subnet Router** (namespace: `tailscale-subnet-router`)
+   - Advertises `10.0.0.0/24` to Tailnet
+   - Acts as exit node for VPN traffic
+   - Connects to Headscale control plane
+
+9. **FRP Client** (namespace: `frp-client`)
+   - Fast Reverse Proxy for external access
+   - Tunnels to Oracle VPS for public endpoints
+   - See [External Access Architecture](#external-access-architecture) below
+
+### External Access Architecture
+
+The cluster uses **FRP (Fast Reverse Proxy)** to expose services to the public internet through an Oracle Cloud VPS.
+
+**Oracle VPS Details:**
+- **IP Address**: `140.238.67.83`
+- **Provider**: Oracle Cloud Infrastructure (Free Tier)
+- **Role**: FRP server, reverse proxy for public domains
+- **FRP Server Port**: 7000
+
+**Network Flow:**
+```
+Internet --> Oracle VPS (140.238.67.83)
+              |
+              +-- Nginx/Caddy (TLS termination)
+              |     |
+              |     +-- headscale.jackhumes.com --> FRP port 8082
+              |     +-- auth.jackhumes.com --> FRP port 8081
+              |
+              +-- FRP Server (port 7000)
+                    |
+                    +-- FRP Client (in k8s cluster)
+                          |
+                          +-- headscale.headscale.svc:8080
+                          +-- authelia.authelia.svc:9091
+```
+
+**FRP Tunnel Configuration** (apps/frp-client/configmap.yaml):
+
+| Proxy Name | Local Service | Local Port | Remote Port | Public Domain |
+|------------|---------------|------------|-------------|---------------|
+| authelia | authelia.authelia.svc.cluster.local | 9091 | 8081 | auth.jackhumes.com |
+| headscale | headscale.headscale.svc.cluster.local | 8080 | 8082 | headscale.jackhumes.com |
+
+**Domain Structure:**
+
+| Domain Pattern | Access Type | Purpose |
+|----------------|-------------|---------|
+| `*.lab.jackhumes.com` | Internal (Traefik) | Services accessible from LAN/VPN |
+| `*.jackhumes.com` | External (via FRP) | Services exposed to public internet |
+
+**Why Two Domains for Headscale:**
+- `headscale.jackhumes.com` - Used by Tailscale clients connecting from anywhere (must be publicly accessible)
+- `headscale.lab.jackhumes.com` - Used for admin access, health checks, and internal cluster communication
+- OIDC uses `auth.jackhumes.com` because the OIDC flow requires a publicly accessible issuer for clients connecting from outside
+
+### Headscale Configuration Details
+
+**Key Configuration Values** (apps/headscale/configmap.yaml):
+
+```yaml
+server_url: https://headscale.jackhumes.com  # External URL for clients
+listen_addr: 0.0.0.0:8080
+
+# IP Allocation
+prefixes:
+  v4: 100.64.0.0/10   # CGNAT range
+  v6: fd7a:115c:a1e0::/48
+allocation: sequential
+
+# DNS Configuration
+dns:
+  magic_dns: true
+  base_domain: tailnet.lab.jackhumes.com
+  nameservers:
+    global:
+      - 10.0.0.201    # Pi-hole
+      - 1.1.1.1       # Cloudflare fallback
+
+# OIDC (Authelia)
+oidc:
+  issuer: https://auth.jackhumes.com
+  client_id: headscale
+  client_secret_path: /etc/headscale/secrets/client_secret
+```
+
+**Creating Pre-Auth Keys:**
+```bash
+# Get a shell in the headscale pod
+kubectl exec -it -n headscale deployment/headscale -- headscale preauthkeys create --user default --expiration 24h
+
+# List existing keys
+kubectl exec -it -n headscale deployment/headscale -- headscale preauthkeys list --user default
+```
+
+**Managing Nodes:**
+```bash
+# List all nodes
+kubectl exec -it -n headscale deployment/headscale -- headscale nodes list
+
+# Register a node manually
+kubectl exec -it -n headscale deployment/headscale -- headscale nodes register --user default --key nodekey:xxx
+
+# Enable routes advertised by a node
+kubectl exec -it -n headscale deployment/headscale -- headscale routes enable -r <route-id>
+```
+
+### Tailscale Subnet Router Details
+
+The subnet router allows Tailnet clients to access the local network (`10.0.0.0/24`).
+
+**Configuration** (apps/tailscale-subnet-router/deployment.yaml):
+
+```yaml
+env:
+  - name: TS_HOSTNAME
+    value: "k8s-subnet-router"
+  - name: TS_ROUTES
+    value: "10.0.0.0/24"
+  - name: TS_EXTRA_ARGS
+    value: "--login-server=https://headscale.jackhumes.com --advertise-exit-node"
+```
+
+**After deploying a new subnet router:**
+1. The router will appear in Headscale nodes list
+2. Routes must be enabled manually:
+   ```bash
+   kubectl exec -it -n headscale deployment/headscale -- headscale routes list
+   kubectl exec -it -n headscale deployment/headscale -- headscale routes enable -r <route-id>
+   ```
+
+### Key IP Addresses
+
+| IP | Service | Notes |
+|----|---------|-------|
+| `140.238.67.83` | Oracle VPS | FRP server, public endpoints |
+| `10.0.0.200` | Traefik | MetalLB LoadBalancer IP |
+| `10.0.0.201` | Pi-hole | DNS server |
+| `100.64.0.0/10` | Tailnet IPv4 | Headscale-allocated IPs |
+
 ### Namespaces
 
 - `argocd` - ArgoCD deployment

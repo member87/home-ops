@@ -8,6 +8,5 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
-  - headplane-external-service.yaml
   - ingressroute.yaml
   - certificate.yaml

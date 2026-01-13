@@ -8,15 +8,8 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # Route /admin to Headplane UI (using external service)
-    - match: Host(`headscale.jackhumes.com`) && PathPrefix(`/admin`)
-      kind: Rule
-      services:
-        - kind: Service
-          name: headplane-external
-          port: 3000
-    # Route everything else to Headscale
-    - match: Host(`headscale.jackhumes.com`) || Host(`headscale-funnel.taila62ed.ts.net`)
+    # Route everything to Headscale (except /admin which is handled by headplane IngressRoute)
+    - match: (Host(`headscale.jackhumes.com`) || Host(`headscale-funnel.taila62ed.ts.net`)) && !PathPrefix(`/admin`)
       kind: Rule
       services:
         - name: headscale

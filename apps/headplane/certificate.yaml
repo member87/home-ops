@@ -6,8 +6,8 @@ metadata:
   namespace: headplane
 spec:
   secretName: headscale-tls
-  dnsNames:
-    - headscale.jackhumes.com
   issuerRef:
     name: letsencrypt-production
     kind: ClusterIssuer
+  dnsNames:
+    - headscale.jackhumes.com

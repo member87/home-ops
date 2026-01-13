@@ -23,6 +23,10 @@ data:
     # Integration configurations - all disabled for standalone mode
     # Headplane runs in API key authentication mode only
     integration:
+      # Agent requires pre_authkey even when disabled (bug workaround)
+      agent:
+        enabled: false
+        pre_authkey: "disabled"
       docker:
         enabled: false
       kubernetes:

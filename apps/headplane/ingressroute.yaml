@@ -8,10 +8,10 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`headscale.lab.jackhumes.com`) && PathPrefix(`/admin`)
+    - match: Host(`headplane.lab.jackhumes.com`)
       kind: Rule
       services:
         - name: headplane
           port: 3000
   tls:
-    secretName: headscale-tls
+    secretName: headplane-tls

@@ -47,6 +47,9 @@ pages:
               - title: Headscale
                 url: https://headscale.lab.jackhumes.com/health
                 icon: si:tailscale
+              - title: Headplane
+                url: https://headplane.lab.jackhumes.com
+                icon: si:tailscale
               - title: Prometheus
                 url: https://prometheus.lab.jackhumes.com
                 icon: si:prometheus

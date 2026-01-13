@@ -364,6 +364,7 @@ The cluster uses **FRP (Fast Reverse Proxy)** to expose services to the public i
 - **Provider**: Oracle Cloud Infrastructure (Free Tier)
 - **Role**: FRP server, reverse proxy for public domains
 - **FRP Server Port**: 7000
+- **SSH Access**: `ssh ubuntu@140.238.67.83` (uses SSH key authentication)
 
 **Network Flow:**
 ```

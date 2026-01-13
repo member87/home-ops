@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headplane-config
+  namespace: headplane
+data:
+  config.yaml: |
+    server:
+      host: "0.0.0.0"
+      port: 3000
+      base_url: "https://headscale.jackhumes.com"
+      cookie_secret_path: "/etc/headplane/secrets/cookie_secret"
+      cookie_secure: true
+      cookie_max_age: 86400
+      data_path: "/var/lib/headplane"
+
+    headscale:
+      url: "http://headscale.headscale.svc.cluster.local:8080"
+      public_url: "https://headscale.jackhumes.com"
+
+    # No Docker/Kubernetes integration for now
+    # Headplane runs in limited mode - API key auth only
+    integration:
+      docker:
+        enabled: false
+      kubernetes:
+        enabled: false
+      proc:
+        enabled: false
+      agent:
+        enabled: false
+
+    # OIDC can be configured later if needed
+    # For now, use Headscale API keys for authentication

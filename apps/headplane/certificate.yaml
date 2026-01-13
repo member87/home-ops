@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: headscale-tls
+  namespace: headplane
+spec:
+  secretName: headscale-tls
+  dnsNames:
+    - headscale.jackhumes.com
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer

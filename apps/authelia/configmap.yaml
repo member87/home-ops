@@ -206,6 +206,7 @@ data:
             pkce_challenge_method: 'S256'
             redirect_uris:
               - 'https://headscale.lab.jackhumes.com/oidc/callback'
+              - 'https://headscale.jackhumes.com/oidc/callback'
             scopes:
               - 'openid'
               - 'email'

@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: frpc
-          image: fatedier/frpc:v0.61.1
+          image: fatedier/frpc:v0.66.0
           args:
             - -c
             - /etc/frp/frpc.toml

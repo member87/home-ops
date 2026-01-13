@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frpc
+  namespace: frp-client
+  labels:
+    app: frpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frpc
+  template:
+    metadata:
+      labels:
+        app: frpc
+    spec:
+      containers:
+        - name: frpc
+          image: fatedier/frpc:v0.61.1
+          args:
+            - -c
+            - /etc/frp/frpc.toml
+          volumeMounts:
+            - name: frpc-config
+              mountPath: /etc/frp
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: frpc-config
+          configMap:
+            name: frpc-config

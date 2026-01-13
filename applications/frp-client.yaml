@@ -1,0 +1,21 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: frp-client
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/member87/home-ops.git
+    targetRevision: HEAD
+    path: apps/frp-client
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: frp-client
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

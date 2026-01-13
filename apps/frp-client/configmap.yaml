@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frpc-config
+  namespace: frp-client
+data:
+  frpc.toml: |
+    # frp client configuration
+    serverAddr = "140.238.67.83"
+    serverPort = 7000
+
+    # Authentication token (must match server)
+    auth.method = "token"
+    auth.token = "cUPijuqvpbl4SEKndzdskwKfzTWOIvSzypaAijzXObg"
+
+    # Authelia tunnel
+    [[proxies]]
+    name = "authelia"
+    type = "tcp"
+    localIP = "authelia.authelia.svc.cluster.local"
+    localPort = 9091
+    remotePort = 8081
+
+    # Headscale tunnel
+    [[proxies]]
+    name = "headscale"
+    type = "tcp"
+    localIP = "headscale.headscale.svc.cluster.local"
+    localPort = 8080
+    remotePort = 8082

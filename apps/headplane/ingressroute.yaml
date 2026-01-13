@@ -8,7 +8,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`headscale.jackhumes.com`) && PathPrefix(`/admin`)
+    - match: Host(`headscale.lab.jackhumes.com`) && PathPrefix(`/admin`)
       kind: Rule
       services:
         - name: headplane

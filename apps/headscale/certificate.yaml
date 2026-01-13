@@ -10,4 +10,4 @@ spec:
     name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
-    - headscale.jackhumes.com
+    - headscale.lab.jackhumes.com

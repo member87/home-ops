@@ -63,8 +63,6 @@ spec:
             customDnsEntries:
               # Wildcard DNS for lab domain - routes all *.lab.jackhumes.com to Traefik
               - address=/.lab.jackhumes.com/10.0.0.200
-              # Tailscale funnel hostname for local access (avoids hairpin NAT)
-              - address=/headscale-funnel.taila62ed.ts.net/10.0.0.200
             customCnameEntries: []
             upstreamServers: []
           

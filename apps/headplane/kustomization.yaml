@@ -8,5 +8,4 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
-  - ingressroute.yaml
-  - certificate.yaml
+  # ingressroute and certificate handled by headscale namespace

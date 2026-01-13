@@ -8,6 +8,13 @@ spec:
   entryPoints:
     - websecure
   routes:
+    - match: Host(`headplane.lab.jackhumes.com`) && Path(`/`)
+      kind: Rule
+      middlewares:
+        - name: headplane-redirect
+      services:
+        - name: headplane
+          port: 3000
     - match: Host(`headplane.lab.jackhumes.com`)
       kind: Rule
       services:

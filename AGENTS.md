@@ -125,6 +125,62 @@ feat(monitoring): add Grafana with Authelia SSO integration
 4. **Image Tags** should always be set to a specific version and NEVER lastest. Always check the latest image when adding new services
 5. **Glance dashboard** icons and links will need to be updated when removing/adding new applications
 
+### What Counts as a Secret?
+
+**ALWAYS seal these values - NEVER put them in ConfigMaps:**
+
+| Secret Type | Examples | Why It's Sensitive |
+|-------------|----------|-------------------|
+| **Private Keys** | RSA keys, ECDSA keys, TLS private keys, SSH keys, OIDC issuer private keys | Can be used to impersonate services, sign tokens, or decrypt traffic |
+| **HMAC Secrets** | JWT signing secrets, session secrets, OIDC hmac_secret | Allows forging tokens and session hijacking |
+| **Passwords** | Database passwords, LDAP bind passwords, service account passwords | Direct access to systems and data |
+| **API Keys/Tokens** | GitHub tokens, Discord webhooks, cloud provider keys | Access to external services |
+| **Client Secrets** | OAuth/OIDC client secrets (plaintext, not hashed) | Impersonation of OAuth clients |
+| **Encryption Keys** | Database encryption keys, storage encryption keys | Data decryption |
+| **Connection Strings** | Database URLs with credentials | Database access |
+
+**Safe to put in ConfigMaps (non-secret configuration):**
+- Hashed passwords (e.g., pbkdf2 hashes for Authelia client_secret)
+- Public URLs and endpoints
+- Feature flags and settings
+- Port numbers and hostnames
+- Log levels and timeouts
+
+### Authelia-Specific Security
+
+Authelia configuration requires special attention because it handles authentication for all services.
+
+**Secrets that MUST be in SealedSecrets (use _FILE env vars):**
+
+```yaml
+# In deployment.yaml environment section:
+env:
+  - name: AUTHELIA_JWT_SECRET_FILE
+    value: /secrets/JWT_SECRET
+  - name: AUTHELIA_SESSION_SECRET_FILE
+    value: /secrets/SESSION_SECRET
+  - name: AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
+    value: /secrets/STORAGE_ENCRYPTION_KEY
+  - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE
+    value: /secrets/OIDC_HMAC_SECRET
+  - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_ISSUER_PRIVATE_KEY_FILE
+    value: /secrets/OIDC_ISSUER_PRIVATE_KEY
+  - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE
+    value: /secrets/LDAP_PASSWORD
+```
+
+**Values that stay in ConfigMap:**
+- OIDC client secrets (hashed with pbkdf2, e.g., `$pbkdf2-sha512$...`)
+- Domain names and URLs
+- Session timeouts and policy settings
+- LDAP filter configurations
+
+**Red Flags - If you see these in a ConfigMap, STOP and fix:**
+- `-----BEGIN RSA PRIVATE KEY-----` or any PEM-formatted key
+- `hmac_secret:` followed by a base64 string
+- `password:` followed by plaintext
+- Any base64-encoded value that looks like a secret
+
 ### Using Sealed Secrets
 
 The repository includes a helper script: `seal-secrets.sh`

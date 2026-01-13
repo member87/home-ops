@@ -18,18 +18,16 @@ data:
     headscale:
       url: "http://headscale.headscale.svc.cluster.local:8080"
       public_url: "https://headscale.jackhumes.com"
+      config_strict: false
 
-    # No Docker/Kubernetes integration for now
-    # Headplane runs in limited mode - API key auth only
+    # Integration configurations - all disabled for standalone mode
+    # Headplane runs in API key authentication mode only
     integration:
       docker:
         enabled: false
       kubernetes:
         enabled: false
+        validate_manifest: false
+        pod_name: "headplane"
       proc:
         enabled: false
-      agent:
-        enabled: false
-
-    # OIDC can be configured later if needed
-    # For now, use Headscale API keys for authentication

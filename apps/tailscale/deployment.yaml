@@ -51,7 +51,7 @@ spec:
         # Required because Tailscale serve doesn't properly forward
         # WebSocket upgrade headers when using HTTP/2
         - name: nginx
-          image: nginx:1.27-alpine
+          image: nginx:1.29-alpine
           ports:
             - containerPort: 8080
               name: http

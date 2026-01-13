@@ -6,5 +6,6 @@ resources:
   - serviceaccount.yaml
   - pvc.yaml
   - configmap.yaml
+  - nginx-configmap.yaml
   - sealedsecret.yaml
   - deployment.yaml

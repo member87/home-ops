@@ -16,7 +16,7 @@ data:
         "headscale-funnel.taila62ed.ts.net:443": {
           "Handlers": {
             "/": {
-              "Proxy": "http://headscale.headscale.svc.cluster.local:8080"
+              "Proxy": "http://127.0.0.1:8080"
             }
           }
         }

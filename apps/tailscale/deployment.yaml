@@ -47,6 +47,33 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
+        # Nginx sidecar to handle WebSocket proxy with HTTP/1.1
+        # Required because Tailscale serve doesn't properly forward
+        # WebSocket upgrade headers when using HTTP/2
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+          securityContext:
+            runAsUser: 101
+            runAsGroup: 101
+            readOnlyRootFilesystem: true
       volumes:
         - name: state
           persistentVolumeClaim:
@@ -54,3 +81,10 @@ spec:
         - name: serve-config
           configMap:
             name: tailscale-serve-config
+        - name: nginx-config
+          configMap:
+            name: nginx-websocket-proxy
+        - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}

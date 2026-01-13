@@ -46,8 +46,8 @@ data:
       base_domain: tailnet.lab.jackhumes.com
       nameservers:
         global:
-          - 1.1.1.1
-          - 8.8.8.8
+          - 10.0.0.201  # Pi-hole
+          - 1.1.1.1     # Cloudflare (fallback)
 
     oidc:
       only_start_if_oidc_is_available: true

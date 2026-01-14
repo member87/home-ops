@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - sealedsecret.yaml
+  - configmap.yaml
   - pvc.yaml
   - deployment.yaml
   - service.yaml

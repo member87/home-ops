@@ -1,7 +1,6 @@
 ---
-# CrowdSec LAPI - decision engine for the bouncer
-# Runs without log parsing agent - uses community blocklist + manual bans
-# Log parsing requires hostPath which violates PodSecurity policy
+# CrowdSec LAPI + Agent - decision engine with log parsing
+# Reads Authelia logs from Loki for brute-force detection
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,18 +23,15 @@ spec:
         - name: crowdsec
           image: crowdsecurity/crowdsec:v1.6.8
           env:
-            # Disable the agent (no log parsing) - LAPI only mode
-            - name: DISABLE_AGENT
-              value: "true"
             # Register the Traefik bouncer with this API key
             - name: BOUNCER_KEY_traefik
               valueFrom:
                 secretKeyRef:
                   name: crowdsec-secrets
                   key: BOUNCER_KEY
-            # Install collections for decision types
+            # Install collections - Authelia for brute-force detection
             - name: COLLECTIONS
-              value: "crowdsecurity/traefik crowdsecurity/base-http-scenarios"
+              value: "crowdsecurity/traefik crowdsecurity/base-http-scenarios LePresidente/authelia"
           ports:
             - name: lapi
               containerPort: 8080
@@ -45,24 +41,30 @@ spec:
               memory: 128Mi
               cpu: 100m
             limits:
-              memory: 256Mi
-              cpu: 300m
+              memory: 512Mi
+              cpu: 500m
           volumeMounts:
             - name: crowdsec-data
               mountPath: /var/lib/crowdsec/data
+            - name: acquis-config
+              mountPath: /etc/crowdsec/acquis.d/
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /health
               port: lapi
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
               port: lapi
-            initialDelaySeconds: 30
+            initialDelaySeconds: 45
             periodSeconds: 5
       volumes:
         - name: crowdsec-data
           persistentVolumeClaim:
             claimName: crowdsec-data
+        - name: acquis-config
+          configMap:
+            name: crowdsec-acquis

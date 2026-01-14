@@ -1,0 +1,16 @@
+---
+# CrowdSec acquisition configuration - reads logs from Loki
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crowdsec-acquis
+  namespace: crowdsec
+data:
+  authelia.yaml: |
+    source: loki
+    url: http://loki.loki.svc.cluster.local:3100
+    query: |
+      {namespace="authelia"}
+    labels:
+      type: authelia
+    log_level: info

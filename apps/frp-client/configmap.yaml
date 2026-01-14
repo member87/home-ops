@@ -14,12 +14,12 @@ data:
     auth.method = "token"
     auth.token = "cUPijuqvpbl4SEKndzdskwKfzTWOIvSzypaAijzXObg"
 
-    # Authelia tunnel
+    # Authelia tunnel - routes through Traefik for CrowdSec protection
     [[proxies]]
     name = "authelia"
     type = "tcp"
-    localIP = "authelia.authelia.svc.cluster.local"
-    localPort = 9091
+    localIP = "traefik.traefik.svc.cluster.local"
+    localPort = 80
     remotePort = 8081
 
     # Headscale tunnel

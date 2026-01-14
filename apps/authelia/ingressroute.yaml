@@ -30,6 +30,25 @@ spec:
   tls:
     secretName: authelia-tls
 ---
+# External route for auth.jackhumes.com (via FRP tunnel)
+# Traffic comes from FRP client already decrypted, routed through Traefik for CrowdSec protection
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authelia-external
+  namespace: authelia
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`auth.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: authelia
+          port: 9091
+      middlewares:
+        - name: crowdsec-bouncer
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:

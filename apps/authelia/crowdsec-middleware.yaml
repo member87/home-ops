@@ -12,10 +12,10 @@ spec:
       enabled: true
       logLevel: INFO
       
-      # Stream mode - fetches all decisions every 60s, best performance
+      # Stream mode - fetches all decisions every 10s
       crowdsecMode: stream
-      updateIntervalSeconds: 60
-      defaultDecisionSeconds: 60
+      updateIntervalSeconds: 10
+      defaultDecisionSeconds: 10
       
       # LAPI connection
       crowdsecLapiScheme: http

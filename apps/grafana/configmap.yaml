@@ -17,24 +17,18 @@ data:
     [auth.generic_oauth]
     enabled = true
     name = Authelia
+    icon = signin
     client_id = grafana
     client_secret = $__file{/etc/secrets/client_secret}
     scopes = openid profile email groups
+    empty_scopes = false
     auth_url = https://auth.lab.jackhumes.com/api/oidc/authorization
     token_url = https://auth.lab.jackhumes.com/api/oidc/token
     api_url = https://auth.lab.jackhumes.com/api/oidc/userinfo
-    use_pkce = false
-    use_refresh_token = true
-    role_attribute_path = contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'editors') && 'Editor' || 'Viewer'
-    role_attribute_strict = false
-    allow_sign_up = true
-    allow_assign_grafana_admin = true
-    auto_login = false
-    email_attribute_path = email
-    login_attribute_path = preferred_username || sub
-    name_attribute_path = name || preferred_username
-    id_attribute_path = sub
-    signout_redirect_url = https://auth.lab.jackhumes.com/logout
+    login_attribute_path = preferred_username
+    groups_attribute_path = groups
+    name_attribute_path = name
+    use_pkce = true
     
     [users]
     auto_assign_org = true

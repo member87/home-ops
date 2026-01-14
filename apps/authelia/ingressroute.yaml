@@ -25,6 +25,8 @@ spec:
       services:
         - name: authelia
           port: 9091
+      middlewares:
+        - name: crowdsec-bouncer
   tls:
     secretName: authelia-tls
 ---

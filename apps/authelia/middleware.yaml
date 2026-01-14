@@ -24,6 +24,7 @@ metadata:
 spec:
   plugin:
     fail2ban:
+      logLevel: DEBUG
       rules:
         # Ban IP after 5 failed attempts within 10 minutes
         bantime: 1h
@@ -32,9 +33,7 @@ spec:
         enabled: true
         # Monitor authentication failure status codes
         statuscode: "401,403"
-      # Allowlist internal cluster IPs
+      # Only allowlist localhost - real client IPs come from X-Forwarded-For
       allowlist:
         ip:
           - "127.0.0.1"
-          - "10.244.0.0/16"
-          - "10.96.0.0/12"

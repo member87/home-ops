@@ -9,3 +9,4 @@ resources:
   - service.yaml
   - ingressroute.yaml
   - middleware.yaml
+  - crowdsec-middleware.yaml

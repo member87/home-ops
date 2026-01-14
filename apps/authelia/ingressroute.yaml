@@ -27,7 +27,6 @@ spec:
           port: 9091
       middlewares:
         - name: crowdsec-bouncer
-          namespace: traefik
   tls:
     secretName: authelia-tls
 ---

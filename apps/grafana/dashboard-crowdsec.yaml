@@ -13,7 +13,7 @@ data:
       "uid": "crowdsec-security",
       "timezone": "browser",
       "schemaVersion": 40,
-      "version": 1,
+      "version": 2,
       "refresh": "30s",
       "templating": {
         "list": [
@@ -92,7 +92,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"ban\" [$__range]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"(new decision|ban)\" [$__range]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -139,7 +139,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"traefik\"} |~ \"blocked\" [15m]))",
+              "expr": "sum(count_over_time({namespace=\"traefik\"} |~ \"(ip is banned|blocked by crowdsec)\" [15m]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -184,7 +184,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"scenario\" [1h]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"bucket overflow\" [1h]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -229,17 +229,17 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"traefik\"} |= \"403\" |= \"bouncer\" [$__range]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"alert\" [$__range]))",
               "queryType": "instant",
               "refId": "A"
             }
           ],
-          "title": "403 Responses (Total)",
+          "title": "Total Alerts",
           "type": "stat"
         },
         {
           "type": "row",
-          "title": "CrowdSec Logs",
+          "title": "Banned IPs",
           "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
           "collapsed": false
         },
@@ -248,7 +248,135 @@ data:
             "type": "loki",
             "uid": "${lokiDatasource}"
           },
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 6},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 6},
+          "id": 10,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
+              "editorMode": "code",
+              "expr": "{namespace=\"crowdsec\"} |~ \"(new decision|performing ban|ban on)\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Recent Ban Decisions",
+          "type": "logs"
+        },
+        {
+          "type": "row",
+          "title": "Activity Over Time",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "normal"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Bans"},
+                "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Alerts"},
+                "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Blocked"},
+                "properties": [{"id": "color", "value": {"fixedColor": "yellow", "mode": "fixed"}}]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 15},
+          "id": 7,
+          "options": {
+            "legend": {"calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"(new decision|ban)\" [5m]))",
+              "legendFormat": "Bans",
+              "queryType": "range",
+              "refId": "A"
+            },
+            {
+              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"alert\" [5m]))",
+              "legendFormat": "Alerts",
+              "queryType": "range",
+              "refId": "B"
+            },
+            {
+              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(count_over_time({namespace=\"traefik\"} |~ \"(ip is banned|blocked)\" [5m]))",
+              "legendFormat": "Blocked",
+              "queryType": "range",
+              "refId": "C"
+            }
+          ],
+          "title": "CrowdSec Activity Over Time",
+          "type": "timeseries"
+        },
+        {
+          "type": "row",
+          "title": "CrowdSec Logs",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 24},
           "id": 5,
           "options": {
             "dedupStrategy": "none",
@@ -276,7 +404,7 @@ data:
         {
           "type": "row",
           "title": "Traefik Bouncer Logs",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
           "collapsed": false
         },
         {
@@ -284,7 +412,7 @@ data:
             "type": "loki",
             "uid": "${lokiDatasource}"
           },
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 17},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 35},
           "id": 6,
           "options": {
             "dedupStrategy": "none",
@@ -301,7 +429,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "{namespace=\"traefik\"} |~ \"(bouncer|crowdsec|blocked)\"",
+              "expr": "{namespace=\"traefik\"} |~ \"(bouncer|crowdsec|blocked|banned)\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -313,5 +441,5 @@ data:
       "time": {"from": "now-6h", "to": "now"},
       "timepicker": {},
       "tags": ["security", "crowdsec", "traefik"],
-      "description": "Dashboard for monitoring CrowdSec security decisions and Traefik bouncer activity"
+      "description": "Dashboard for monitoring CrowdSec security decisions, banned IPs, and Traefik bouncer activity"
     }

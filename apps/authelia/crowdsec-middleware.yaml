@@ -5,7 +5,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: crowdsec-bouncer
-  namespace: traefik
+  namespace: authelia
 spec:
   plugin:
     bouncer:

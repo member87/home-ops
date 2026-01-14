@@ -7,7 +7,7 @@ metadata:
   labels:
     grafana_dashboard: "1"
 data:
-  fail2ban.json: |
+  fail2ban-traefik.json: |
     {
       "title": "Fail2ban - Traefik Plugin",
       "uid": "fail2ban-traefik",

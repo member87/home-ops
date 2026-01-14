@@ -8,30 +8,14 @@ data:
   dashboards.yaml: |
     apiVersion: 1
     providers:
-      - name: 'default'
+      - name: 'sidecar'
         orgId: 1
         folder: ''
         type: file
         disableDeletion: false
         editable: false
-        updateIntervalSeconds: 30
+        allowUiUpdates: false
+        updateIntervalSeconds: 10
         options:
-          path: /var/lib/grafana/dashboards
-      - name: 'kubernetes'
-        orgId: 1
-        folder: 'Kubernetes'
-        type: file
-        disableDeletion: false
-        editable: false
-        updateIntervalSeconds: 30
-        options:
-          path: /var/lib/grafana/dashboards/kubernetes
-      - name: 'unifi'
-        orgId: 1
-        folder: 'UniFi'
-        type: file
-        disableDeletion: false
-        editable: false
-        updateIntervalSeconds: 30
-        options:
-          path: /var/lib/grafana/dashboards/unifi
+          path: /dashboards
+          foldersFromFilesStructure: true

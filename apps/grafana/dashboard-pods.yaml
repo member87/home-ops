@@ -6,6 +6,8 @@ metadata:
   namespace: grafana
   labels:
     grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "Kubernetes"
 data:
   pods.json: |
     {

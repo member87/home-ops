@@ -14,14 +14,51 @@ spec:
       labels:
         app: grafana
     spec:
+      serviceAccountName: grafana
       initContainers:
         - name: init-dirs
           image: busybox:1.36
-          command: ['sh', '-c', 'mkdir -p /var/lib/grafana/dashboards/kubernetes /var/lib/grafana/dashboards/unifi']
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /var/lib/grafana/dashboards/kubernetes
+              mkdir -p /var/lib/grafana/dashboards/unifi
+              mkdir -p /var/lib/grafana/dashboards/general
+              chown -R 472:472 /var/lib/grafana
+              chown -R 472:472 /dashboards
           volumeMounts:
             - name: storage
               mountPath: /var/lib/grafana
+            - name: dashboards
+              mountPath: /dashboards
       containers:
+        # Sidecar that watches for dashboard ConfigMap changes and copies them
+        - name: dashboard-sidecar
+          image: kiwigrid/k8s-sidecar:1.28.0
+          env:
+            - name: LABEL
+              value: "grafana_dashboard"
+            - name: LABEL_VALUE
+              value: "1"
+            - name: FOLDER
+              value: /dashboards
+            - name: RESOURCE
+              value: configmap
+            - name: NAMESPACE
+              value: grafana
+            - name: FOLDER_ANNOTATION
+              value: grafana_folder
+          volumeMounts:
+            - name: dashboards
+              mountPath: /dashboards
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
         - name: grafana
           image: grafana/grafana:12.3.1
           ports:
@@ -49,60 +86,10 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: dashboards-provisioning
               mountPath: /etc/grafana/provisioning/dashboards
-            # Kubernetes dashboards
-            - name: dashboard-k8s-cluster
-              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-cluster.json
-              subPath: k8s-cluster.json
-            - name: dashboard-k8s-global
-              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-global.json
-              subPath: k8s-views-global.json
-            - name: dashboard-k8s-namespaces
-              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-namespaces.json
-              subPath: k8s-views-namespaces.json
-            - name: dashboard-k8s-pods
-              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-pods.json
-              subPath: k8s-views-pods.json
-            - name: dashboard-k8s-nodes
-              mountPath: /var/lib/grafana/dashboards/kubernetes/k8s-nodes.json
-              subPath: k8s-views-nodes.json
-            - name: dashboard-pods
-              mountPath: /var/lib/grafana/dashboards/kubernetes/pods.json
-              subPath: pods.json
-            # General dashboards
-            - name: dashboard-logs
-              mountPath: /var/lib/grafana/dashboards/logs.json
-              subPath: logs.json
-            - name: dashboard-elastiflow
-              mountPath: /var/lib/grafana/dashboards/elastiflow.json
-              subPath: elastiflow.json
-            - name: dashboard-crowdsec
-              mountPath: /var/lib/grafana/dashboards/crowdsec.json
-              subPath: crowdsec.json
-            # UniFi dashboards
-            - name: dashboard-unifi-network-sites
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-network-sites.json
-              subPath: unifi-network-sites.json
-            - name: dashboard-unifi-uap-insights
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-uap-insights.json
-              subPath: unifi-uap-insights.json
-            - name: dashboard-unifi-usw-insights
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-usw-insights.json
-              subPath: unifi-usw-insights.json
-            - name: dashboard-unifi-usg-insights
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-usg-insights.json
-              subPath: unifi-usg-insights.json
-            - name: dashboard-unifi-client-dpi
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-client-dpi.json
-              subPath: unifi-client-dpi.json
-            - name: dashboard-unifi-client-insights
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-client-insights.json
-              subPath: unifi-client-insights.json
-            - name: dashboard-unifi-clients-overview
-              mountPath: /var/lib/grafana/dashboards/unifi/unifi-clients-overview.json
-              subPath: unifi-clients-overview.json
+            - name: dashboards
+              mountPath: /dashboards
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
-
           livenessProbe:
             httpGet:
               path: /api/health
@@ -138,54 +125,8 @@ spec:
         - name: dashboards-provisioning
           configMap:
             name: grafana-dashboards-provisioning
-        - name: dashboard-k8s-cluster
-          configMap:
-            name: grafana-dashboard-k8s-cluster
-        - name: dashboard-pods
-          configMap:
-            name: grafana-dashboard-pods
-        - name: dashboard-logs
-          configMap:
-            name: grafana-dashboard-logs
-        - name: dashboard-k8s-global
-          configMap:
-            name: grafana-dashboard-k8s-global
-        - name: dashboard-k8s-namespaces
-          configMap:
-            name: grafana-dashboard-k8s-namespaces
-        - name: dashboard-k8s-pods
-          configMap:
-            name: grafana-dashboard-k8s-pods
-        - name: dashboard-k8s-nodes
-          configMap:
-            name: grafana-dashboard-k8s-nodes
-        - name: dashboard-unifi-network-sites
-          configMap:
-            name: grafana-dashboard-unifi-network-sites
-        - name: dashboard-unifi-uap-insights
-          configMap:
-            name: grafana-dashboard-unifi-uap-insights
-        - name: dashboard-unifi-usw-insights
-          configMap:
-            name: grafana-dashboard-unifi-usw-insights
-        - name: dashboard-unifi-usg-insights
-          configMap:
-            name: grafana-dashboard-unifi-usg-insights
-        - name: dashboard-unifi-client-dpi
-          configMap:
-            name: grafana-dashboard-unifi-client-dpi
-        - name: dashboard-unifi-client-insights
-          configMap:
-            name: grafana-dashboard-unifi-client-insights
-        - name: dashboard-unifi-clients-overview
-          configMap:
-            name: grafana-dashboard-unifi-clients-overview
-        - name: dashboard-elastiflow
-          configMap:
-            name: grafana-dashboard-elastiflow
-        - name: dashboard-crowdsec
-          configMap:
-            name: grafana-dashboard-crowdsec
+        - name: dashboards
+          emptyDir: {}
         - name: alerting
           configMap:
             name: grafana-alerting

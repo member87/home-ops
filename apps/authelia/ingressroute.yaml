@@ -26,7 +26,8 @@ spec:
         - name: authelia
           port: 9091
       middlewares:
-        - name: fail2ban
+        - name: crowdsec-bouncer
+          namespace: traefik
   tls:
     secretName: authelia-tls
 ---

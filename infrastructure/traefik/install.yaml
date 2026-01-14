@@ -88,7 +88,7 @@ metadata:
   namespace: traefik
 spec:
   type: LoadBalancer
-  # Preserve client source IP - required for fail2ban to see real IPs
+  # Preserve client source IP - required for CrowdSec to see real IPs
   externalTrafficPolicy: Local
   ports:
     - name: web
@@ -132,13 +132,13 @@ spec:
             # Trust forwarded headers from any source (for real client IP)
             - --entrypoints.web.forwardedHeaders.insecure=true
             - --entrypoints.websecure.forwardedHeaders.insecure=true
-            - --log.level=DEBUG
-            # Enable access logs to see client IPs
+            - --log.level=INFO
+            # Enable access logs for CrowdSec to parse
             - --accesslog=true
             - --accesslog.format=json
-            # Enable fail2ban plugin
-            - --experimental.plugins.fail2ban.modulename=github.com/tomMoulard/fail2ban
-            - --experimental.plugins.fail2ban.version=v0.8.9
+            # Enable CrowdSec bouncer plugin
+            - --experimental.plugins.bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+            - --experimental.plugins.bouncer.version=v1.4.6
           ports:
             - name: web
               containerPort: 80

@@ -1,0 +1,24 @@
+---
+# Log acquisition configuration for CrowdSec agent
+# Tells the agent where to find logs to parse
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crowdsec-acquis
+  namespace: crowdsec
+data:
+  # Traefik access logs - for HTTP request analysis
+  traefik.yaml: |
+    source: file
+    filenames:
+      - /var/log/pods/traefik_traefik-*/traefik/*.log
+    labels:
+      type: traefik
+    
+  # Authelia logs - for authentication failure detection
+  authelia.yaml: |
+    source: file
+    filenames:
+      - /var/log/pods/authelia_authelia-*/authelia/*.log
+    labels:
+      type: syslog

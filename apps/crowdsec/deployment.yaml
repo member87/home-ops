@@ -1,6 +1,7 @@
 ---
-# CrowdSec - combines LAPI (decision engine) and Agent (log parser)
-# Single deployment for simplicity in Kubernetes
+# CrowdSec LAPI - decision engine for the bouncer
+# Runs without log parsing agent - uses community blocklist + manual bans
+# Log parsing requires hostPath which violates PodSecurity policy
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,34 +24,32 @@ spec:
         - name: crowdsec
           image: crowdsecurity/crowdsec:v1.6.8
           env:
+            # Disable the agent (no log parsing) - LAPI only mode
+            - name: DISABLE_AGENT
+              value: "true"
             # Register the Traefik bouncer with this API key
             - name: BOUNCER_KEY_traefik
               valueFrom:
                 secretKeyRef:
                   name: crowdsec-secrets
                   key: BOUNCER_KEY
-            # Install required parsers and scenarios for HTTP/auth detection
+            # Install collections for decision types
             - name: COLLECTIONS
-              value: "crowdsecurity/traefik crowdsecurity/base-http-scenarios crowdsecurity/http-cve"
+              value: "crowdsecurity/traefik crowdsecurity/base-http-scenarios"
           ports:
             - name: lapi
               containerPort: 8080
               protocol: TCP
           resources:
             requests:
-              memory: 256Mi
+              memory: 128Mi
               cpu: 100m
             limits:
-              memory: 512Mi
-              cpu: 500m
+              memory: 256Mi
+              cpu: 300m
           volumeMounts:
             - name: crowdsec-data
               mountPath: /var/lib/crowdsec/data
-            - name: acquis-config
-              mountPath: /etc/crowdsec/acquis.d
-            - name: varlog
-              mountPath: /var/log
-              readOnly: true
           livenessProbe:
             httpGet:
               path: /health
@@ -67,10 +66,3 @@ spec:
         - name: crowdsec-data
           persistentVolumeClaim:
             claimName: crowdsec-data
-        - name: acquis-config
-          configMap:
-            name: crowdsec-acquis
-        - name: varlog
-          hostPath:
-            path: /var/log
-            type: Directory

@@ -28,7 +28,9 @@ data:
     login_attribute_path = preferred_username
     groups_attribute_path = groups
     name_attribute_path = name
+    email_attribute_path = email
     use_pkce = true
+    allow_sign_up = true
     
     [users]
     auto_assign_org = true

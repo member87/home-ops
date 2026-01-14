@@ -139,7 +139,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"traefik\"} |~ \"(ip is banned|blocked by crowdsec)\" [15m]))",
+              "expr": "sum(count_over_time({namespace=\"traefik\"} | json | DownstreamStatus = `403` [15m]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -305,7 +305,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Activity Over Time",
+          "title": "Blocked Requests Over Time",
           "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
           "collapsed": false
         },
@@ -321,7 +321,7 @@ data:
                 "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
-                "axisLabel": "",
+                "axisLabel": "Requests",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "bars",
@@ -335,7 +335,7 @@ data:
                 "scaleDistribution": {"type": "linear"},
                 "showPoints": "auto",
                 "spanNulls": false,
-                "stacking": {"group": "A", "mode": "normal"},
+                "stacking": {"group": "A", "mode": "none"},
                 "thresholdsStyle": {"mode": "off"}
               },
               "mappings": [],
@@ -346,16 +346,8 @@ data:
             },
             "overrides": [
               {
-                "matcher": {"id": "byName", "options": "Bans"},
+                "matcher": {"id": "byName", "options": "Blocked Requests"},
                 "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
-              },
-              {
-                "matcher": {"id": "byName", "options": "Alerts"},
-                "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]
-              },
-              {
-                "matcher": {"id": "byName", "options": "Blocked"},
-                "properties": [{"id": "color", "value": {"fixedColor": "yellow", "mode": "fixed"}}]
               }
             ]
           },
@@ -370,29 +362,13 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"ban on Ip\" [5m]))",
-              "legendFormat": "Bans",
+              "expr": "sum(count_over_time({namespace=\"traefik\"} | json | DownstreamStatus = `403` [5m]))",
+              "legendFormat": "Blocked Requests",
               "queryType": "range",
               "refId": "A"
-            },
-            {
-              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
-              "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"performed.*authelia\" [5m]))",
-              "legendFormat": "Alerts",
-              "queryType": "range",
-              "refId": "B"
-            },
-            {
-              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
-              "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"traefik\"} |~ \"(ip is banned|blocked)\" [5m]))",
-              "legendFormat": "Blocked",
-              "queryType": "range",
-              "refId": "C"
             }
           ],
-          "title": "CrowdSec Activity Over Time",
+          "title": "Blocked Requests Over Time (403 responses)",
           "type": "timeseries"
         },
         {

@@ -92,7 +92,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"(new decision|ban)\" [$__range]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"ban on Ip\" [$__range]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -265,7 +265,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "{namespace=\"crowdsec\"} |~ \"(new decision|performing ban|ban on)\"",
+              "expr": "{namespace=\"crowdsec\"} |~ \"ban on Ip\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -274,9 +274,39 @@ data:
           "type": "logs"
         },
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14},
+          "id": 11,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
+              "editorMode": "code",
+              "expr": "{namespace=\"crowdsec\"} |~ \"performed.*authelia\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Authelia Brute Force Detections",
+          "type": "logs"
+        },
+        {
           "type": "row",
           "title": "Activity Over Time",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
           "collapsed": false
         },
         {
@@ -329,7 +359,7 @@ data:
               }
             ]
           },
-          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 15},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 23},
           "id": 7,
           "options": {
             "legend": {"calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true},
@@ -340,7 +370,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"(new decision|ban)\" [5m]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"ban on Ip\" [5m]))",
               "legendFormat": "Bans",
               "queryType": "range",
               "refId": "A"
@@ -348,7 +378,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"alert\" [5m]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"performed.*authelia\" [5m]))",
               "legendFormat": "Alerts",
               "queryType": "range",
               "refId": "B"
@@ -368,7 +398,7 @@ data:
         {
           "type": "row",
           "title": "CrowdSec Logs",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 31},
           "collapsed": false
         },
         {
@@ -376,7 +406,7 @@ data:
             "type": "loki",
             "uid": "${lokiDatasource}"
           },
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 24},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 32},
           "id": 5,
           "options": {
             "dedupStrategy": "none",
@@ -404,7 +434,7 @@ data:
         {
           "type": "row",
           "title": "Traefik Bouncer Logs",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 42},
           "collapsed": false
         },
         {
@@ -412,7 +442,7 @@ data:
             "type": "loki",
             "uid": "${lokiDatasource}"
           },
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 35},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 43},
           "id": 6,
           "options": {
             "dedupStrategy": "none",

@@ -88,6 +88,8 @@ metadata:
   namespace: traefik
 spec:
   type: LoadBalancer
+  # Preserve client source IP - required for fail2ban to see real IPs
+  externalTrafficPolicy: Local
   ports:
     - name: web
       port: 80
@@ -127,6 +129,9 @@ spec:
             - --providers.kubernetescrd
             - --entrypoints.web.address=:80
             - --entrypoints.websecure.address=:443
+            # Trust forwarded headers from any source (for real client IP)
+            - --entrypoints.web.forwardedHeaders.insecure=true
+            - --entrypoints.websecure.forwardedHeaders.insecure=true
             - --log.level=INFO
             # Enable fail2ban plugin
             - --experimental.plugins.fail2ban.modulename=github.com/tomMoulard/fail2ban

@@ -325,8 +325,11 @@ git push
 5. **Monitoring Stack** (Prometheus, Grafana, Loki)
    - **Prometheus** (namespace: `prometheus`) - Metrics collection and storage
    - **Grafana** (namespace: `grafana`) - Visualization and alerting
+     - Uses **k8s-sidecar** for automatic dashboard reloading
+     - Dashboards stored as ConfigMaps with `grafana_dashboard: "1"` label
+     - Dashboard folders controlled via `grafana_folder` annotation
    - **Loki** (namespace: `loki`) - Log aggregation
-   - **Promtail** - Log shipping DaemonSet
+   - **Promtail** (namespace: `promtail`) - Log shipping DaemonSet
    - **kube-state-metrics** - Kubernetes object metrics
    - **node-exporter** - Node hardware metrics
    - **Discord alerting** - Configured with webhook for critical alerts
@@ -353,7 +356,21 @@ git push
 9. **FRP Client** (namespace: `frp-client`)
    - Fast Reverse Proxy for external access
    - Tunnels to Oracle VPS for public endpoints
+   - **Routes external traffic through Traefik** for CrowdSec protection
    - See [External Access Architecture](#external-access-architecture) below
+
+10. **CrowdSec** (namespace: `crowdsec`)
+    - Intrusion Prevention System (IPS) for blocking malicious IPs
+    - Detects brute-force attacks, credential stuffing, and other threats
+    - **Components**:
+      - CrowdSec Agent: Parses logs and detects attacks
+      - CrowdSec LAPI: Local API for decision management
+      - Traefik Bouncer: Middleware plugin that blocks banned IPs
+    - **Log Sources**: Reads Authelia logs from Loki
+    - **Scenarios**: `LePresidente/authelia-bf` (brute-force detection)
+    - **Ban Duration**: 4 hours default
+    - **Bouncer Update Interval**: 10 seconds
+    - LAPI Service: `crowdsec-lapi.crowdsec.svc.cluster.local:8080`
 
 ### External Access Architecture
 
@@ -379,16 +396,25 @@ Internet --> Oracle VPS (140.238.67.83)
                     |
                     +-- FRP Client (in k8s cluster)
                           |
+                          +-- Traefik (port 80) --> CrowdSec Bouncer --> Authelia
                           +-- headscale.headscale.svc:8080
-                          +-- authelia.authelia.svc:9091
 ```
+
+**IMPORTANT: CrowdSec Protection for External Traffic**
+
+External traffic to `auth.jackhumes.com` is routed through Traefik (not directly to Authelia) so that the CrowdSec bouncer middleware can block banned IPs. This is critical for security.
 
 **FRP Tunnel Configuration** (apps/frp-client/configmap.yaml):
 
-| Proxy Name | Local Service | Local Port | Remote Port | Public Domain |
-|------------|---------------|------------|-------------|---------------|
-| authelia | authelia.authelia.svc.cluster.local | 9091 | 8081 | auth.jackhumes.com |
-| headscale | headscale.headscale.svc.cluster.local | 8080 | 8082 | headscale.jackhumes.com |
+| Proxy Name | Local Service | Local Port | Remote Port | Public Domain | Notes |
+|------------|---------------|------------|-------------|---------------|-------|
+| authelia | traefik.traefik.svc.cluster.local | 80 | 8081 | auth.jackhumes.com | Routes through Traefik for CrowdSec |
+| headscale | headscale.headscale.svc.cluster.local | 8080 | 8082 | headscale.jackhumes.com | Direct to service |
+
+**Authelia External IngressRoute** (apps/authelia/ingressroute.yaml):
+- An IngressRoute for `Host(\`auth.jackhumes.com\`)` on the `web` entrypoint handles traffic from FRP
+- This route includes the `crowdsec-bouncer` middleware
+- Traffic flow: FRP Client → Traefik (port 80) → IngressRoute → CrowdSec Bouncer → Authelia
 
 **Domain Structure:**
 
@@ -490,9 +516,15 @@ env:
 
 - `argocd` - ArgoCD deployment
 - `authelia` - Authentication and SSO provider
+- `crowdsec` - CrowdSec IPS (agent and LAPI)
+- `grafana` - Grafana visualization
+- `headscale` - Headscale VPN control plane
 - `lldap` - Lightweight LDAP server
-- `netbird` - VPN management
+- `loki` - Loki log aggregation
+- `prometheus` - Prometheus metrics
+- `promtail` - Promtail log shipping
 - `sealed-secrets` - Sealed secrets controller
+- `traefik` - Traefik ingress controller
 - (others as needed per application)
 
 ## Common Operations
@@ -1075,6 +1107,102 @@ kubectl rollout restart deployment -n authelia authelia
    ```bash
    kubectl rollout restart deployment -n prometheus prometheus
    ```
+
+### CrowdSec Not Blocking IPs
+
+**Symptoms**: CrowdSec detects attacks and creates bans, but attackers still get through.
+
+1. **Verify bouncer is registered**:
+   ```bash
+   kubectl exec -n crowdsec deployment/crowdsec -- cscli bouncers list
+   ```
+
+2. **Check active decisions (bans)**:
+   ```bash
+   kubectl exec -n crowdsec deployment/crowdsec -- cscli decisions list
+   ```
+
+3. **Check if traffic is going through Traefik**:
+   - External traffic MUST go through Traefik for CrowdSec bouncer to work
+   - If FRP routes directly to service, bouncer is bypassed
+   - Check FRP config routes to `traefik.traefik.svc.cluster.local:80`
+
+4. **Verify IngressRoute has bouncer middleware**:
+   ```bash
+   kubectl get ingressroute -n authelia authelia-external -o yaml | grep -A5 middlewares
+   ```
+   Should show `crowdsec-bouncer` middleware.
+
+5. **Check Traefik logs for 403 responses**:
+   ```bash
+   kubectl logs -n traefik deployment/traefik --tail=100 | grep "403"
+   ```
+
+6. **Test bouncer connectivity to LAPI**:
+   ```bash
+   # Check if LAPI service is accessible
+   kubectl exec -n traefik deployment/traefik -- wget -qO- http://crowdsec-lapi.crowdsec.svc.cluster.local:8080/health
+   ```
+
+**Common Issues**:
+- **FRP bypassing Traefik**: Update FRP to route through Traefik instead of directly to service
+- **Missing middleware**: Add `crowdsec-bouncer` middleware to IngressRoute
+- **Wrong entrypoint**: External traffic uses `web` (port 80), not `websecure` (port 443)
+- **Bouncer not registered**: Check LAPI key matches between middleware and CrowdSec
+
+### Grafana Dashboard Not Updating
+
+**Symptoms**: Dashboard changes in ConfigMap not reflected in Grafana UI.
+
+1. **Check ArgoCD sync status**:
+   ```bash
+   kubectl get app grafana -n argocd -o jsonpath='{.status.sync.status}'
+   ```
+
+2. **Check ConfigMap has updated content**:
+   ```bash
+   kubectl get configmap grafana-dashboard-<name> -n grafana -o yaml | head -30
+   ```
+
+3. **Check sidecar logs**:
+   ```bash
+   kubectl logs -n grafana deployment/grafana -c dashboard-sidecar --tail=20
+   ```
+   Look for "Writing" messages indicating dashboard updates.
+
+4. **Force ArgoCD refresh**:
+   ```bash
+   kubectl -n argocd patch app grafana --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+   ```
+
+5. **Verify dashboard file on disk**:
+   ```bash
+   kubectl exec -n grafana deployment/grafana -c dashboard-sidecar -- ls -la /dashboards/
+   ```
+
+**Dashboard Folder Organization**:
+- Add `grafana_folder` annotation to ConfigMap metadata for folder placement
+- Example: `annotations: grafana_folder: "Security"`
+- Available folders: Kubernetes, UniFi, Security, Logs
+
+### Loki Log Duplicates
+
+**Symptoms**: Same log line appears multiple times in Grafana logs panel.
+
+**Root Cause**: Multiple log collectors ingesting the same logs (e.g., both Promtail and Loki's built-in kubernetes source).
+
+**Solution**: Filter queries to single job:
+```
+{namespace="crowdsec", job=~".*crowdsec/crowdsec.*"} |~ "pattern"
+```
+
+**Check for duplicate streams**:
+```bash
+kubectl run -it --rm loki-debug --image=curlimages/curl --restart=Never -- \
+  curl -s 'http://loki.loki.svc.cluster.local:3100/loki/api/v1/series' \
+  --data-urlencode 'match[]={namespace="<namespace>"}'
+```
+If you see multiple jobs for the same pod, filter to one job in your queries.
 
 ### Ingress Not Working
 

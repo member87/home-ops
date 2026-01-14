@@ -6,6 +6,11 @@ metadata:
   name: crowdsec-acquis
   namespace: crowdsec
 data:
+  # Local config override to point to custom acquisition directory
+  config.yaml.local: |
+    crowdsec_service:
+      acquisition_dir: /etc/crowdsec/acquis-loki
+  # Authelia acquisition from Loki
   authelia.yaml: |
     source: loki
     url: http://loki.loki.svc.cluster.local:3100
@@ -14,3 +19,4 @@ data:
     labels:
       type: authelia
     log_level: info
+

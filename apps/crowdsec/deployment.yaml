@@ -47,7 +47,11 @@ spec:
             - name: crowdsec-data
               mountPath: /var/lib/crowdsec/data
             - name: acquis-config
-              mountPath: /etc/crowdsec/acquis.d/
+              mountPath: /etc/crowdsec/acquis-loki/
+              readOnly: true
+            - name: acquis-config
+              mountPath: /etc/crowdsec/config.yaml.local
+              subPath: config.yaml.local
               readOnly: true
           livenessProbe:
             httpGet:

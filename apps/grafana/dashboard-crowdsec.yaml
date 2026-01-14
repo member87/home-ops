@@ -364,12 +364,13 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"traefik\"} | json | DownstreamStatus = `403` [5m]))",
+              "expr": "sum by () (count_over_time({namespace=\"traefik\"} | json | DownstreamStatus = `403` [$__auto]))",
               "legendFormat": "Blocked Requests",
               "queryType": "range",
               "refId": "A"
             }
           ],
+          "interval": "1m",
           "title": "Blocked Requests Over Time (403 responses)",
           "type": "timeseries"
         },

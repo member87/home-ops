@@ -94,7 +94,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |~ \"ban on Ip\" [$__range]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\", filename=~\".+\"} |~ \"ban on Ip\" [$__range]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -186,7 +186,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"bucket overflow\" [1h]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\", filename=~\".+\"} |= \"bucket overflow\" [1h]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -231,7 +231,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "sum(count_over_time({namespace=\"crowdsec\"} |= \"alert\" [$__range]))",
+              "expr": "sum(count_over_time({namespace=\"crowdsec\", filename=~\".+\"} |= \"alert\" [$__range]))",
               "queryType": "instant",
               "refId": "A"
             }
@@ -267,7 +267,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "{namespace=\"crowdsec\"} |~ \"ban on Ip\"",
+              "expr": "{namespace=\"crowdsec\", filename=~\".+\"} |~ \"ban on Ip\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -297,7 +297,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "{namespace=\"crowdsec\"} |~ \"performed.*authelia\"",
+              "expr": "{namespace=\"crowdsec\", filename=~\".+\"} |~ \"performed.*authelia\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -402,7 +402,7 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "{namespace=\"crowdsec\"}",
+              "expr": "{namespace=\"crowdsec\", filename=~\".+\"}",
               "queryType": "range",
               "refId": "A"
             }

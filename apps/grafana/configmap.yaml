@@ -25,11 +25,16 @@ data:
     api_url = https://auth.lab.jackhumes.com/api/oidc/userinfo
     use_pkce = false
     use_refresh_token = true
-    role_attribute_path = contains(groups, 'admins') && 'Admin' || contains(groups, 'editors') && 'Editor' || 'Viewer'
+    role_attribute_path = contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'editors') && 'Editor' || 'Viewer'
+    role_attribute_strict = false
     allow_sign_up = true
+    allow_assign_grafana_admin = true
+    auto_login = false
     email_attribute_path = email
-    login_attribute_path = preferred_username
-    name_attribute_path = name
+    login_attribute_path = preferred_username || sub
+    name_attribute_path = name || preferred_username
+    id_attribute_path = sub
+    signout_redirect_url = https://auth.lab.jackhumes.com/logout
     
     [users]
     auto_assign_org = true

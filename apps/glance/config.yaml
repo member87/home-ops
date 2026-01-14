@@ -60,12 +60,6 @@ pages:
                 icon: si:grafana
                 alt-status-codes:
                   - 401
-              - title: NetFlow Dashboard
-                url: https://grafana.lab.jackhumes.com/d/goflow2-netflow/network-flow-analysis
-                icon: si:grafana
-                alt-status-codes:
-                  - 401
-
           - type: monitor
             cache: 1m
             title: Media Stack

@@ -329,7 +329,10 @@ git push
      - Dashboards stored as ConfigMaps with `grafana_dashboard: "1"` label
      - Dashboard folders controlled via `grafana_folder` annotation
    - **Loki** (namespace: `loki`) - Log aggregation
-   - **Promtail** (namespace: `promtail`) - Log shipping DaemonSet
+   - **Alloy** (namespace: `alloy`) - Log shipping DaemonSet (replaces Promtail)
+     - **IMPORTANT**: Always use Alloy, never Promtail
+     - Config: `apps/alloy/configmap.yaml`
+     - Uses `loki.source.kubernetes` for pod log collection
    - **kube-state-metrics** - Kubernetes object metrics
    - **node-exporter** - Node hardware metrics
    - **Discord alerting** - Configured with webhook for critical alerts
@@ -514,6 +517,7 @@ env:
 
 ### Namespaces
 
+- `alloy` - Alloy log shipping (replaces Promtail)
 - `argocd` - ArgoCD deployment
 - `authelia` - Authentication and SSO provider
 - `crowdsec` - CrowdSec IPS (agent and LAPI)
@@ -522,7 +526,6 @@ env:
 - `lldap` - Lightweight LDAP server
 - `loki` - Loki log aggregation
 - `prometheus` - Prometheus metrics
-- `promtail` - Promtail log shipping
 - `sealed-secrets` - Sealed secrets controller
 - `traefik` - Traefik ingress controller
 - (others as needed per application)

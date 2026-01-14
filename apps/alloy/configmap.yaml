@@ -75,83 +75,12 @@ data:
     loki.process "pod_logs" {
       stage.cri {}
 
-      // Parse fail2ban logs specifically
-      stage.match {
-        selector = "{container=\"fail2ban\"}"
-        
-        stage.multiline {
-          firstline     = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"
-          max_wait_time = "10s"
-        }
-
-        stage.regex {
-          expression = "^(?s)(?P<time>\\S+? \\S+?) (fail2ban\\.)(?P<component>\\S+)\\s* \\[(?P<pid>\\S+)\\]: (?P<priority>\\S+)\\s* (?P<message>.*?)$"
-        }
-
-        stage.timestamp {
-          source = "time"
-          format = "2006-01-02 15:04:05,000"
-        }
-
-        stage.labels {
-          values = {
-            component = "",
-            priority  = "",
-          }
-        }
-
-        stage.output {
-          source = "message"
-        }
-
-        // Extract jail information
-        stage.match {
-          selector = "{container=\"fail2ban\"} |~ \"\\\\[\\\\S+\\\\] .*\""
-          
-          stage.regex {
-            expression = "(\\[(?P<jail>\\S+)\\] )?(?P<message>.*?)$"
-          }
-
-          stage.labels {
-            values = {
-              jail = "",
-            }
-          }
-
-          stage.output {
-            source = "message"
-          }
-        }
-
-        // Extract IP addresses for bans
-        stage.regex {
-          expression = ".*?(?P<remote_addr>\\d+\\.\\d+\\.\\d+\\.\\d+).*"
-        }
-
-        // Add GeoIP enrichment for extracted IP addresses
-        stage.geoip {
-          db          = "/etc/alloy/geoip/GeoLite2-City.mmdb"
-          source      = "remote_addr"
-          db_type     = "city"
-        }
-
-        // Add GeoIP labels for Grafana geomap
-        stage.labels {
-          values = {
-            geoip_latitude  = "",
-            geoip_longitude = "",
-            geoip_city      = "",
-            geoip_country   = "",
-          }
-        }
-      }
-
-      // Extract fail2ban specific fields from Authelia logs
+      // Extract log level from Authelia logs
       stage.regex {
         expression = ".*level=(?P<level>\\w+).*msg=\"(?P<msg>.*)\".*"
       }
 
-      // Add labels for fail2ban
+      // Add labels
       stage.labels {
         values = {
           level = "",
@@ -167,5 +96,3 @@ data:
         url = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"
       }
     }
-
-

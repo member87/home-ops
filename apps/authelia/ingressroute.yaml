@@ -25,6 +25,8 @@ spec:
       services:
         - name: authelia
           port: 9091
+      middlewares:
+        - name: fail2ban
   tls:
     secretName: authelia-tls
 ---

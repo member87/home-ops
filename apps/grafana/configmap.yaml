@@ -34,6 +34,8 @@ data:
     email_attribute_path = email
     use_pkce = true
     allow_sign_up = true
+    allow_assign_grafana_admin = true
+    skip_org_role_sync = false
     
     [users]
     auto_assign_org = true

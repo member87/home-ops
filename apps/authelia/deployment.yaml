@@ -30,8 +30,8 @@ spec:
         app: authelia
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9091,9191"
-        prometheus.io/path: "/api/health,/metrics"
+        prometheus.io/port: "9091"
+        prometheus.io/path: "/api/health"
     spec:
       containers:
       - name: authelia
@@ -62,8 +62,6 @@ spec:
           readOnly: true
         - name: data
           mountPath: /data
-        - name: logs
-          mountPath: /var/log/authelia
         livenessProbe:
           httpGet:
             path: /api/health
@@ -76,41 +74,6 @@ spec:
             port: 9091
           initialDelaySeconds: 10
           periodSeconds: 5
-      - name: fail2ban
-        image: crazymax/fail2ban:1.1.0
-        env:
-        - name: TZ
-          value: "Europe/London"
-        - name: F2B_LOG_LEVEL
-          value: "INFO"
-        - name: F2B_DB_PURGE_AGE
-          value: "1d"
-        - name: F2B_MAX_RETRY
-          value: "3"
-        - name: F2B_DEST_EMAIL
-          value: "root@localhost"
-        - name: F2B_SENDER
-          value: "fail2ban@localhost"
-        - name: F2B_ACTION
-          value: "%(action_)s"
-        ports:
-        - containerPort: 9191
-          name: metrics
-        volumeMounts:
-        - name: fail2ban-config
-          mountPath: /data/jail.d/authelia.local
-          subPath: jail.local
-        - name: fail2ban-config
-          mountPath: /data/filter.d/authelia.conf
-          subPath: filter.d-authelia.conf
-        - name: fail2ban-config
-          mountPath: /etc/fail2ban/fail2ban.local
-          subPath: fail2ban.local
-        - name: logs
-          mountPath: /var/log/authelia
-          readOnly: true
-        - name: fail2ban-data
-          mountPath: /data
       volumes:
       - name: config
         configMap:
@@ -124,10 +87,3 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: authelia-data
-      - name: logs
-        emptyDir: {}
-      - name: fail2ban-config
-        configMap:
-          name: fail2ban-config
-      - name: fail2ban-data
-        emptyDir: {}

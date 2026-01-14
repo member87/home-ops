@@ -13,3 +13,28 @@ spec:
       - Remote-Groups
       - Remote-Name
       - Remote-Email
+---
+# Fail2ban middleware to block IPs after repeated failed login attempts
+# Monitors HTTP status codes 401 (Unauthorized) and 403 (Forbidden)
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: fail2ban
+  namespace: authelia
+spec:
+  plugin:
+    fail2ban:
+      rules:
+        # Ban IP after 5 failed attempts within 10 minutes
+        bantime: 1h
+        findtime: 10m
+        maxretry: 5
+        enabled: true
+        # Monitor authentication failure status codes
+        statuscode: "401,403"
+      # Allowlist internal cluster IPs
+      allowlist:
+        ip:
+          - "127.0.0.1"
+          - "10.244.0.0/16"
+          - "10.96.0.0/12"

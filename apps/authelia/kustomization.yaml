@@ -5,7 +5,6 @@ resources:
   - namespace.yaml
   - sealedsecret.yaml  # Use SealedSecret instead of plain Secret
   - configmap.yaml
-  - fail2ban-configmap.yaml
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml

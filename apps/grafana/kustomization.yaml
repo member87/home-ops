@@ -23,7 +23,6 @@ resources:
   - dashboard-unifi-client-insights.yaml
   - dashboard-unifi-clients-overview.yaml
   - dashboard-elastiflow.yaml
-  - dashboard-fail2ban.yaml
   - alerting.yaml
   - pvc.yaml
   - deployment.yaml

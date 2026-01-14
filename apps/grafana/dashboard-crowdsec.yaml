@@ -253,7 +253,7 @@ data:
           "gridPos": {"h": 8, "w": 24, "x": 0, "y": 6},
           "id": 10,
           "options": {
-            "dedupStrategy": "none",
+            "dedupStrategy": "exact",
             "enableLogDetails": true,
             "prettifyLogMessage": false,
             "showCommonLabels": false,
@@ -283,7 +283,7 @@ data:
           "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14},
           "id": 11,
           "options": {
-            "dedupStrategy": "none",
+            "dedupStrategy": "exact",
             "enableLogDetails": true,
             "prettifyLogMessage": false,
             "showCommonLabels": false,
@@ -388,7 +388,7 @@ data:
           "gridPos": {"h": 10, "w": 24, "x": 0, "y": 32},
           "id": 5,
           "options": {
-            "dedupStrategy": "none",
+            "dedupStrategy": "exact",
             "enableLogDetails": true,
             "prettifyLogMessage": false,
             "showCommonLabels": false,
@@ -424,7 +424,7 @@ data:
           "gridPos": {"h": 10, "w": 24, "x": 0, "y": 43},
           "id": 6,
           "options": {
-            "dedupStrategy": "none",
+            "dedupStrategy": "exact",
             "enableLogDetails": true,
             "prettifyLogMessage": false,
             "showCommonLabels": false,

@@ -21,7 +21,7 @@ spec:
       serviceAccountName: crowdsec
       containers:
         - name: crowdsec
-          image: crowdsecurity/crowdsec:v1.6.8
+          image: crowdsecurity/crowdsec:v1.7.4
           env:
             # Register the Traefik bouncer with this API key
             - name: BOUNCER_KEY_traefik

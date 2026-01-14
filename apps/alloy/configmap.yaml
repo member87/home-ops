@@ -17,14 +17,23 @@ data:
       role = "pod"
     }
 
-    // Discover Kubernetes nodes for metrics
-    discovery.kubernetes "nodes" {
-      role = "node"
-    }
-
-    // Relabel pods for log collection
+    // Relabel pods for log collection - filter to pods on this node
     discovery.relabel "pod_logs" {
       targets = discovery.kubernetes.pods.targets
+
+      // Only collect logs from pods on the same node as this Alloy instance
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        action        = "keep"
+        regex         = env("HOSTNAME")
+      }
+
+      // Drop pods that are not running
+      rule {
+        source_labels = ["__meta_kubernetes_pod_phase"]
+        action        = "drop"
+        regex         = "Pending|Succeeded|Failed|Unknown"
+      }
 
       // Add namespace label
       rule {
@@ -56,7 +65,7 @@ data:
         target_label  = "node_name"
       }
 
-      // Set the log path
+      // Set the __path__ for log file discovery
       rule {
         source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
         separator     = "/"
@@ -65,9 +74,14 @@ data:
       }
     }
 
-    // Collect logs from discovered pods
-    loki.source.kubernetes "pods" {
-      targets    = discovery.relabel.pod_logs.output
+    // Use local.file_match to find log files based on discovery
+    local.file_match "pod_logs" {
+      path_targets = discovery.relabel.pod_logs.output
+    }
+
+    // Collect logs from files
+    loki.source.file "pod_logs" {
+      targets    = local.file_match.pod_logs.targets
       forward_to = [loki.process.pod_logs.receiver]
     }
 
@@ -75,9 +89,9 @@ data:
     loki.process "pod_logs" {
       stage.cri {}
 
-      // Extract log level from Authelia logs
+      // Extract log level from logfmt logs (Authelia, CrowdSec, etc.)
       stage.regex {
-        expression = ".*level=(?P<level>\\w+).*msg=\"(?P<msg>.*)\".*"
+        expression = "level=(?P<level>\\w+)"
       }
 
       // Add labels

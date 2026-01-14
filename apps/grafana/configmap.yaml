@@ -27,6 +27,9 @@ data:
     use_refresh_token = true
     role_attribute_path = contains(groups, 'admins') && 'Admin' || contains(groups, 'editors') && 'Editor' || 'Viewer'
     allow_sign_up = true
+    email_attribute_path = email
+    login_attribute_path = preferred_username
+    name_attribute_path = name
     
     [users]
     auto_assign_org = true

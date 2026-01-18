@@ -47,8 +47,11 @@ data:
       override_local_dns: true
       nameservers:
         global:
-          - 10.0.0.201  # Pi-hole
-          - 1.1.1.1     # Cloudflare (fallback)
+          - 1.1.1.1     # Cloudflare
+          - 1.0.0.1     # Cloudflare (secondary)
+        split:
+          lab.jackhumes.com:
+            - 10.0.0.201  # Pi-hole for internal domains
 
     oidc:
       only_start_if_oidc_is_available: true

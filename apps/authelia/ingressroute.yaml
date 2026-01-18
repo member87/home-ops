@@ -25,8 +25,9 @@ spec:
       services:
         - name: authelia
           port: 9091
-      middlewares:
-        - name: crowdsec-bouncer
+      # TODO: Re-enable crowdsec-bouncer middleware once plugin issue is resolved
+      # middlewares:
+      #   - name: crowdsec-bouncer
   tls:
     secretName: authelia-tls
 ---
@@ -46,8 +47,9 @@ spec:
       services:
         - name: authelia
           port: 9091
-      middlewares:
-        - name: crowdsec-bouncer
+      # TODO: Re-enable crowdsec-bouncer middleware once plugin issue is resolved
+      # middlewares:
+      #   - name: crowdsec-bouncer
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute

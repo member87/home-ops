@@ -38,10 +38,13 @@ data:
     skip_org_role_sync = false
     skip_email_verify = true
     role_attribute_path = contains(groups[*], 'admin') && 'GrafanaAdmin' || 'Viewer'
+    id_token_attribute_name = sub
     
     [users]
     auto_assign_org = true
+    auto_assign_org_id = 1
     auto_assign_org_role = Viewer
+    allow_sign_up = true
     
     [security]
     allow_embedding = true

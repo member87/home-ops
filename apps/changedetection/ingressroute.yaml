@@ -21,6 +21,13 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # API route - no ForwardAuth, relies on x-api-key header
+    - match: Host(`changes.lab.jackhumes.com`) && PathPrefix(`/api/`)
+      kind: Rule
+      services:
+        - name: changedetection
+          port: 5000
+    # Web UI route - protected by Tinyauth
     - match: Host(`changes.lab.jackhumes.com`)
       kind: Rule
       middlewares:

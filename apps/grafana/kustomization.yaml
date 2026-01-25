@@ -24,6 +24,7 @@ resources:
   - dashboard-unifi-client-insights.yaml
   - dashboard-unifi-clients-overview.yaml
   - dashboard-crowdsec.yaml
+  - dashboard-pocket-id.yaml
   - alerting.yaml
   - pvc.yaml
   - deployment.yaml

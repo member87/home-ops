@@ -58,14 +58,12 @@ spec:
             - name: OAUTH_AUTO_REDIRECT
               value: "pocketid"
           livenessProbe:
-            httpGet:
-              path: /api/health
+            tcpSocket:
               port: 3000
             initialDelaySeconds: 15
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /api/health
+            tcpSocket:
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 5

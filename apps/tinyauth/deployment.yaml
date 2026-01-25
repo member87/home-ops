@@ -38,11 +38,11 @@ spec:
             - name: PROVIDERS_POCKETID_NAME
               value: "Pocket ID"
             - name: PROVIDERS_POCKETID_AUTH_URL
-              value: "https://auth.lab.jackhumes.com/authorize"
+              value: "https://auth.jackhumes.com/authorize"
             - name: PROVIDERS_POCKETID_TOKEN_URL
-              value: "https://auth.lab.jackhumes.com/api/oidc/token"
+              value: "https://auth.jackhumes.com/api/oidc/token"
             - name: PROVIDERS_POCKETID_USER_INFO_URL
-              value: "https://auth.lab.jackhumes.com/api/oidc/userinfo"
+              value: "https://auth.jackhumes.com/api/oidc/userinfo"
             - name: PROVIDERS_POCKETID_SCOPES
               value: "openid,profile,email"
             - name: PROVIDERS_POCKETID_REDIRECT_URL

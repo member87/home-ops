@@ -26,9 +26,9 @@ data:
     client_secret = $__file{/etc/secrets/client_secret}
     scopes = openid profile email groups
     empty_scopes = false
-    auth_url = https://auth.lab.jackhumes.com/authorize
-    token_url = https://auth.lab.jackhumes.com/api/oidc/token
-    api_url = https://auth.lab.jackhumes.com/api/oidc/userinfo
+    auth_url = https://auth.jackhumes.com/authorize
+    token_url = https://auth.jackhumes.com/api/oidc/token
+    api_url = https://auth.jackhumes.com/api/oidc/userinfo
     login_attribute_path = preferred_username
     groups_attribute_path = groups
     name_attribute_path = name

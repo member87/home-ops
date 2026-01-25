@@ -49,7 +49,7 @@ spec:
             - name: QUI__OIDC_ENABLED
               value: "true"
             - name: QUI__OIDC_ISSUER
-              value: "https://auth.lab.jackhumes.com"
+              value: "https://auth.jackhumes.com"
             - name: QUI__OIDC_CLIENT_ID
               value: "e4bd390f-7cc8-4d63-b522-94fa7c06543d"
             - name: QUI__OIDC_CLIENT_SECRET

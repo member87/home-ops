@@ -40,7 +40,7 @@ spec:
               protocol: TCP
           env:
             - name: APP_URL
-              value: "https://auth.lab.jackhumes.com"
+              value: "https://auth.jackhumes.com"
             - name: TRUST_PROXY
               value: "true"
             # Enable env var config and disable signups

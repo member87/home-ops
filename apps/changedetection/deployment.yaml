@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: changedetection
+  namespace: changedetection
+  labels:
+    app: changedetection
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: changedetection
+  template:
+    metadata:
+      labels:
+        app: changedetection
+    spec:
+      containers:
+        - name: changedetection
+          image: dgtlmoon/changedetection.io:0.52.9
+          ports:
+            - containerPort: 5000
+              name: http
+              protocol: TCP
+          env:
+            # Base URL for the application
+            - name: BASE_URL
+              value: "https://changes.lab.jackhumes.com"
+            # Use behind reverse proxy
+            - name: USE_X_SETTINGS
+              value: "1"
+            # Disable the hide referer feature (not needed with TinyAuth)
+            - name: HIDE_REFERER
+              value: "false"
+            # Playwright URL for JavaScript rendering (optional, can add later)
+            # - name: PLAYWRIGHT_DRIVER_URL
+            #   value: "ws://playwright-chrome:3000/?stealth=1&--disable-web-security=true"
+          volumeMounts:
+            - name: data
+              mountPath: /datastore
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: changedetection-data

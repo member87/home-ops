@@ -60,6 +60,11 @@ pages:
                 icon: sh:grafana
                 alt-status-codes:
                   - 401
+              - title: Change Detection
+                url: https://changes.lab.jackhumes.com
+                icon: sh:changedetection
+                alt-status-codes:
+                  - 401
           - type: monitor
             cache: 1m
             title: Media Stack

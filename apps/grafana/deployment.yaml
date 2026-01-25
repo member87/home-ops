@@ -32,6 +32,40 @@ spec:
               mountPath: /var/lib/grafana
             - name: dashboards
               mountPath: /dashboards
+        # Pre-populate dashboards before Grafana starts to avoid race condition
+        - name: init-dashboards
+          image: alpine/k8s:1.31.13
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Fetching dashboard ConfigMaps..."
+              
+              # Get all configmaps with the grafana_dashboard label
+              for CM in $(kubectl get configmap -n grafana -l grafana_dashboard=1 -o name); do
+                CM_NAME=$(echo "$CM" | sed 's|configmap/||')
+                echo "Processing $CM_NAME..."
+                
+                # Get folder annotation
+                FOLDER=$(kubectl get "$CM" -n grafana -o jsonpath='{.metadata.annotations.grafana_folder}' 2>/dev/null || echo "General")
+                [ -z "$FOLDER" ] && FOLDER="General"
+                
+                mkdir -p "/dashboards/$FOLDER"
+                
+                # Get all .json keys and extract each one
+                KEYS=$(kubectl get "$CM" -n grafana -o json | jq -r '.data | keys[] | select(endswith(".json"))')
+                for KEY in $KEYS; do
+                  echo "  Extracting $KEY to /dashboards/$FOLDER/"
+                  kubectl get "$CM" -n grafana -o json | jq -r --arg key "$KEY" '.data[$key]' > "/dashboards/$FOLDER/$KEY"
+                done
+              done
+              
+              echo "Dashboard init complete. Files:"
+              find /dashboards -name "*.json" -type f -exec ls -la {} \; | head -20
+          volumeMounts:
+            - name: dashboards
+              mountPath: /dashboards
       containers:
         # Sidecar that watches for dashboard ConfigMap changes and copies them
         - name: dashboard-sidecar

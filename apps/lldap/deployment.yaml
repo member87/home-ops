@@ -68,4 +68,5 @@ spec:
           periodSeconds: 5
       volumes:
       - name: data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: lldap-data

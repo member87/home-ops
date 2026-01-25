@@ -1,6 +1,6 @@
 ---
 # ArgoCD RBAC ConfigMap
-# Configures role-based access control with Authelia authentication
+# Configures role-based access control with Pocket ID authentication
 apiVersion: v1
 kind: ConfigMap
 metadata:

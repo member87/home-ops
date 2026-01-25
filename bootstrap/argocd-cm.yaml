@@ -16,13 +16,13 @@ data:
   # Enable resource tracking
   application.resourceTrackingMethod: annotation
   
-  # OIDC Configuration for Authelia
+  # OIDC Configuration for Pocket ID
   url: https://argocd.lab.jackhumes.com
   oidc.config: |
-    name: Authelia
+    name: Pocket ID
     issuer: https://auth.lab.jackhumes.com
-    clientID: argocd
-    clientSecret: TqLynrmOo6GR4ocpE0wJY87amKLQykOxyaciyMVtjJo=
+    clientID: c758dec3-896b-4167-8192-f70f530c7801
+    clientSecret: $oidc.pocketid.clientSecret
     requestedScopes:
       - openid
       - profile

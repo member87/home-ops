@@ -89,7 +89,7 @@ data:
     loki.process "pod_logs" {
       stage.cri {}
 
-      // Extract log level from logfmt logs (Authelia, CrowdSec, etc.)
+      // Extract log level from logfmt logs (CrowdSec, etc.)
       stage.regex {
         expression = "level=(?P<level>\\w+)"
       }

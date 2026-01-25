@@ -13,7 +13,7 @@ spec:
       targetRevision: 2.35.0
       helm:
         valuesObject:
-          # Admin password disabled - protected by Authelia
+          # Admin password disabled - protected by Tinyauth/Pocket ID
           # Use empty password secret to disable Pi-hole authentication
           admin:
             existingSecret: "pihole-password-empty"

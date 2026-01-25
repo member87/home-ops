@@ -39,7 +39,7 @@ spec:
               name: http
               protocol: TCP
           env:
-            - name: PUBLIC_APP_URL
+            - name: APP_URL
               value: "https://auth.lab.jackhumes.com"
             - name: TRUST_PROXY
               value: "true"

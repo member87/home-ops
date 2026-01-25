@@ -10,7 +10,6 @@ spec:
     name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
-    - auth.lab.jackhumes.com
     - auth.jackhumes.com
 ---
 apiVersion: traefik.io/v1alpha1
@@ -22,7 +21,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`auth.lab.jackhumes.com`) || Host(`auth.jackhumes.com`)
+    - match: Host(`auth.jackhumes.com`)
       kind: Rule
       services:
         - name: pocket-id
@@ -52,31 +51,3 @@ spec:
       middlewares:
         - name: crowdsec-bouncer
           namespace: pocket-id
----
-# HTTP to HTTPS redirect for internal domain only
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: pocket-id-http
-  namespace: pocket-id
-spec:
-  entryPoints:
-    - web
-  routes:
-    - match: Host(`auth.lab.jackhumes.com`)
-      kind: Rule
-      services:
-        - name: pocket-id
-          port: 80
-      middlewares:
-        - name: redirect-https
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: redirect-https
-  namespace: pocket-id
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true

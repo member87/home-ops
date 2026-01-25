@@ -26,7 +26,8 @@ spec:
               mkdir -p /var/lib/grafana/dashboards/unifi
               mkdir -p /var/lib/grafana/dashboards/general
               chown -R 472:472 /var/lib/grafana
-              chown -R 472:472 /dashboards
+              # Make dashboards dir writable by sidecar (runs as nobody:65534)
+              chmod 777 /dashboards
           volumeMounts:
             - name: storage
               mountPath: /var/lib/grafana
@@ -52,12 +53,16 @@ spec:
                 [ -z "$FOLDER" ] && FOLDER="General"
                 
                 mkdir -p "/dashboards/$FOLDER"
+                # Make folder writable by sidecar
+                chmod 777 "/dashboards/$FOLDER"
                 
                 # Get all .json keys and extract each one
                 KEYS=$(kubectl get "$CM" -n grafana -o json | jq -r '.data | keys[] | select(endswith(".json"))')
                 for KEY in $KEYS; do
                   echo "  Extracting $KEY to /dashboards/$FOLDER/"
                   kubectl get "$CM" -n grafana -o json | jq -r --arg key "$KEY" '.data[$key]' > "/dashboards/$FOLDER/$KEY"
+                  # Make file writable by sidecar
+                  chmod 666 "/dashboards/$FOLDER/$KEY"
                 done
               done
               

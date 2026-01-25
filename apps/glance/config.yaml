@@ -28,7 +28,7 @@ pages:
                 alt-status-codes:
                   - 401
               - title: Pocket ID
-                url: https://auth.lab.jackhumes.com
+                url: https://auth.jackhumes.com
                 icon: si:openid
               - title: LLDAP
                 url: https://lldap.lab.jackhumes.com

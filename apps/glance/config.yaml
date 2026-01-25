@@ -19,45 +19,45 @@ pages:
             sites:
               - title: PiHole
                 url: https://pihole.lab.jackhumes.com/admin
-                icon: si:pihole
+                icon: sh:pi-hole
                 alt-status-codes:
                   - 401
               - title: ArgoCD
                 url: https://argocd.lab.jackhumes.com
-                icon: si:argo
+                icon: sh:argo-cd
                 alt-status-codes:
                   - 401
               - title: Pocket ID
                 url: https://auth.jackhumes.com
-                icon: si:openid
+                icon: sh:pocket-id
               - title: LLDAP
                 url: https://lldap.lab.jackhumes.com
-                icon: si:ldap
+                icon: sh:lldap
                 alt-status-codes:
                   - 401
               - title: Glance
                 url: https://glance.lab.jackhumes.com
-                icon: si:glance
+                icon: sh:glance
               - title: IP Checker
                 url: https://ip-checker.lab.jackhumes.com
-                icon: si:speedtest
+                icon: sh:speedtest
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
-                icon: si:kubernetes
+                icon: sh:kubernetes
               - title: Headscale
                 url: https://headscale.lab.jackhumes.com/health
-                icon: si:tailscale
+                icon: sh:headscale
               - title: Headplane
                 url: https://headplane.lab.jackhumes.com
-                icon: si:tailscale
+                icon: sh:headscale
               - title: Prometheus
                 url: https://prometheus.lab.jackhumes.com
-                icon: si:prometheus
+                icon: sh:prometheus
                 alt-status-codes:
                   - 401
               - title: Grafana
                 url: https://grafana.lab.jackhumes.com
-                icon: si:grafana
+                icon: sh:grafana
                 alt-status-codes:
                   - 401
           - type: monitor
@@ -66,28 +66,28 @@ pages:
             sites:
               - title: Jellyfin
                 url: https://jellyfin.lab.jackhumes.com
-                icon: si:jellyfin
+                icon: sh:jellyfin
               - title: Sonarr
                 url: https://sonarr.lab.jackhumes.com
-                icon: si:sonarr
+                icon: sh:sonarr
               - title: Radarr
                 url: https://radarr.lab.jackhumes.com
-                icon: si:radarr
+                icon: sh:radarr
               - title: Prowlarr
                 url: https://prowlarr.lab.jackhumes.com
-                icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png
+                icon: sh:prowlarr
               - title: Bazarr
                 url: https://bazarr.lab.jackhumes.com
-                icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/bazarr.png
+                icon: sh:bazarr
               - title: qBittorrent
                 url: https://qbittorrent.lab.jackhumes.com
-                icon: si:qbittorrent
+                icon: sh:qbittorrent
               - title: SABnzbd
                 url: https://sabnzbd.lab.jackhumes.com
-                icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sabnzbd.png
+                icon: sh:sabnzbd
               - title: Qui (qBittorrent UI)
                 url: https://qui.lab.jackhumes.com
-                icon: si:qbittorrent
+                icon: sh:qbittorrent
 
           - type: hacker-news
             limit: 15

@@ -57,6 +57,9 @@ spec:
             # Auto-redirect to Pocket ID (skip local login page)
             - name: OAUTH_AUTO_REDIRECT
               value: "pocketid"
+            # Custom background image from CDN
+            - name: BACKGROUND_IMAGE
+              value: "https://cdn.lab.jackhumes.com/images/london-5297395.jpg"
           livenessProbe:
             tcpSocket:
               port: 3000

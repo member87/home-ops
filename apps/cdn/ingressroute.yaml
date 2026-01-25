@@ -1,0 +1,17 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cdn
+  namespace: cdn
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`cdn.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: cdn
+          port: 80
+  tls:
+    certResolver: letsencrypt-production

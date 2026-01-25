@@ -48,7 +48,7 @@ spec:
             - name: PROVIDERS_POCKETID_REDIRECT_URL
               value: "https://tinyauth.lab.jackhumes.com/api/oauth/callback/pocketid"
             - name: PROVIDERS_POCKETID_CLIENT_ID
-              value: "tinyauth"
+              value: "bc64c2f1-968f-4db5-aa26-2ef3a5d521e5"
             - name: PROVIDERS_POCKETID_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:

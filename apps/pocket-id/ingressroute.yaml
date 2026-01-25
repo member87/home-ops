@@ -11,6 +11,7 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - auth.lab.jackhumes.com
+    - auth.jackhumes.com
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -21,7 +22,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`auth.lab.jackhumes.com`)
+    - match: Host(`auth.lab.jackhumes.com`) || Host(`auth.jackhumes.com`)
       kind: Rule
       services:
         - name: pocket-id
@@ -52,7 +53,7 @@ spec:
         - name: crowdsec-bouncer
           namespace: pocket-id
 ---
-# HTTP to HTTPS redirect for internal domain
+# HTTP to HTTPS redirect for internal domain only
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:

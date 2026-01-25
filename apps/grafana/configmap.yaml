@@ -15,8 +15,8 @@ data:
     
     [auth]
     disable_login_form = false
+    disable_signout_menu = false
     oauth_auto_login = false
-    oauth_allow_insecure_email_lookup = true
     
     [auth.generic_oauth]
     enabled = true
@@ -45,7 +45,7 @@ data:
     auto_assign_org = true
     auto_assign_org_id = 1
     auto_assign_org_role = Viewer
-    allow_sign_up = true
+    allow_sign_up = false
     
     [security]
     allow_embedding = true

@@ -43,6 +43,11 @@ spec:
               value: "https://auth.lab.jackhumes.com"
             - name: TRUST_PROXY
               value: "true"
+            # Enable env var config and open signups for initial setup
+            - name: UI_CONFIG_DISABLED
+              value: "true"
+            - name: ALLOW_USER_SIGNUPS
+              value: "open"
             - name: ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:

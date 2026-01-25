@@ -41,6 +41,11 @@ spec:
               value: "https://auth.lab.jackhumes.com"
             - name: TRUST_PROXY
               value: "true"
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-secrets
+                  key: ENCRYPTION_KEY
             # LDAP Configuration for user sync from LLDAP
             - name: LDAP_ENABLED
               value: "true"

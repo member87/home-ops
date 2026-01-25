@@ -43,7 +43,7 @@ data:
           mail: mail
           member_of: memberOf
           group_name: cn
-        user: uid=authelia-service,ou=people,dc=lab,dc=jackhumes,dc=com
+        user: uid=admin,ou=people,dc=lab,dc=jackhumes,dc=com
         # Password loaded from secret file - see deployment env AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE
     
     access_control:

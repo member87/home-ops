@@ -87,7 +87,7 @@ pages:
                 icon: sh:sabnzbd
               - title: Qui (qBittorrent UI)
                 url: https://qui.lab.jackhumes.com
-                icon: sh:qbittorrent
+                icon: sh:qui
 
           - type: hacker-news
             limit: 15

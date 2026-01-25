@@ -297,12 +297,12 @@ data:
             {
               "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
               "editorMode": "code",
-              "expr": "{namespace=\"crowdsec\", filename=~\".+\"} |~ \"performed.*authelia\"",
+              "expr": "{namespace=\"crowdsec\", filename=~\".+\"} |~ \"performed.*(http|brute)\"",
               "queryType": "range",
               "refId": "A"
             }
           ],
-          "title": "Authelia Brute Force Detections",
+          "title": "Brute Force Detections",
           "type": "logs"
         },
         {

@@ -1,6 +1,6 @@
 ---
 # CrowdSec LAPI + Agent - decision engine with log parsing
-# Reads Authelia logs from Loki for brute-force detection
+# Reads logs from Loki for brute-force detection
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,9 +29,9 @@ spec:
                 secretKeyRef:
                   name: crowdsec-secrets
                   key: BOUNCER_KEY
-            # Install collections - Authelia for brute-force detection
+            # Install collections - Traefik and base HTTP scenarios for protection
             - name: COLLECTIONS
-              value: "crowdsecurity/traefik crowdsecurity/base-http-scenarios LePresidente/authelia"
+              value: "crowdsecurity/traefik crowdsecurity/base-http-scenarios"
           ports:
             - name: lapi
               containerPort: 8080

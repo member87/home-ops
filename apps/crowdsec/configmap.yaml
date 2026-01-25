@@ -10,13 +10,13 @@ data:
   config.yaml.local: |
     crowdsec_service:
       acquisition_dir: /etc/crowdsec/acquis-loki
-  # Authelia acquisition from Loki
-  authelia.yaml: |
+  # Pocket ID acquisition from Loki (using generic JSON log parsing)
+  pocket-id.yaml: |
     source: loki
     url: http://loki.loki.svc.cluster.local:3100
     query: |
-      {namespace="authelia"}
+      {namespace="pocket-id"}
     labels:
-      type: authelia
+      type: syslog
     log_level: info
 

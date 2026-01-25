@@ -14,9 +14,9 @@ data:
     auth.method = "token"
     auth.token = "cUPijuqvpbl4SEKndzdskwKfzTWOIvSzypaAijzXObg"
 
-    # Authelia tunnel - routes through Traefik for CrowdSec protection
+    # Pocket ID tunnel - routes through Traefik for CrowdSec protection
     [[proxies]]
-    name = "authelia"
+    name = "pocket-id"
     type = "tcp"
     localIP = "traefik.traefik.svc.cluster.local"
     localPort = 80

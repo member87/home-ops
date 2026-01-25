@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  url: https://argocd.lab.jackhumes.com
+  application.resourceTrackingMethod: annotation
+  timeout.reconciliation: 180s
+  oidc.config: |
+    name: Pocket ID
+    issuer: https://auth.lab.jackhumes.com
+    clientID: argocd
+    clientSecret: $oidc.pocketid.clientSecret
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true

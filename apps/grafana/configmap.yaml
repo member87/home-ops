@@ -19,13 +19,13 @@ data:
     
     [auth.generic_oauth]
     enabled = true
-    name = Authelia
+    name = Pocket ID
     icon = signin
     client_id = grafana
     client_secret = $__file{/etc/secrets/client_secret}
     scopes = openid profile email groups
     empty_scopes = false
-    auth_url = https://auth.lab.jackhumes.com/api/oidc/authorization
+    auth_url = https://auth.lab.jackhumes.com/authorize
     token_url = https://auth.lab.jackhumes.com/api/oidc/token
     api_url = https://auth.lab.jackhumes.com/api/oidc/userinfo
     login_attribute_path = preferred_username

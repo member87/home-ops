@@ -23,7 +23,7 @@ spec:
     - match: Host(`pihole.lab.jackhumes.com`)
       kind: Rule
       middlewares:
-        - name: authelia-forwardauth
+        - name: tinyauth-forwardauth
       services:
         - name: pihole-web
           port: 80

@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pocket-id-data
+  namespace: pocket-id
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pocket-id
+  namespace: pocket-id
+  labels:
+    app: pocket-id
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pocket-id
+  template:
+    metadata:
+      labels:
+        app: pocket-id
+    spec:
+      containers:
+        - name: pocket-id
+          image: ghcr.io/pocket-id/pocket-id:v2.2.0
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          env:
+            - name: PUBLIC_APP_URL
+              value: "https://auth.lab.jackhumes.com"
+            - name: TRUST_PROXY
+              value: "true"
+            # LDAP Configuration for user sync from LLDAP
+            - name: LDAP_ENABLED
+              value: "true"
+            - name: LDAP_URL
+              value: "ldap://lldap.lldap.svc.cluster.local:3890"
+            - name: LDAP_SKIP_TLS_VERIFY
+              value: "true"
+            - name: LDAP_BASE_DN
+              value: "dc=lab,dc=jackhumes,dc=com"
+            - name: LDAP_BIND_DN
+              value: "uid=admin,ou=people,dc=lab,dc=jackhumes,dc=com"
+            - name: LDAP_BIND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-secrets
+                  key: LDAP_BIND_PASSWORD
+            - name: LDAP_USER_SEARCH_BASE
+              value: "ou=people"
+            - name: LDAP_USER_SEARCH_FILTER
+              value: "(uid={username})"
+            - name: LDAP_GROUP_SEARCH_BASE
+              value: "ou=groups"
+            - name: LDAP_ATTRIBUTE_USER_ID
+              value: "uid"
+            - name: LDAP_ATTRIBUTE_USER_EMAIL
+              value: "mail"
+            - name: LDAP_ATTRIBUTE_USER_NAME
+              value: "cn"
+            - name: LDAP_ATTRIBUTE_GROUP_MEMBER
+              value: "member"
+            - name: LDAP_ATTRIBUTE_GROUP_NAME
+              value: "cn"
+            # Sync users periodically
+            - name: LDAP_SYNC_INTERVAL
+              value: "5m"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pocket-id-data

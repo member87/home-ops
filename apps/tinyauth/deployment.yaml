@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+  labels:
+    app: tinyauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinyauth
+  template:
+    metadata:
+      labels:
+        app: tinyauth
+    spec:
+      containers:
+        - name: tinyauth
+          image: ghcr.io/steveiliop56/tinyauth:v4.1.0
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            # General configuration
+            - name: APP_URL
+              value: "https://tinyauth.lab.jackhumes.com"
+            - name: SECURE_COOKIE
+              value: "true"
+            - name: SESSION_EXPIRY
+              value: "86400"
+            # Users list is empty - we only use OAuth
+            - name: USERS
+              value: ""
+            # OAuth provider configuration - Pocket ID
+            - name: PROVIDERS_POCKETID_NAME
+              value: "Pocket ID"
+            - name: PROVIDERS_POCKETID_AUTH_URL
+              value: "https://auth.lab.jackhumes.com/authorize"
+            - name: PROVIDERS_POCKETID_TOKEN_URL
+              value: "https://auth.lab.jackhumes.com/api/oidc/token"
+            - name: PROVIDERS_POCKETID_USER_INFO_URL
+              value: "https://auth.lab.jackhumes.com/api/oidc/userinfo"
+            - name: PROVIDERS_POCKETID_SCOPES
+              value: "openid,profile,email"
+            - name: PROVIDERS_POCKETID_REDIRECT_URL
+              value: "https://tinyauth.lab.jackhumes.com/api/oauth/callback/pocketid"
+            - name: PROVIDERS_POCKETID_CLIENT_ID
+              value: "tinyauth"
+            - name: PROVIDERS_POCKETID_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tinyauth-secrets
+                  key: POCKETID_CLIENT_SECRET
+            # Auto-redirect to Pocket ID (skip local login page)
+            - name: OAUTH_AUTO_REDIRECT
+              value: "pocketid"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "25m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"

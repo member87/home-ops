@@ -2,49 +2,48 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: lldap-cert
-  namespace: lldap
+  name: tinyauth-cert
+  namespace: tinyauth
 spec:
-  secretName: lldap-tls
+  secretName: tinyauth-tls
   issuerRef:
     name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
-    - lldap.lab.jackhumes.com
+    - tinyauth.lab.jackhumes.com
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: lldap
-  namespace: lldap
+  name: tinyauth
+  namespace: tinyauth
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`lldap.lab.jackhumes.com`)
+    - match: Host(`tinyauth.lab.jackhumes.com`)
       kind: Rule
-      middlewares:
-        - name: tinyauth-forwardauth
       services:
-        - name: lldap
-          port: 17170
+        - name: tinyauth
+          port: 3000
   tls:
-    secretName: lldap-tls
+    secretName: tinyauth-tls
 ---
+# HTTP to HTTPS redirect
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: lldap-http
-  namespace: lldap
+  name: tinyauth-http
+  namespace: tinyauth
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`lldap.lab.jackhumes.com`)
+    - match: Host(`tinyauth.lab.jackhumes.com`)
       kind: Rule
       services:
-        - name: lldap
-          port: 17170
+        - name: tinyauth
+          port: 3000
       middlewares:
         - name: redirect-https
 ---
@@ -52,7 +51,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: redirect-https
-  namespace: lldap
+  namespace: tinyauth
 spec:
   redirectScheme:
     scheme: https

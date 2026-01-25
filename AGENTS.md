@@ -18,12 +18,19 @@ This document provides guidelines for AI agents working with the home-ops Kubern
 ```
 home-ops/
 ├── applications/          # ArgoCD Application manifests
-│   ├── authelia.yaml
+│   ├── pocket-id.yaml
+│   ├── tinyauth.yaml
 │   ├── netbird.yaml
 │   └── ...
 ├── apps/                  # Kubernetes manifests for each application
-│   ├── authelia/
-│   │   ├── configmap.yaml
+│   ├── pocket-id/
+│   │   ├── deployment.yaml
+│   │   ├── sealedsecret.yaml
+│   │   ├── service.yaml
+│   │   ├── ingressroute.yaml
+│   │   ├── namespace.yaml
+│   │   └── kustomization.yaml
+│   ├── tinyauth/
 │   │   ├── deployment.yaml
 │   │   ├── sealedsecret.yaml
 │   │   ├── service.yaml
@@ -87,22 +94,22 @@ Follow this format for commit messages:
 
 **Examples:**
 ```
-fix(netbird): secure OIDC integration with Authelia using sealed secrets
+fix(netbird): secure OIDC integration with Pocket ID using sealed secrets
 
 - Generate new OIDC client secret and store in sealed secret
-- Update Authelia config with new hashed client secret
+- Update Pocket ID with new client configuration
 - Remove plaintext secrets from NetBird configmap
 ```
 
 ```
-feat(monitoring): add Grafana with Authelia SSO integration
+feat(monitoring): add Grafana with Pocket ID SSO integration
 ```
 
 ## Naming Conventions
 
 ### Resource Names
 
-1. **Namespaces**: Use lowercase application name (e.g., `authelia`, `netbird`, `lldap`)
+1. **Namespaces**: Use lowercase application name (e.g., `pocket-id`, `tinyauth`, `netbird`, `lldap`)
 2. **Deployments**: `<app-name>` or `<app-name>-<component>` (e.g., `netbird-management`, `netbird-dashboard`)
 3. **Services**: Match deployment names
 4. **ConfigMaps**: `<app-name>-config` or `<app-name>-<component>-config`
@@ -140,46 +147,36 @@ feat(monitoring): add Grafana with Authelia SSO integration
 | **Connection Strings** | Database URLs with credentials | Database access |
 
 **Safe to put in ConfigMaps (non-secret configuration):**
-- Hashed passwords (e.g., pbkdf2 hashes for Authelia client_secret)
 - Public URLs and endpoints
 - Feature flags and settings
 - Port numbers and hostnames
 - Log levels and timeouts
 
-### Authelia-Specific Security
+### Pocket ID Security
 
-Authelia configuration requires special attention because it handles authentication for all services.
+Pocket ID is the OIDC provider for all services. It syncs users from LLDAP and provides passkey-based authentication.
 
-**Secrets that MUST be in SealedSecrets (use _FILE env vars):**
+**Secrets that MUST be in SealedSecrets:**
+- LDAP bind password (for syncing users from LLDAP)
+- Any API keys or tokens
 
-```yaml
-# In deployment.yaml environment section:
-env:
-  - name: AUTHELIA_JWT_SECRET_FILE
-    value: /secrets/JWT_SECRET
-  - name: AUTHELIA_SESSION_SECRET_FILE
-    value: /secrets/SESSION_SECRET
-  - name: AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
-    value: /secrets/STORAGE_ENCRYPTION_KEY
-  - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE
-    value: /secrets/OIDC_HMAC_SECRET
-  - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_ISSUER_PRIVATE_KEY_FILE
-    value: /secrets/OIDC_ISSUER_PRIVATE_KEY
-  - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE
-    value: /secrets/LDAP_PASSWORD
-```
+**Configuration stored in environment variables:**
+- Public URLs (POCKET_ID_PUBLIC_APP_URL)
+- LDAP connection settings (host, port, base DN, bind DN)
+- Feature flags
 
-**Values that stay in ConfigMap:**
-- OIDC client secrets (hashed with pbkdf2, e.g., `$pbkdf2-sha512$...`)
-- Domain names and URLs
-- Session timeouts and policy settings
-- LDAP filter configurations
+### Tiny Auth Security
 
-**Red Flags - If you see these in a ConfigMap, STOP and fix:**
-- `-----BEGIN RSA PRIVATE KEY-----` or any PEM-formatted key
-- `hmac_secret:` followed by a base64 string
-- `password:` followed by plaintext
-- Any base64-encoded value that looks like a secret
+Tiny Auth provides ForwardAuth middleware for applications that don't support OIDC natively.
+
+**Secrets that MUST be in SealedSecrets:**
+- SECRET (session signing secret)
+- OAUTH_CLIENT_SECRET (Pocket ID client secret)
+
+**Configuration stored in environment variables:**
+- Pocket ID OAuth endpoints
+- Allowed users list
+- Feature flags (DISABLE_CONTINUE, AUTO_REDIRECT)
 
 ### Using Sealed Secrets
 
@@ -225,7 +222,7 @@ spec:
 
 1. **OIDC Client Secrets**
    - Generate: `head -c 32 /dev/urandom | base64`
-   - Hash for Authelia: `kubectl exec -n authelia <pod> -- authelia crypto hash generate pbkdf2 --password '<secret>'`
+   - Register in Pocket ID UI with the plaintext secret
    - Seal the plaintext secret for the application
 
 2. **API Keys and Tokens**
@@ -343,7 +340,7 @@ git push
    - Image: `headscale/headscale:v0.27.1`
    - Internal URL: `https://headscale.lab.jackhumes.com`
    - External URL: `https://headscale.jackhumes.com` (via FRP tunnel)
-   - OIDC integration with Authelia
+   - OIDC integration with Pocket ID
    - SQLite database with persistent storage
 
 7. **Headplane** (namespace: `headplane`)
@@ -369,11 +366,25 @@ git push
       - CrowdSec Agent: Parses logs and detects attacks
       - CrowdSec LAPI: Local API for decision management
       - Traefik Bouncer: Middleware plugin that blocks banned IPs
-    - **Log Sources**: Reads Authelia logs from Loki
-    - **Scenarios**: `LePresidente/authelia-bf` (brute-force detection)
+    - **Log Sources**: Reads Pocket ID logs from Loki
     - **Ban Duration**: 4 hours default
     - **Bouncer Update Interval**: 10 seconds
     - LAPI Service: `crowdsec-lapi.crowdsec.svc.cluster.local:8080`
+
+11. **Pocket ID** (namespace: `pocket-id`)
+    - OIDC provider with passkey authentication
+    - Image: `ghcr.io/pocket-id/pocket-id:v2.2.0`
+    - Internal URL: `https://auth.lab.jackhumes.com`
+    - External URL: `https://auth.jackhumes.com` (via FRP tunnel)
+    - Syncs users from LLDAP
+    - Provides SSO for all cluster applications
+
+12. **Tiny Auth** (namespace: `tinyauth`)
+    - ForwardAuth middleware for apps without native OIDC support
+    - Image: `ghcr.io/steveiliop56/tinyauth:v4.1.0`
+    - URL: `https://tinyauth.lab.jackhumes.com`
+    - Uses Pocket ID as OAuth provider
+    - Protects: Prometheus, Pi-hole, LLDAP
 
 ### External Access Architecture
 
@@ -399,25 +410,25 @@ Internet --> Oracle VPS (140.238.67.83)
                     |
                     +-- FRP Client (in k8s cluster)
                           |
-                          +-- Traefik (port 80) --> CrowdSec Bouncer --> Authelia
+                          +-- Traefik (port 80) --> CrowdSec Bouncer --> Pocket ID
                           +-- headscale.headscale.svc:8080
 ```
 
 **IMPORTANT: CrowdSec Protection for External Traffic**
 
-External traffic to `auth.jackhumes.com` is routed through Traefik (not directly to Authelia) so that the CrowdSec bouncer middleware can block banned IPs. This is critical for security.
+External traffic to `auth.jackhumes.com` is routed through Traefik (not directly to Pocket ID) so that the CrowdSec bouncer middleware can block banned IPs. This is critical for security.
 
 **FRP Tunnel Configuration** (apps/frp-client/configmap.yaml):
 
 | Proxy Name | Local Service | Local Port | Remote Port | Public Domain | Notes |
 |------------|---------------|------------|-------------|---------------|-------|
-| authelia | traefik.traefik.svc.cluster.local | 80 | 8081 | auth.jackhumes.com | Routes through Traefik for CrowdSec |
+| pocket-id | traefik.traefik.svc.cluster.local | 80 | 8081 | auth.jackhumes.com | Routes through Traefik for CrowdSec |
 | headscale | headscale.headscale.svc.cluster.local | 8080 | 8082 | headscale.jackhumes.com | Direct to service |
 
-**Authelia External IngressRoute** (apps/authelia/ingressroute.yaml):
+**Pocket ID External IngressRoute** (apps/pocket-id/ingressroute.yaml):
 - An IngressRoute for `Host(\`auth.jackhumes.com\`)` on the `web` entrypoint handles traffic from FRP
 - This route includes the `crowdsec-bouncer` middleware
-- Traffic flow: FRP Client → Traefik (port 80) → IngressRoute → CrowdSec Bouncer → Authelia
+- Traffic flow: FRP Client → Traefik (port 80) → IngressRoute → CrowdSec Bouncer → Pocket ID
 
 **Domain Structure:**
 
@@ -454,7 +465,7 @@ dns:
       - 10.0.0.201    # Pi-hole
       - 1.1.1.1       # Cloudflare fallback
 
-# OIDC (Authelia)
+# OIDC (Pocket ID)
 oidc:
   issuer: https://auth.jackhumes.com
   client_id: headscale
@@ -519,14 +530,15 @@ env:
 
 - `alloy` - Alloy log shipping (replaces Promtail)
 - `argocd` - ArgoCD deployment
-- `authelia` - Authentication and SSO provider
 - `crowdsec` - CrowdSec IPS (agent and LAPI)
 - `grafana` - Grafana visualization
 - `headscale` - Headscale VPN control plane
 - `lldap` - Lightweight LDAP server
 - `loki` - Loki log aggregation
+- `pocket-id` - OIDC provider with passkey authentication
 - `prometheus` - Prometheus metrics
 - `sealed-secrets` - Sealed secrets controller
+- `tinyauth` - ForwardAuth middleware
 - `traefik` - Traefik ingress controller
 - (others as needed per application)
 
@@ -887,36 +899,20 @@ If you've set up Grafana monitoring for an application with Prometheus metrics, 
 7. **Document dashboards** - Use text panels to explain metrics and add context
 8. **Keep dashboards focused** - Create separate dashboards for different purposes (overview vs. debugging)
 
-### Configuring OIDC with Authelia
+### Configuring OIDC with Pocket ID
 
-1. **Add OIDC client to Authelia** (apps/authelia/configmap.yaml):
-```yaml
-- client_id: '<app-name>'
-  client_name: '<App Display Name>'
-  client_secret: '<pbkdf2-hashed-secret>'
-  public: false
-  authorization_policy: 'one_factor'
-  redirect_uris:
-    - 'https://<app>.lab.jackhumes.com/callback'
-  scopes:
-    - 'openid'
-    - 'email'
-    - 'profile'
-  response_types:
-    - 'code'
-  grant_types:
-    - 'authorization_code'
-  token_endpoint_auth_method: 'client_secret_post'
-```
+1. **Add OIDC client in Pocket ID UI** (https://auth.lab.jackhumes.com):
+   - Navigate to Admin → OIDC Clients
+   - Create new client with:
+     - Client ID: `<app-name>`
+     - Client Name: `<App Display Name>`
+     - Redirect URIs: `https://<app>.lab.jackhumes.com/callback`
+     - Generate a client secret and save it
 
 2. **Create sealed secret for application**:
 ```bash
-# Generate secret
-SECRET=$(head -c 32 /dev/urandom | base64)
-
-# Hash for Authelia
-kubectl exec -n authelia <pod> -- authelia crypto hash generate pbkdf2 --password "$SECRET"
-# Copy the hash to Authelia config
+# The secret you copied from Pocket ID UI
+SECRET="<client-secret-from-pocket-id>"
 
 # Seal for application
 echo -n "$SECRET" | kubeseal --raw \
@@ -927,15 +923,55 @@ echo -n "$SECRET" | kubeseal --raw \
   --scope strict
 ```
 
-3. **Configure application to use Authelia**:
-   - Set OIDC endpoints to point to `https://auth.lab.jackhumes.com`
+3. **Configure application to use Pocket ID**:
+   - Set OIDC issuer to `https://auth.lab.jackhumes.com` (internal) or `https://auth.jackhumes.com` (external)
    - Use sealed secret for client secret
-   - Configure redirect URIs to match Authelia config
+   - Configure redirect URIs to match Pocket ID config
+   - Common endpoints:
+     - Authorization: `https://auth.lab.jackhumes.com/authorize`
+     - Token: `https://auth.lab.jackhumes.com/api/oidc/token`
+     - Userinfo: `https://auth.lab.jackhumes.com/api/oidc/userinfo`
 
-4. **Restart Authelia** after config changes:
-```bash
-kubectl rollout restart deployment -n authelia authelia
+### Configuring ForwardAuth with Tiny Auth
+
+For applications that don't support OIDC natively, use Tiny Auth as a ForwardAuth middleware.
+
+1. **Create ForwardAuth middleware** in the application namespace:
+```yaml
+# apps/<app-name>/middleware.yaml
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: tinyauth-forwardauth
+  namespace: <app-namespace>
+spec:
+  forwardAuth:
+    address: http://tinyauth.tinyauth.svc.cluster.local:3000/api/auth/traefik
+    trustForwardHeader: true
+    authResponseHeaders:
+      - Remote-User
+      - Remote-Groups
+      - Remote-Name
+      - Remote-Email
 ```
+
+2. **Add middleware to IngressRoute**:
+```yaml
+# In ingressroute.yaml
+spec:
+  routes:
+    - match: Host(`<app>.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: tinyauth-forwardauth
+      services:
+        - name: <app-name>
+          port: <port>
+```
+
+3. **Add user to Tiny Auth allowed users** (apps/tinyauth/deployment.yaml):
+   - Update USERS environment variable if needed
 
 ### Updating Configurations
 
@@ -1057,20 +1093,20 @@ kubectl logs -n sealed-secrets -l app.kubernetes.io/name=sealed-secrets-controll
 
 ### OIDC Authentication Failing
 
-1. Check Authelia logs for errors:
+1. Check Pocket ID logs for errors:
 ```bash
-kubectl logs -n authelia -l app.kubernetes.io/name=authelia
+kubectl logs -n pocket-id deployment/pocket-id
 ```
 
 2. Common issues:
-   - **Redirect URI mismatch**: Ensure redirect URIs in Authelia match what the application sends
-   - **Client secret mismatch**: Verify the hashed secret in Authelia matches the plaintext secret in application
-   - **Scopes not supported**: Ensure requested scopes are configured in Authelia
+   - **Redirect URI mismatch**: Ensure redirect URIs in Pocket ID match what the application sends
+   - **Client secret mismatch**: Verify the sealed secret matches the client secret in Pocket ID
+   - **Scopes not supported**: Ensure requested scopes are configured in Pocket ID
    - **Audience mismatch**: Some apps need specific audience configuration
 
-3. Restart Authelia after config changes:
+3. Check Tiny Auth logs (for ForwardAuth issues):
 ```bash
-kubectl rollout restart deployment -n authelia authelia
+kubectl logs -n tinyauth deployment/tinyauth
 ```
 
 ### Prometheus Not Scraping cAdvisor
@@ -1132,7 +1168,7 @@ kubectl rollout restart deployment -n authelia authelia
 
 4. **Verify IngressRoute has bouncer middleware**:
    ```bash
-   kubectl get ingressroute -n authelia authelia-external -o yaml | grep -A5 middlewares
+   kubectl get ingressroute -n pocket-id pocket-id-external -o yaml | grep -A5 middlewares
    ```
    Should show `crowdsec-bouncer` middleware.
 
@@ -1243,6 +1279,6 @@ curl http://localhost:8080
 ## Additional Resources
 
 - ArgoCD UI: `https://argocd.lab.jackhumes.com`
-- Authelia UI: `https://auth.lab.jackhumes.com`
+- Pocket ID UI: `https://auth.lab.jackhumes.com`
 - Sealed Secrets: https://github.com/bitnami-labs/sealed-secrets
-- Authelia OIDC Docs: https://www.authelia.com/integration/openid-connect/
+- Pocket ID Docs: https://pocket-id.org/docs

@@ -27,12 +27,12 @@ pages:
                 icon: si:argo
                 alt-status-codes:
                   - 401
-              - title: Authelia
+              - title: Pocket ID
                 url: https://auth.lab.jackhumes.com
-                icon: si:authelia
+                icon: si:openid
               - title: LLDAP
                 url: https://lldap.lab.jackhumes.com
-                icon: si:authelia
+                icon: si:ldap
                 alt-status-codes:
                   - 401
               - title: Glance

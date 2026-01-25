@@ -1,10 +1,11 @@
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: authelia-cert
-  namespace: authelia
+  name: pocket-id-cert
+  namespace: pocket-id
 spec:
-  secretName: authelia-tls
+  secretName: pocket-id-tls
   issuerRef:
     name: letsencrypt-production
     kind: ClusterIssuer
@@ -14,8 +15,8 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: authelia
-  namespace: authelia
+  name: pocket-id
+  namespace: pocket-id
 spec:
   entryPoints:
     - websecure
@@ -23,20 +24,21 @@ spec:
     - match: Host(`auth.lab.jackhumes.com`)
       kind: Rule
       services:
-        - name: authelia
-          port: 9091
+        - name: pocket-id
+          port: 80
       middlewares:
         - name: crowdsec-bouncer
+          namespace: pocket-id
   tls:
-    secretName: authelia-tls
+    secretName: pocket-id-tls
 ---
 # External route for auth.jackhumes.com (via FRP tunnel)
 # Traffic comes from FRP client already decrypted, routed through Traefik for CrowdSec protection
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: authelia-external
-  namespace: authelia
+  name: pocket-id-external
+  namespace: pocket-id
 spec:
   entryPoints:
     - web
@@ -44,16 +46,18 @@ spec:
     - match: Host(`auth.jackhumes.com`)
       kind: Rule
       services:
-        - name: authelia
-          port: 9091
+        - name: pocket-id
+          port: 80
       middlewares:
         - name: crowdsec-bouncer
+          namespace: pocket-id
 ---
+# HTTP to HTTPS redirect for internal domain
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: authelia-http
-  namespace: authelia
+  name: pocket-id-http
+  namespace: pocket-id
 spec:
   entryPoints:
     - web
@@ -61,8 +65,8 @@ spec:
     - match: Host(`auth.lab.jackhumes.com`)
       kind: Rule
       services:
-        - name: authelia
-          port: 9091
+        - name: pocket-id
+          port: 80
       middlewares:
         - name: redirect-https
 ---
@@ -70,7 +74,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: redirect-https
-  namespace: authelia
+  namespace: pocket-id
 spec:
   redirectScheme:
     scheme: https

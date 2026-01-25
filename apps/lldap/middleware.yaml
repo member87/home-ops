@@ -2,11 +2,11 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: authelia-forwardauth
+  name: tinyauth-forwardauth
   namespace: lldap
 spec:
   forwardAuth:
-    address: http://authelia.authelia.svc.cluster.local:9091/api/verify?rd=https://auth.lab.jackhumes.com/
+    address: http://tinyauth.tinyauth.svc.cluster.local:3000/api/auth/traefik
     trustForwardHeader: true
     authResponseHeaders:
       - Remote-User

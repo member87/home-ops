@@ -3,10 +3,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - sealedsecret.yaml  # Use SealedSecret instead of plain Secret
-  - configmap.yaml
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml
-  - middleware.yaml
   - crowdsec-middleware.yaml
+  - sealedsecret.yaml

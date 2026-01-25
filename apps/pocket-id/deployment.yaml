@@ -38,6 +38,9 @@ spec:
             - containerPort: 1411
               name: http
               protocol: TCP
+            - containerPort: 9464
+              name: metrics
+              protocol: TCP
           env:
             - name: APP_URL
               value: "https://auth.jackhumes.com"
@@ -53,6 +56,15 @@ spec:
                 secretKeyRef:
                   name: pocket-id-secrets
                   key: ENCRYPTION_KEY
+            # Prometheus metrics
+            - name: METRICS_ENABLED
+              value: "true"
+            - name: OTEL_METRICS_EXPORTER
+              value: "prometheus"
+            - name: OTEL_EXPORTER_PROMETHEUS_HOST
+              value: "0.0.0.0"
+            - name: OTEL_EXPORTER_PROMETHEUS_PORT
+              value: "9464"
           volumeMounts:
             - name: data
               mountPath: /app/data

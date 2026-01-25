@@ -14,7 +14,7 @@ data:
   oidc.config: |
     name: Pocket ID
     issuer: https://auth.lab.jackhumes.com
-    clientID: argocd
+    clientID: c758dec3-896b-4167-8192-f70f530c7801
     clientSecret: $oidc.pocketid.clientSecret
     requestedScopes:
       - openid

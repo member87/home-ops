@@ -51,7 +51,7 @@ spec:
             - name: QUI__OIDC_ISSUER
               value: "https://auth.lab.jackhumes.com"
             - name: QUI__OIDC_CLIENT_ID
-              value: "qui"
+              value: "e4bd390f-7cc8-4d63-b522-94fa7c06543d"
             - name: QUI__OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:

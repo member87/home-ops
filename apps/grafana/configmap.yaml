@@ -21,7 +21,7 @@ data:
     enabled = true
     name = Pocket ID
     icon = signin
-    client_id = grafana
+    client_id = 1f82bc12-5f49-4d1d-a31e-602866895a74
     client_secret = $__file{/etc/secrets/client_secret}
     scopes = openid profile email groups
     empty_scopes = false

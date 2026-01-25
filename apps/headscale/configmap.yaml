@@ -56,7 +56,7 @@ data:
     oidc:
       only_start_if_oidc_is_available: true
       issuer: https://auth.jackhumes.com
-      client_id: headscale
+      client_id: ab49bd88-09b1-4330-bc41-f84c9ad4e61d
       client_secret_path: /etc/headscale/secrets/client_secret
       scope:
         - openid

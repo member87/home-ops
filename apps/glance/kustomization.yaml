@@ -9,6 +9,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml
+  - sealedsecret.yaml
 
 configMapGenerator:
   - name: glance-config

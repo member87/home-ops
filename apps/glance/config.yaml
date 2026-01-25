@@ -10,6 +10,10 @@ pages:
             location: London, United Kingdom
             units: metric
 
+          - type: change-detection
+            instance-url: https://changes.lab.jackhumes.com
+            token: ${CHANGE_DETECTION_TOKEN}
+            collapse-after: 5
 
       - size: full
         widgets:

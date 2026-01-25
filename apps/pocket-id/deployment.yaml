@@ -48,51 +48,6 @@ spec:
                 secretKeyRef:
                   name: pocket-id-secrets
                   key: ENCRYPTION_KEY
-            # LDAP Configuration for user sync from LLDAP
-            - name: LDAP_ENABLED
-              value: "true"
-            - name: LDAP_URL
-              value: "ldap://lldap.lldap.svc.cluster.local:3890"
-            - name: LDAP_SKIP_CERT_VERIFY
-              value: "true"
-            - name: LDAP_BASE
-              value: "dc=lab,dc=jackhumes,dc=com"
-            - name: LDAP_BIND_DN
-              value: "uid=admin,ou=people,dc=lab,dc=jackhumes,dc=com"
-            - name: LDAP_BIND_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pocket-id-secrets
-                  key: LDAP_BIND_PASSWORD
-            # Search filters
-            - name: LDAP_USER_SEARCH_FILTER
-              value: "(objectClass=person)"
-            - name: LDAP_USER_GROUP_SEARCH_FILTER
-              value: "(objectClass=groupOfUniqueNames)"
-            # User attribute mappings
-            - name: LDAP_ATTRIBUTE_USER_UNIQUE_IDENTIFIER
-              value: "entryUuid"
-            - name: LDAP_ATTRIBUTE_USER_USERNAME
-              value: "uid"
-            - name: LDAP_ATTRIBUTE_USER_EMAIL
-              value: "mail"
-            - name: LDAP_ATTRIBUTE_USER_FIRST_NAME
-              value: "givenName"
-            - name: LDAP_ATTRIBUTE_USER_LAST_NAME
-              value: "sn"
-            # Group attribute mappings
-            - name: LDAP_ATTRIBUTE_GROUP_UNIQUE_IDENTIFIER
-              value: "entryUuid"
-            - name: LDAP_ATTRIBUTE_GROUP_NAME
-              value: "cn"
-            - name: LDAP_ATTRIBUTE_GROUP_MEMBER
-              value: "uniqueMember"
-            # Admin group - users in this group become Pocket ID admins
-            - name: LDAP_ADMIN_GROUP_NAME
-              value: "pocket_id_admins"
-            # Disable UI config so we use env vars
-            - name: UI_CONFIG_DISABLED
-              value: "true"
           volumeMounts:
             - name: data
               mountPath: /app/data

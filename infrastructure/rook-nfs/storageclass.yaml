@@ -1,0 +1,27 @@
+---
+# StorageClass for NFS-backed persistent volumes
+# Applications can request storage using this class
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs
+  annotations:
+    # Set to "true" if you want this to be the default storage class
+    # Note: local-path is currently the default
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: nfs.csi.k8s.io
+parameters:
+  # Archive PV data when PVC is deleted (moves to "archived-" prefix)
+  archiveOnDelete: "true"
+  # Path pattern for PV directories: namespace-pvcname-pvname
+  pathPattern: "${.PVC.namespace}-${.PVC.name}"
+# Allow volume expansion
+allowVolumeExpansion: true
+# Retain volumes after PVC deletion
+reclaimPolicy: Retain
+# WaitForFirstConsumer ensures PV is created where the pod is scheduled
+volumeBindingMode: Immediate
+mountOptions:
+  - nfsvers=4.1
+  - hard
+  - nointr

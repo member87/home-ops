@@ -1,0 +1,10 @@
+---
+# ServersTransport for connecting to NAS over HTTPS
+# Skips TLS verification since NAS likely uses self-signed cert
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: nas-transport
+  namespace: nas
+spec:
+  insecureSkipVerify: true

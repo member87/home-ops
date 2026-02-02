@@ -54,6 +54,9 @@ pages:
               - title: Headplane
                 url: https://headplane.lab.jackhumes.com
                 icon: sh:headscale
+              - title: NAS
+                url: https://nas.lab.jackhumes.com
+                icon: sh:synology
               - title: Prometheus
                 url: https://prometheus.lab.jackhumes.com
                 icon: sh:prometheus

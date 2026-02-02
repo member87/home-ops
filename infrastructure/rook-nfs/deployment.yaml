@@ -1,0 +1,51 @@
+---
+# NFS Subdir External Provisioner Deployment
+# Dynamically provisions PVs as subdirectories on the NFS server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-provisioner
+  namespace: rook-nfs
+  labels:
+    app: nfs-provisioner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-provisioner
+    spec:
+      serviceAccountName: nfs-provisioner
+      containers:
+        - name: nfs-provisioner
+          # Using the well-maintained nfs-subdir-external-provisioner
+          image: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
+          volumeMounts:
+            - name: nfs-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: nfs.csi.k8s.io
+            - name: NFS_SERVER
+              value: "10.0.0.9"
+            - name: NFS_PATH
+              # TODO: Update this to your actual NFS export path
+              value: "/kubernetes"
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+      volumes:
+        - name: nfs-root
+          nfs:
+            server: "10.0.0.9"
+            # TODO: Update this to your actual NFS export path
+            path: "/kubernetes"

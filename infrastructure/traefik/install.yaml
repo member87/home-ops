@@ -127,6 +127,7 @@ spec:
             - --api.insecure=true
             - --providers.kubernetesingress
             - --providers.kubernetescrd
+            - --providers.kubernetescrd.allowCrossNamespace=true
             - --entrypoints.web.address=:80
             - --entrypoints.websecure.address=:443
             # Trust forwarded headers from any source (for real client IP)

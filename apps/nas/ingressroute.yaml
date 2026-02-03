@@ -26,5 +26,6 @@ spec:
       services:
         - name: nas
           port: 9999
+          scheme: http
   tls:
     secretName: nas-tls

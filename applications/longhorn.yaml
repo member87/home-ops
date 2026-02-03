@@ -47,6 +47,8 @@ spec:
             # Talos-specific: set the system managed components to false
             # since Talos manages these at the OS level
             systemManagedComponentsNodeSelector: ""
+            # V2 Data Engine disabled - using standard iSCSI with Talos extensions
+            v2DataEngine: false
           
           # Storage Class settings
           persistence:

@@ -37,18 +37,75 @@ spec:
           - "8.8.8.8"
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:2.3.0
+          image: lscr.io/linuxserver/prowlarr:1.31.2
           ports:
             - containerPort: 9696
               name: http
               protocol: TCP
           env:
+            # ============================================
+            # LinuxServer.io Container Variables
+            # ============================================
             - name: PUID
               value: "1000"
             - name: PGID
               value: "1000"
             - name: TZ
               value: "Europe/London"
+            - name: UMASK
+              value: "022"
+            
+            # ============================================
+            # Prowlarr Application Configuration
+            # Format: PROWLARR__SECTION__KEY
+            # ============================================
+            
+            # Server Configuration
+            - name: PROWLARR__SERVER__PORT
+              value: "9696"
+            - name: PROWLARR__SERVER__BINDADDRESS
+              value: "*"
+            - name: PROWLARR__SERVER__URLBASE
+              value: ""
+            
+            # Authentication - Using External (Tinyauth ForwardAuth)
+            - name: PROWLARR__AUTH__METHOD
+              value: "External"
+            - name: PROWLARR__AUTH__REQUIRED
+              value: "DisabledForLocalAddresses"
+            
+            # API Key from sealed secret
+            - name: PROWLARR__AUTH__APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: prowlarr-secrets
+                  key: api-key
+            
+            # Logging Configuration
+            - name: PROWLARR__LOG__LEVEL
+              value: "info"
+            - name: PROWLARR__LOG__CONSOLEFORMAT
+              value: "Standard"
+            - name: PROWLARR__LOG__ANALYTICSENABLED
+              value: "false"
+            - name: PROWLARR__LOG__DBENABLED
+              value: "true"
+            
+            # Update Configuration (Docker-managed)
+            - name: PROWLARR__UPDATE__BRANCH
+              value: "master"
+            - name: PROWLARR__UPDATE__MECHANISM
+              value: "Docker"
+            
+            # Application Settings
+            - name: PROWLARR__APP__INSTANCENAME
+              value: "Prowlarr"
+            - name: PROWLARR__APP__THEME
+              value: "auto"
+            - name: PROWLARR__APP__LAUNCHBROWSER
+              value: "false"
+            
+            # VPN Proxy Configuration
             - name: HTTP_PROXY
               value: "http://gluetun.gluetun.svc.cluster.local:8888"
             - name: HTTPS_PROXY

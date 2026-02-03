@@ -31,18 +31,73 @@ spec:
     spec:
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:6.0.4
+          image: lscr.io/linuxserver/radarr:5.20.1
           ports:
             - containerPort: 7878
               name: http
               protocol: TCP
           env:
+            # ============================================
+            # LinuxServer.io Container Variables
+            # ============================================
             - name: PUID
               value: "1000"
             - name: PGID
               value: "1000"
             - name: TZ
               value: "Europe/London"
+            - name: UMASK
+              value: "022"
+            
+            # ============================================
+            # Radarr Application Configuration
+            # Format: RADARR__SECTION__KEY
+            # ============================================
+            
+            # Server Configuration
+            - name: RADARR__SERVER__PORT
+              value: "7878"
+            - name: RADARR__SERVER__BINDADDRESS
+              value: "*"
+            - name: RADARR__SERVER__URLBASE
+              value: ""
+            
+            # Authentication - Using External (Tinyauth ForwardAuth)
+            - name: RADARR__AUTH__METHOD
+              value: "External"
+            - name: RADARR__AUTH__REQUIRED
+              value: "DisabledForLocalAddresses"
+            
+            # API Key from sealed secret
+            - name: RADARR__AUTH__APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: radarr-secrets
+                  key: api-key
+            
+            # Logging Configuration
+            - name: RADARR__LOG__LEVEL
+              value: "info"
+            - name: RADARR__LOG__CONSOLEFORMAT
+              value: "Standard"
+            - name: RADARR__LOG__ANALYTICSENABLED
+              value: "false"
+            - name: RADARR__LOG__DBENABLED
+              value: "true"
+            
+            # Update Configuration (Docker-managed)
+            - name: RADARR__UPDATE__BRANCH
+              value: "master"
+            - name: RADARR__UPDATE__MECHANISM
+              value: "Docker"
+            
+            # Application Settings
+            - name: RADARR__APP__INSTANCENAME
+              value: "Radarr"
+            - name: RADARR__APP__THEME
+              value: "auto"
+            - name: RADARR__APP__LAUNCHBROWSER
+              value: "false"
           volumeMounts:
             - name: config
               mountPath: /config

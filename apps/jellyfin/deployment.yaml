@@ -12,6 +12,19 @@ spec:
     requests:
       storage: 10Gi
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-cache
+  namespace: jellyfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,7 +44,7 @@ spec:
     spec:
       containers:
         - name: jellyfin
-          image: lscr.io/linuxserver/jellyfin:10.11.6
+          image: lscr.io/linuxserver/jellyfin:10.10.6
           ports:
             - containerPort: 8096
               name: http
@@ -46,17 +59,59 @@ spec:
               name: dlna
               protocol: UDP
           env:
+            # ============================================
+            # LinuxServer.io Container Variables
+            # ============================================
             - name: PUID
               value: "1000"
             - name: PGID
               value: "1000"
             - name: TZ
               value: "Europe/London"
+            - name: UMASK
+              value: "022"
+            
+            # ============================================
+            # Jellyfin Application Configuration
+            # Format: JELLYFIN_<setting> or JELLYFIN_<Section>__<Key>
+            # ============================================
+            
+            # Published Server URL for auto-discovery
             - name: JELLYFIN_PublishedServerUrl
               value: "https://jellyfin.lab.jackhumes.com"
+            
+            # Directory Configuration (using container paths)
+            - name: JELLYFIN_DATA_DIR
+              value: "/config"
+            - name: JELLYFIN_CONFIG_DIR
+              value: "/config/config"
+            - name: JELLYFIN_CACHE_DIR
+              value: "/cache"
+            - name: JELLYFIN_LOG_DIR
+              value: "/config/log"
+            
+            # FFmpeg Configuration
+            - name: JELLYFIN_FFmpeg__probesize
+              value: "1G"
+            - name: JELLYFIN_FFmpeg__analyzeduration
+              value: "200M"
+            
+            # Server Behavior
+            - name: JELLYFIN_hostwebclient
+              value: "true"
+            
+            # Locale Settings
+            - name: LC_ALL
+              value: "en_GB.UTF-8"
+            - name: LANG
+              value: "en_GB.UTF-8"
+            - name: LANGUAGE
+              value: "en_GB:en"
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: cache
+              mountPath: /cache
             - name: media
               mountPath: /data
             # Optional: hardware acceleration (uncomment if needed)
@@ -85,6 +140,9 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: jellyfin-config
+        - name: cache
+          persistentVolumeClaim:
+            claimName: jellyfin-cache
         - name: media
           persistentVolumeClaim:
             claimName: media-data

@@ -1,5 +1,12 @@
 ---
-# Media data PVC for Radarr (shared media storage)
+# ============================================
+# Media Data PVC for Radarr
+# ============================================
+# Current: Using local-path (works without NAS)
+# Future: Switch to NFS when NAS is available
+# ============================================
+
+# Local storage (current - works without NAS)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,3 +19,25 @@ spec:
   resources:
     requests:
       storage: 100Gi
+
+# ============================================
+# NFS Storage (uncomment when NAS is ready)
+# ============================================
+# To switch to NFS shared storage:
+# 1. Comment out the local-path PVC above
+# 2. Uncomment the NFS PVC below
+# 3. Ensure the media-storage namespace PVC exists
+# ============================================
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: media-data
+#   namespace: radarr
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   storageClassName: nfs
+#   resources:
+#     requests:
+#       storage: 1Ti

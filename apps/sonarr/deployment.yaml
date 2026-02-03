@@ -31,18 +31,73 @@ spec:
     spec:
       containers:
         - name: sonarr
-          image: lscr.io/linuxserver/sonarr:4.0.16
+          image: lscr.io/linuxserver/sonarr:4.0.14
           ports:
             - containerPort: 8989
               name: http
               protocol: TCP
           env:
+            # ============================================
+            # LinuxServer.io Container Variables
+            # ============================================
             - name: PUID
               value: "1000"
             - name: PGID
               value: "1000"
             - name: TZ
               value: "Europe/London"
+            - name: UMASK
+              value: "022"
+            
+            # ============================================
+            # Sonarr Application Configuration
+            # Format: SONARR__SECTION__KEY
+            # ============================================
+            
+            # Server Configuration
+            - name: SONARR__SERVER__PORT
+              value: "8989"
+            - name: SONARR__SERVER__BINDADDRESS
+              value: "*"
+            - name: SONARR__SERVER__URLBASE
+              value: ""
+            
+            # Authentication - Using External (Tinyauth ForwardAuth)
+            - name: SONARR__AUTH__METHOD
+              value: "External"
+            - name: SONARR__AUTH__REQUIRED
+              value: "DisabledForLocalAddresses"
+            
+            # API Key from sealed secret
+            - name: SONARR__AUTH__APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: sonarr-secrets
+                  key: api-key
+            
+            # Logging Configuration
+            - name: SONARR__LOG__LEVEL
+              value: "info"
+            - name: SONARR__LOG__CONSOLEFORMAT
+              value: "Standard"
+            - name: SONARR__LOG__ANALYTICSENABLED
+              value: "false"
+            - name: SONARR__LOG__DBENABLED
+              value: "true"
+            
+            # Update Configuration (Docker-managed)
+            - name: SONARR__UPDATE__BRANCH
+              value: "main"
+            - name: SONARR__UPDATE__MECHANISM
+              value: "Docker"
+            
+            # Application Settings
+            - name: SONARR__APP__INSTANCENAME
+              value: "Sonarr"
+            - name: SONARR__APP__THEME
+              value: "auto"
+            - name: SONARR__APP__LAUNCHBROWSER
+              value: "false"
           volumeMounts:
             - name: config
               mountPath: /config

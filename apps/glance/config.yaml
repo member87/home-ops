@@ -79,6 +79,9 @@ pages:
               - title: Jellyfin
                 url: https://jellyfin.lab.jackhumes.com
                 icon: sh:jellyfin
+              - title: Jellyseerr
+                url: https://jellyseerr.lab.jackhumes.com
+                icon: sh:jellyseerr
               - title: Sonarr
                 url: https://sonarr.lab.jackhumes.com
                 icon: sh:sonarr

@@ -379,29 +379,22 @@ data:
     
     SABNZBD_INI="/config/sabnzbd.ini"
     
-    # Wait for SABnzbd to create initial config on first run
-    for i in $(seq 1 30); do
-      if [ -f "$SABNZBD_INI" ]; then
-        break
-      fi
-      echo "Waiting for SABnzbd config file... ($i/30)"
-      sleep 2
-    done
-    
+    # If config exists, update the port
     if [ -f "$SABNZBD_INI" ]; then
-      # Update the port setting
       if grep -q "^port = " "$SABNZBD_INI"; then
         sed -i 's/^port = .*/port = 8085/' "$SABNZBD_INI"
         echo "Updated SABnzbd port to 8085"
       else
-        echo "port = 8085" >> "$SABNZBD_INI"
-        echo "Added SABnzbd port 8085"
+        # Add port to [misc] section if it exists
+        if grep -q "^\[misc\]" "$SABNZBD_INI"; then
+          sed -i '/^\[misc\]/a port = 8085' "$SABNZBD_INI"
+          echo "Added port 8085 to [misc] section"
+        fi
       fi
     else
-      # Create a minimal config with correct port if file doesn't exist
+      # Create initial config with correct port BEFORE SABnzbd starts
       mkdir -p /config
-      echo "[misc]" > "$SABNZBD_INI"
-      echo "port = 8085" >> "$SABNZBD_INI"
-      echo "host = 0.0.0.0" >> "$SABNZBD_INI"
+      printf '%s\n' '[misc]' 'port = 8085' 'host = 0.0.0.0' > "$SABNZBD_INI"
+      chown 1000:1000 "$SABNZBD_INI"
       echo "Created initial SABnzbd config with port 8085"
     fi

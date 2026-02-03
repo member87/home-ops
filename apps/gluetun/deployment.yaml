@@ -16,6 +16,22 @@ spec:
       storage: 1Gi
 ---
 # ============================================
+# SABnzbd Config PVC
+# ============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sabnzbd-config
+  namespace: gluetun
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+# ============================================
 # Downloads PVC (temporary until NFS works)
 # ============================================
 apiVersion: v1
@@ -32,10 +48,10 @@ spec:
       storage: 50Gi
 ---
 # ============================================
-# Gluetun VPN Client + qBittorrent Sidecar
+# Gluetun VPN + Download Clients
 # ============================================
 # ProtonVPN WireGuard with Port Forwarding
-# qBittorrent runs as sidecar sharing network namespace
+# qBittorrent and SABnzbd run as sidecars sharing VPN network
 # https://github.com/qdm12/gluetun-wiki
 # ============================================
 apiVersion: apps/v1
@@ -74,9 +90,13 @@ spec:
             - containerPort: 8888
               name: http-proxy
               protocol: TCP
-            # qBittorrent Web UI (exposed via shared network)
+            # qBittorrent Web UI
             - containerPort: 8080
               name: qbittorrent
+              protocol: TCP
+            # SABnzbd Web UI
+            - containerPort: 8085
+              name: sabnzbd
               protocol: TCP
           env:
             # ============================================
@@ -97,11 +117,8 @@ spec:
             # ============================================
             # Server Selection
             # ============================================
-            # Use Netherlands for good speeds and P2P support
             - name: SERVER_COUNTRIES
               value: "Netherlands"
-            
-            # Only connect to P2P/port-forwarding enabled servers
             - name: PORT_FORWARD_ONLY
               value: "on"
             
@@ -112,16 +129,13 @@ spec:
               value: "on"
             - name: VPN_PORT_FORWARDING_PROVIDER
               value: "protonvpn"
-            
-            # Write forwarded port to file (for debugging)
             - name: VPN_PORT_FORWARDING_STATUS_FILE
               value: "/gluetun/forwarded_port"
             
-            # Update qBittorrent when port is assigned
-            # qBittorrent is accessible at 127.0.0.1:8080 (same pod)
+            # Update qBittorrent listening port when VPN port is assigned
+            # Requires bypass_local_auth=true in qBittorrent (set via init script)
             - name: VPN_PORT_FORWARDING_UP_COMMAND
-              value: |
-                /bin/sh -c 'echo "Port forwarding started: {{PORT}}"; sleep 10; wget -q -O- --retry-connrefused --tries=10 --post-data "json={\"listen_port\":{{PORT}}}" "http://127.0.0.1:8080/api/v2/app/setPreferences" 2>&1 || echo "Failed to update qBittorrent port"'
+              value: "/bin/sh -c 'wget -q -O- --retry-connrefused --tries=30 --waitretry=2 --post-data \"json={\\\"listen_port\\\":{{PORT}}}\" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1 || echo Failed to update qBittorrent port'"
             
             # ============================================
             # Firewall Configuration (Kill Switch)
@@ -144,7 +158,7 @@ spec:
               value: "on"
             
             # ============================================
-            # HTTP Proxy (for other cluster apps)
+            # HTTP Proxy (for Prowlarr indexer requests)
             # ============================================
             - name: HTTPPROXY
               value: "on"
@@ -188,7 +202,7 @@ spec:
         # qBittorrent Sidecar Container
         # ============================================
         # Shares network namespace with Gluetun
-        # All traffic automatically goes through VPN
+        # All torrent traffic goes through VPN tunnel
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:5.0.4
           env:
@@ -207,8 +221,8 @@ spec:
               mountPath: /config
             - name: downloads
               mountPath: /downloads
-          # Note: ports are defined on gluetun container since it owns the network
-          # Health checks go through gluetun's network
+            - name: qbittorrent-init
+              mountPath: /custom-cont-init.d
           livenessProbe:
             httpGet:
               path: /
@@ -230,6 +244,49 @@ spec:
               memory: "2Gi"
               cpu: "2000m"
 
+        # ============================================
+        # SABnzbd Sidecar Container
+        # ============================================
+        # Shares network namespace with Gluetun
+        # All usenet traffic goes through VPN tunnel
+        # HTTP_PROXY does NOT work for NNTP - must use sidecar
+        - name: sabnzbd
+          image: lscr.io/linuxserver/sabnzbd:4.5.5
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/London"
+            - name: UMASK
+              value: "022"
+          volumeMounts:
+            - name: sabnzbd-config
+              mountPath: /config
+            - name: downloads
+              mountPath: /downloads
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+
       volumes:
         - name: tun
           hostPath:
@@ -240,6 +297,61 @@ spec:
         - name: qbittorrent-config
           persistentVolumeClaim:
             claimName: qbittorrent-config
+        - name: qbittorrent-init
+          configMap:
+            name: qbittorrent-init
+            defaultMode: 0755
+        - name: sabnzbd-config
+          persistentVolumeClaim:
+            claimName: sabnzbd-config
         - name: downloads
           persistentVolumeClaim:
             claimName: downloads
+---
+# ============================================
+# qBittorrent Init Script
+# ============================================
+# Enables bypass_local_auth so Gluetun can update the listening port
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-init
+  namespace: gluetun
+data:
+  99-bypass-local-auth.sh: |
+    #!/bin/bash
+    # Enable bypass_local_auth for Gluetun port forwarding command
+    # This allows localhost requests to skip authentication
+    
+    QBITTORRENT_CONF="/config/qBittorrent/qBittorrent.conf"
+    
+    # Wait for config file to exist (first run creates it)
+    for i in $(seq 1 30); do
+      if [ -f "$QBITTORRENT_CONF" ]; then
+        break
+      fi
+      echo "Waiting for qBittorrent config file... ($i/30)"
+      sleep 2
+    done
+    
+    if [ -f "$QBITTORRENT_CONF" ]; then
+      # Check if WebUI section exists
+      if grep -q "\[WebUI\]" "$QBITTORRENT_CONF"; then
+        # Check if setting already exists
+        if grep -q "LocalHostAuth" "$QBITTORRENT_CONF"; then
+          # Update existing setting
+          sed -i 's/WebUI\\LocalHostAuth=.*/WebUI\\LocalHostAuth=false/' "$QBITTORRENT_CONF"
+        else
+          # Add setting to WebUI section
+          sed -i '/\[WebUI\]/a WebUI\\LocalHostAuth=false' "$QBITTORRENT_CONF"
+        fi
+        echo "Enabled bypass_local_auth in qBittorrent config"
+      else
+        echo "[WebUI]" >> "$QBITTORRENT_CONF"
+        echo "WebUI\\LocalHostAuth=false" >> "$QBITTORRENT_CONF"
+        echo "Added WebUI section with bypass_local_auth"
+      fi
+    else
+      echo "Warning: qBittorrent config file not found, bypass_local_auth not set"
+      echo "You may need to manually enable 'Bypass authentication for localhost' in Web UI settings"
+    fi

@@ -15,15 +15,14 @@ spec:
       port: 8000
       targetPort: 8000
       protocol: TCP
-    # HTTP Proxy - used by other apps to route traffic through VPN
+    # HTTP Proxy - used by Prowlarr for indexer requests through VPN
     - name: http-proxy
       port: 8888
       targetPort: 8888
       protocol: TCP
   type: ClusterIP
 ---
-# Separate service for qBittorrent Web UI
-# This makes it easier to create IngressRoute and reference
+# qBittorrent Web UI Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -39,5 +38,24 @@ spec:
     - name: http
       port: 8080
       targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+---
+# SABnzbd Web UI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: sabnzbd
+  namespace: gluetun
+  labels:
+    app: gluetun
+    component: sabnzbd
+spec:
+  selector:
+    app: gluetun
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085
       protocol: TCP
   type: ClusterIP

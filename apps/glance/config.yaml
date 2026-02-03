@@ -56,7 +56,7 @@ pages:
                 icon: sh:headscale
               - title: NAS
                 url: https://nas.lab.jackhumes.com
-                icon: sh:synology
+                icon: sh:ugreen-nas
               - title: Prometheus
                 url: https://prometheus.lab.jackhumes.com
                 icon: sh:prometheus

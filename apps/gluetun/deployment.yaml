@@ -10,7 +10,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path
+  storageClassName: longhorn
   resources:
     requests:
       storage: 1Gi
@@ -26,26 +26,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path
+  storageClassName: longhorn
   resources:
     requests:
       storage: 1Gi
----
-# ============================================
-# Downloads PVC (temporary until NFS works)
-# ============================================
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: downloads
-  namespace: gluetun
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 50Gi
 ---
 # ============================================
 # Gluetun VPN + Download Clients
@@ -310,9 +294,11 @@ spec:
           configMap:
             name: sabnzbd-init
             defaultMode: 0755
+        # Shared NFS downloads storage from NAS at 10.0.0.9
         - name: downloads
-          persistentVolumeClaim:
-            claimName: downloads
+          nfs:
+            server: 10.0.0.9
+            path: /kubernetes/downloads
 ---
 # ============================================
 # qBittorrent Init Script

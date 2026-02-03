@@ -1,0 +1,58 @@
+---
+# Direct NFS PersistentVolume for Media Storage
+# Points directly to NAS at 10.0.0.9:/kubernetes/media
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-media
+  labels:
+    app.kubernetes.io/name: nfs-media
+    storage-type: nfs
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: media-storage
+    name: media-data
+  nfs:
+    server: 10.0.0.9
+    path: /kubernetes/media
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - nointr
+    - rsize=1048576
+    - wsize=1048576
+---
+# Direct NFS PersistentVolume for Downloads
+# Points directly to NAS at 10.0.0.9:/kubernetes/downloads
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-downloads
+  labels:
+    app.kubernetes.io/name: nfs-downloads
+    storage-type: nfs
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: media-storage
+    name: downloads
+  nfs:
+    server: 10.0.0.9
+    path: /kubernetes/downloads
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - nointr
+    - rsize=1048576
+    - wsize=1048576

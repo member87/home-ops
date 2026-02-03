@@ -19,11 +19,11 @@ spec:
             existingSecret: "pihole-password-empty"
             passwordKey: "password"
           
-          # Persistent storage using local-path provisioner
+          # Persistent storage using Longhorn
           persistentVolumeClaim:
             enabled: true
             size: "2Gi"
-            storageClass: "local-path"
+            storageClass: "longhorn"
             accessModes:
               - ReadWriteOnce
           

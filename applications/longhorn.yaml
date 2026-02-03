@@ -1,0 +1,117 @@
+---
+# Longhorn Distributed Block Storage
+# Replaces local-path as the primary storage solution with replication and snapshots
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # Helm chart for Longhorn
+    - repoURL: https://charts.longhorn.io
+      chart: longhorn
+      targetRevision: 1.8.1
+      helm:
+        valuesObject:
+          # Longhorn settings
+          defaultSettings:
+            # Default replica count - 2 for multi-node redundancy
+            defaultReplicaCount: 2
+            # Prefer local data for performance
+            defaultDataLocality: best-effort
+            # Storage reservation for system operations
+            storageMinimalAvailablePercentage: 15
+            storageOverProvisioningPercentage: 100
+            # Backup settings (can configure S3 later)
+            backupTarget: ""
+            # Auto-delete workload pods when volume is detached unexpectedly
+            autoDeletePodWhenVolumeDetachedUnexpectedly: true
+            # Node drain policy
+            nodeDrainPolicy: block-if-contains-last-replica
+            # Snapshot cleanup
+            autoCleanupSystemGeneratedSnapshot: true
+            # Concurrent volume backup/restore
+            concurrentAutomaticEngineUpgradePerNodeLimit: 1
+            # Talos Linux compatibility - use /var/lib/longhorn
+            defaultDataPath: /var/lib/longhorn
+            # Create default disk on labeled nodes only (or all if none labeled)
+            createDefaultDiskLabeledNodes: false
+            # Guaranteed instance manager CPU
+            guaranteedInstanceManagerCPU: 12
+            # Orphan management
+            orphanAutoDeletion: true
+          
+          # Storage Class settings
+          persistence:
+            # Set as default storage class
+            defaultClass: true
+            defaultClassReplicaCount: 2
+            defaultFsType: ext4
+            reclaimPolicy: Retain
+            migratable: true
+          
+          # Longhorn Manager
+          longhornManager:
+            priorityClass: system-cluster-critical
+            tolerations:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: "Exists"
+                effect: "NoSchedule"
+          
+          # Longhorn Driver
+          longhornDriver:
+            priorityClass: system-cluster-critical
+            tolerations:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: "Exists"
+                effect: "NoSchedule"
+          
+          # Longhorn UI
+          longhornUI:
+            replicas: 1
+          
+          # Ingress for Longhorn UI (disabled - will use IngressRoute)
+          ingress:
+            enabled: false
+          
+          # Enable pre-upgrade checker
+          preUpgradeChecker:
+            jobEnabled: true
+            upgradeVersionCheck: true
+          
+          # CSI settings
+          csi:
+            attacherReplicaCount: 1
+            provisionerReplicaCount: 1
+            resizerReplicaCount: 1
+            snapshotterReplicaCount: 1
+          
+          # Metrics for Prometheus
+          metrics:
+            serviceMonitor:
+              enabled: false
+    # Additional resources from git (IngressRoute, etc.)
+    - repoURL: https://github.com/member87/home-ops.git
+      targetRevision: HEAD
+      path: infrastructure/longhorn
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

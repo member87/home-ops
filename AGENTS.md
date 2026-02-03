@@ -297,7 +297,38 @@ git push
 - **Kubernetes**: v1.34+
 - **Nodes**: `talos-lox-1n1` (and others)
 - **CNI**: Likely Calico or Cilium
-- **Storage**: local-path provisioner
+- **Storage**: Longhorn (default), Direct NFS for media
+
+### Storage Architecture
+
+The cluster uses a two-tier storage architecture:
+
+1. **Longhorn** (default StorageClass)
+   - Distributed block storage with replication
+   - Default replica count: 2 (for redundancy across nodes)
+   - Used for: Application configs, databases, monitoring data
+   - Namespace: `longhorn-system`
+   - Data path: `/var/lib/longhorn` on each node
+
+2. **Direct NFS** (for media storage)
+   - NAS server: `10.0.0.9`
+   - Paths:
+     - `/kubernetes/media` - Shared media files (Jellyfin, Sonarr, Radarr, Bazarr)
+     - `/kubernetes/downloads` - Downloads directory (qBittorrent, SABnzbd)
+   - Mount options: `nfsvers=4.1`, `hard`, `nointr`
+
+3. **local-path** (legacy, not default)
+   - Kept for debugging/temporary volumes
+   - Uses `/var/local-path-provisioner` on nodes
+   - Not recommended for production data
+
+**Storage Class Usage:**
+| Application Type | Storage Class | Notes |
+|------------------|---------------|-------|
+| App configs (Pocket ID, LLDAP, etc.) | `longhorn` | Replicated for reliability |
+| Monitoring (Prometheus, Loki, Grafana) | `longhorn` | Replicated for reliability |
+| Media files (movies, TV shows) | Direct NFS mount | Shared across media apps |
+| Downloads (torrents, usenet) | Direct NFS mount | Temporary, shared |
 
 ### Installed Components
 

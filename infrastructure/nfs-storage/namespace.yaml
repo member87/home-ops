@@ -1,0 +1,9 @@
+---
+# Media Storage Namespace
+# Holds shared NFS PVCs for media applications
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media-storage
+  labels:
+    app.kubernetes.io/name: media-storage

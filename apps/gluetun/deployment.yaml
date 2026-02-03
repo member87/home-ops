@@ -264,6 +264,8 @@ spec:
           volumeMounts:
             - name: sabnzbd-config
               mountPath: /config
+            - name: sabnzbd-init
+              mountPath: /custom-cont-init.d
             - name: downloads
               mountPath: /downloads
           livenessProbe:
@@ -304,6 +306,10 @@ spec:
         - name: sabnzbd-config
           persistentVolumeClaim:
             claimName: sabnzbd-config
+        - name: sabnzbd-init
+          configMap:
+            name: sabnzbd-init
+            defaultMode: 0755
         - name: downloads
           persistentVolumeClaim:
             claimName: downloads
@@ -354,4 +360,48 @@ data:
     else
       echo "Warning: qBittorrent config file not found, bypass_local_auth not set"
       echo "You may need to manually enable 'Bypass authentication for localhost' in Web UI settings"
+    fi
+---
+# ============================================
+# SABnzbd Init Script
+# ============================================
+# Configures SABnzbd to listen on port 8085 to avoid conflict with qBittorrent
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sabnzbd-init
+  namespace: gluetun
+data:
+  99-configure-port.sh: |
+    #!/bin/bash
+    # Configure SABnzbd to use port 8085 instead of default 8080
+    # This avoids conflict with qBittorrent on the same port
+    
+    SABNZBD_INI="/config/sabnzbd.ini"
+    
+    # Wait for SABnzbd to create initial config on first run
+    for i in $(seq 1 30); do
+      if [ -f "$SABNZBD_INI" ]; then
+        break
+      fi
+      echo "Waiting for SABnzbd config file... ($i/30)"
+      sleep 2
+    done
+    
+    if [ -f "$SABNZBD_INI" ]; then
+      # Update the port setting
+      if grep -q "^port = " "$SABNZBD_INI"; then
+        sed -i 's/^port = .*/port = 8085/' "$SABNZBD_INI"
+        echo "Updated SABnzbd port to 8085"
+      else
+        echo "port = 8085" >> "$SABNZBD_INI"
+        echo "Added SABnzbd port 8085"
+      fi
+    else
+      # Create a minimal config with correct port if file doesn't exist
+      mkdir -p /config
+      echo "[misc]" > "$SABNZBD_INI"
+      echo "port = 8085" >> "$SABNZBD_INI"
+      echo "host = 0.0.0.0" >> "$SABNZBD_INI"
+      echo "Created initial SABnzbd config with port 8085"
     fi

@@ -7,5 +7,4 @@ namespace: nas
 resources:
   - namespace.yaml
   - service.yaml
-  - serverstransport.yaml
   - ingressroute.yaml

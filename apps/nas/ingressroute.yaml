@@ -26,7 +26,5 @@ spec:
       services:
         - name: nas
           port: 9999
-          scheme: https
-          serversTransport: nas-nas-transport@kubernetescrd
   tls:
     secretName: nas-tls

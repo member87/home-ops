@@ -1,8 +1,11 @@
 ---
+# ============================================
+# qBittorrent Config PVC
+# ============================================
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: gluetun-data
+  name: qbittorrent-config
   namespace: gluetun
 spec:
   accessModes:
@@ -10,8 +13,31 @@ spec:
   storageClassName: local-path
   resources:
     requests:
-      storage: 100Mi
+      storage: 1Gi
 ---
+# ============================================
+# Downloads PVC (temporary until NFS works)
+# ============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: downloads
+  namespace: gluetun
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 50Gi
+---
+# ============================================
+# Gluetun VPN Client + qBittorrent Sidecar
+# ============================================
+# ProtonVPN WireGuard with Port Forwarding
+# qBittorrent runs as sidecar sharing network namespace
+# https://github.com/qdm12/gluetun-wiki
+# ============================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,73 +56,112 @@ spec:
         app: gluetun
     spec:
       containers:
+        # ============================================
+        # Gluetun VPN Container
+        # ============================================
         - name: gluetun
-          image: qmcgaw/gluetun:v3.41.0
+          image: qmcgaw/gluetun:v3.40.0
           securityContext:
             capabilities:
               add:
                 - NET_ADMIN
           ports:
-            - containerPort: 8888
-              name: http-proxy
-              protocol: TCP
-            - containerPort: 8388
-              name: shadowsocks-tcp
-              protocol: TCP
-            - containerPort: 8388
-              name: shadowsocks-udp
-              protocol: UDP
+            # Gluetun Control API
             - containerPort: 8000
               name: control
               protocol: TCP
-            # Prowlarr port
-            - containerPort: 9696
-              name: prowlarr
+            # HTTP Proxy (for other apps like Prowlarr)
+            - containerPort: 8888
+              name: http-proxy
               protocol: TCP
-            # qBittorrent ports
-            - containerPort: 8081
+            # qBittorrent Web UI (exposed via shared network)
+            - containerPort: 8080
               name: qbittorrent
               protocol: TCP
-            # SABnzbd port
-            - containerPort: 8082
-              name: sabnzbd
-              protocol: TCP
           env:
+            # ============================================
+            # VPN Provider Configuration
+            # ============================================
             - name: VPN_SERVICE_PROVIDER
               value: "protonvpn"
             - name: VPN_TYPE
               value: "wireguard"
+            
+            # WireGuard Private Key (from sealed secret)
             - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   name: gluetun-secrets
                   key: WIREGUARD_PRIVATE_KEY
+            
+            # ============================================
+            # Server Selection
+            # ============================================
+            # Use Netherlands for good speeds and P2P support
             - name: SERVER_COUNTRIES
               value: "Netherlands"
-            - name: VPN_PORT_FORWARDING
-              value: "on"
+            
+            # Only connect to P2P/port-forwarding enabled servers
             - name: PORT_FORWARD_ONLY
               value: "on"
-            - name: FIREWALL_VPN_INPUT_PORTS
-              value: "9696,8081,8082"
-            - name: TZ
-              value: "Europe/London"
-            - name: HTTPPROXY
+            
+            # ============================================
+            # Port Forwarding Configuration
+            # ============================================
+            - name: VPN_PORT_FORWARDING
               value: "on"
-            - name: SHADOWSOCKS
+            - name: VPN_PORT_FORWARDING_PROVIDER
+              value: "protonvpn"
+            
+            # Write forwarded port to file (for debugging)
+            - name: VPN_PORT_FORWARDING_STATUS_FILE
+              value: "/gluetun/forwarded_port"
+            
+            # Update qBittorrent when port is assigned
+            # qBittorrent is accessible at 127.0.0.1:8080 (same pod)
+            - name: VPN_PORT_FORWARDING_UP_COMMAND
+              value: |
+                /bin/sh -c 'echo "Port forwarding started: {{PORT}}"; sleep 10; wget -q -O- --retry-connrefused --tries=10 --post-data "json={\"listen_port\":{{PORT}}}" "http://127.0.0.1:8080/api/v2/app/setPreferences" 2>&1 || echo "Failed to update qBittorrent port"'
+            
+            # ============================================
+            # Firewall Configuration (Kill Switch)
+            # ============================================
+            - name: FIREWALL
               value: "on"
+            - name: FIREWALL_DEBUG
+              value: "off"
+            
+            # ============================================
+            # DNS Configuration
+            # ============================================
             - name: DOT
               value: "on"
             - name: DOT_PROVIDERS
               value: "cloudflare"
-            - name: HEALTH_VPN_DURATION_INITIAL
-              value: "30s"
-            - name: HEALTH_SUCCESS_WAIT_DURATION
-              value: "10s"
+            - name: BLOCK_MALICIOUS
+              value: "on"
+            - name: BLOCK_SURVEILLANCE
+              value: "on"
+            
+            # ============================================
+            # HTTP Proxy (for other cluster apps)
+            # ============================================
+            - name: HTTPPROXY
+              value: "on"
+            
+            # ============================================
+            # Logging & General
+            # ============================================
+            - name: LOG_LEVEL
+              value: "info"
+            - name: TZ
+              value: "Europe/London"
+            - name: UPDATER_PERIOD
+              value: "24h"
           volumeMounts:
             - name: tun
               mountPath: /dev/net/tun
-            - name: data
+            - name: gluetun-data
               mountPath: /gluetun
           livenessProbe:
             httpGet:
@@ -118,11 +183,63 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+
+        # ============================================
+        # qBittorrent Sidecar Container
+        # ============================================
+        # Shares network namespace with Gluetun
+        # All traffic automatically goes through VPN
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:5.0.4
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/London"
+            - name: UMASK
+              value: "022"
+            - name: WEBUI_PORT
+              value: "8080"
+          volumeMounts:
+            - name: qbittorrent-config
+              mountPath: /config
+            - name: downloads
+              mountPath: /downloads
+          # Note: ports are defined on gluetun container since it owns the network
+          # Health checks go through gluetun's network
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+
       volumes:
         - name: tun
           hostPath:
             path: /dev/net/tun
             type: CharDevice
-        - name: data
+        - name: gluetun-data
+          emptyDir: {}
+        - name: qbittorrent-config
           persistentVolumeClaim:
-            claimName: gluetun-data
+            claimName: qbittorrent-config
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: downloads

@@ -59,7 +59,7 @@ spec:
       # Wait for VPN to be ready before starting
       initContainers:
         - name: wait-for-vpn
-          image: curlimages/curl:8.11.1
+          image: curlimages/curl:8.18.0
           command:
             - /bin/sh
             - -c

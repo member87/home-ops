@@ -49,12 +49,9 @@ spec:
       labels:
         app: sabnzbd
     spec:
-      # Use custom DNS since we're routing through VPN proxy
-      dnsPolicy: None
-      dnsConfig:
-        nameservers:
-          - "1.1.1.1"
-          - "8.8.8.8"
+      # Use cluster DNS so we can resolve gluetun service
+      # VPN routing is done via HTTP_PROXY, not network namespace
+      dnsPolicy: ClusterFirst
       
       # Wait for VPN to be ready before starting
       initContainers:

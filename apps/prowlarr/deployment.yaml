@@ -29,12 +29,9 @@ spec:
       labels:
         app: prowlarr
     spec:
-      # Use Gluetun's network namespace for VPN routing
-      dnsPolicy: None
-      dnsConfig:
-        nameservers:
-          - "1.1.1.1"
-          - "8.8.8.8"
+      # Use cluster DNS so we can resolve gluetun service
+      # VPN routing is done via HTTP_PROXY, not network namespace
+      dnsPolicy: ClusterFirst
       containers:
         - name: prowlarr
           image: lscr.io/linuxserver/prowlarr:1.37.0

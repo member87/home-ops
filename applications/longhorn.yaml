@@ -44,6 +44,9 @@ spec:
             guaranteedInstanceManagerCPU: 12
             # Orphan management
             orphanAutoDeletion: true
+            # Talos-specific: set the system managed components to false
+            # since Talos manages these at the OS level
+            systemManagedComponentsNodeSelector: ""
           
           # Storage Class settings
           persistence:
@@ -78,10 +81,14 @@ spec:
           ingress:
             enabled: false
           
-          # Enable pre-upgrade checker
+          # Disable pre-upgrade checker (not needed for fresh install, causes issues with ArgoCD hooks)
           preUpgradeChecker:
-            jobEnabled: true
-            upgradeVersionCheck: true
+            jobEnabled: false
+            upgradeVersionCheck: false
+          
+          # Disable post-delete job for Helm to avoid ArgoCD hook issues
+          longhornPostDelete:
+            enabled: false
           
           # CSI settings
           csi:
@@ -109,6 +116,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      # Skip Helm hooks that cause issues with ArgoCD
+      - SkipDryRunOnMissingResource=true
     retry:
       limit: 5
       backoff:

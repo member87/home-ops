@@ -188,7 +188,7 @@ spec:
         # Shares network namespace with Gluetun
         # All torrent traffic goes through VPN tunnel
         - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:5.1.4
+          image: lscr.io/linuxserver/qbittorrent:20.04.1
           env:
             - name: PUID
               value: "1000"

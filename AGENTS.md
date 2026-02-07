@@ -368,7 +368,7 @@ The cluster uses a two-tier storage architecture:
 
 6. **Headscale** (namespace: `headscale`)
    - Self-hosted Tailscale control plane
-   - Image: `headscale/headscale:v0.28.0`
+   - Image: `headscale/headscale:v0.27.1`
    - Internal URL: `https://headscale.lab.jackhumes.com`
    - External URL: `https://headscale.jackhumes.com` (via FRP tunnel)
    - OIDC integration with Pocket ID
@@ -376,7 +376,7 @@ The cluster uses a two-tier storage architecture:
 
 7. **Headplane** (namespace: `headplane`)
    - Web-based admin UI for Headscale
-   - Image: `ghcr.io/tale/headplane:next`
+   - Image: `ghcr.io/tale/headplane:0.6.1`
    - Accessible at: `https://headplane.lab.jackhumes.com`
    - OIDC authentication via Pocket ID (client ID in Pocket ID UI)
    - Uses long-lived Headscale API key (sealed in `headplane-secrets`)

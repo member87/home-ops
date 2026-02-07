@@ -368,7 +368,7 @@ The cluster uses a two-tier storage architecture:
 
 6. **Headscale** (namespace: `headscale`)
    - Self-hosted Tailscale control plane
-   - Image: `headscale/headscale:v0.27.1`
+   - Image: `headscale/headscale:v0.28.0`
    - Internal URL: `https://headscale.lab.jackhumes.com`
    - External URL: `https://headscale.jackhumes.com` (via FRP tunnel)
    - OIDC integration with Pocket ID
@@ -376,8 +376,11 @@ The cluster uses a two-tier storage architecture:
 
 7. **Headplane** (namespace: `headplane`)
    - Web-based admin UI for Headscale
-   - Image: `ghcr.io/tale/headplane:0.6.1`
-   - Accessible at: `https://headscale.lab.jackhumes.com/admin`
+   - Image: `ghcr.io/tale/headplane:next`
+   - Accessible at: `https://headplane.lab.jackhumes.com`
+   - OIDC authentication via Pocket ID (client ID in Pocket ID UI)
+   - Uses long-lived Headscale API key (sealed in `headplane-secrets`)
+   - Secrets in SealedSecret: `oidc_client_secret`, `headscale_api_key`, `cookie_secret`
 
 8. **Tailscale Subnet Router** (namespace: `tailscale-subnet-router`)
    - Advertises `10.0.0.0/24` to Tailnet
@@ -491,10 +494,9 @@ allocation: sequential
 dns:
   magic_dns: true
   base_domain: tailnet.lab.jackhumes.com
-  nameservers:
-    global:
-      - 10.0.0.201    # Pi-hole
-      - 1.1.1.1       # Cloudflare fallback
+   nameservers:
+     global:
+       - 10.0.0.201    # Pi-hole
 
 # OIDC (Pocket ID)
 oidc:
@@ -563,12 +565,14 @@ env:
 - `argocd` - ArgoCD deployment
 - `crowdsec` - CrowdSec IPS (agent and LAPI)
 - `grafana` - Grafana visualization
+- `headplane` - Headplane web UI for Headscale
 - `headscale` - Headscale VPN control plane
 - `lldap` - Lightweight LDAP server
 - `loki` - Loki log aggregation
 - `pocket-id` - OIDC provider with passkey authentication
 - `prometheus` - Prometheus metrics
 - `sealed-secrets` - Sealed secrets controller
+- `tailscale-subnet-router` - Tailscale subnet router for LAN access
 - `tinyauth` - ForwardAuth middleware
 - `traefik` - Traefik ingress controller
 - (others as needed per application)

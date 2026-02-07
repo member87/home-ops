@@ -21,10 +21,13 @@ data:
       config_strict: false
 
     oidc:
-      issuer: "https://auth.lab.jackhumes.com"
+      issuer: "https://auth.jackhumes.com"
       client_id: "4f76cfd0-245e-4f84-a2e4-b488b0cbbcbc"
       client_secret_path: "/etc/headplane/secrets/oidc_client_secret"
       headscale_api_key_path: "/etc/headplane/secrets/headscale_api_key"
+      disable_api_key_login: true
+      token_endpoint_auth_method: "client_secret_post"
+      redirect_uri: "https://headplane.lab.jackhumes.com/admin/oidc/callback"
 
     integration:
       # Agent requires pre_authkey even when disabled (bug workaround)

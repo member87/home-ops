@@ -11,6 +11,9 @@ data:
   url: https://argocd.lab.jackhumes.com
   application.resourceTrackingMethod: annotation
   timeout.reconciliation: 180s
+  resource.customizations.ignoreDifferences.PersistentVolumeClaim: |
+    jsonPointers:
+      - /spec/volumeName
   oidc.config: |
     name: Pocket ID
     issuer: https://auth.jackhumes.com

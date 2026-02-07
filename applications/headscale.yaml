@@ -5,6 +5,12 @@ metadata:
   name: headscale
   namespace: argocd
 spec:
+  ignoreDifferences:
+    - group: ""
+      kind: PersistentVolumeClaim
+      jsonPointers:
+        - /spec/volumeName
+        - /spec/volumeMode
   project: default
   source:
     repoURL: https://github.com/member87/home-ops.git
@@ -19,3 +25,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

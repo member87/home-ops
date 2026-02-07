@@ -18,7 +18,6 @@ spec:
           admin:
             existingSecret: "pihole-password-empty"
             passwordKey: "password"
-          
           # Persistent storage using Longhorn
           persistentVolumeClaim:
             enabled: true
@@ -26,7 +25,6 @@ spec:
             storageClass: "longhorn"
             accessModes:
               - ReadWriteOnce
-          
           # DNS Service Configuration - using LoadBalancer with MetalLB
           serviceDns:
             mixedService: true
@@ -35,7 +33,6 @@ spec:
             port: 53
             annotations:
               metallb.universe.tf/allow-shared-ip: pihole-svc
-          
           # Web Interface Service Configuration
           serviceWeb:
             http:
@@ -48,15 +45,12 @@ spec:
             loadBalancerIP: "10.0.0.201"
             annotations:
               metallb.universe.tf/allow-shared-ip: pihole-svc
-          
           # DHCP Service - disable if not needed
           serviceDhcp:
             enabled: false
-          
           # DNS Configuration
           DNS1: "1.1.1.1"
           DNS2: "1.0.0.1"
-          
           # DNSMasq custom configuration
           dnsmasq:
             enableCustomDnsMasq: true
@@ -65,14 +59,12 @@ spec:
               - address=/.lab.jackhumes.com/10.0.0.200
             customCnameEntries: []
             upstreamServers: []
-          
           # Environment variables
           extraEnvVars:
             TZ: "UTC"
             WEBPASSWORD: ""
             FTLCONF_dns_listeningMode: "all"
             FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/10.0.0.200"
-          
           # Pod DNS Configuration
           # Use external DNS during startup to avoid chicken-and-egg problem
           podDnsConfig:
@@ -81,7 +73,6 @@ spec:
             nameservers:
               - 1.1.1.1
               - 1.0.0.1
-          
           # Resources
           resources:
             limits:
@@ -90,12 +81,10 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          
           # Additional blocklists
           adlists:
             - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
             - https://dbl.oisd.nl/
-          
           # Monitoring
           monitoring:
             podMonitor:
@@ -116,9 +105,16 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 3m
+  ignoreDifferences:
+    - group: ""
+      kind: PersistentVolumeClaim
+      jsonPointers:
+        - /spec/volumeName
+        - /spec/volumeMode

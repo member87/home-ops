@@ -11,7 +11,7 @@ data:
   url: https://argocd.lab.jackhumes.com
   application.resourceTrackingMethod: annotation
   timeout.reconciliation: 180s
-  resource.customizations.ignoreDifferences.PersistentVolumeClaim: |
+  resource.customizations.ignoreDifferences.all: |
     jsonPointers:
       - /spec/volumeName
   oidc.config: |

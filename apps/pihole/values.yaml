@@ -25,8 +25,10 @@ serviceDns:
     metallb.universe.tf/allow-shared-ip: pihole-svc
 
 # Web Interface Service Configuration
+# externalTrafficPolicy must match serviceDns for MetalLB shared IP
 serviceWeb:
   type: LoadBalancer
+  externalTrafficPolicy: Cluster
   loadBalancerIP: "10.0.0.201"
   http:
     enabled: true

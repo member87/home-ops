@@ -39,6 +39,7 @@ spec:
             annotations:
               metallb.universe.tf/allow-shared-ip: pihole-svc
           # Web Interface Service Configuration
+          # externalTrafficPolicy must match serviceDns for MetalLB shared IP
           serviceWeb:
             http:
               enabled: true
@@ -47,6 +48,7 @@ spec:
               enabled: true
               port: 443
             type: LoadBalancer
+            externalTrafficPolicy: Cluster
             loadBalancerIP: "10.0.0.201"
             annotations:
               metallb.universe.tf/allow-shared-ip: pihole-svc

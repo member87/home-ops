@@ -43,7 +43,7 @@ data:
 
     dns:
       magic_dns: true
-      base_domain: tailnet.lab.jackhumes.com
+      base_domain: tailnet.jackhumes.com
       override_local_dns: true
       nameservers:
         global:

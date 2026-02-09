@@ -47,13 +47,7 @@ data:
       override_local_dns: true
       nameservers:
         global:
-          - 1.1.1.1
-          - 1.0.0.1
-        split:
-          lab.jackhumes.com:
-            - 10.0.0.201
-      search_domains:
-        - lab.jackhumes.com
+          - 10.0.0.201
       extra_records: []
 
     oidc:

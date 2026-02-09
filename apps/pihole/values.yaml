@@ -14,8 +14,11 @@ persistentVolumeClaim:
     - ReadWriteOnce
 
 # DNS Service Configuration - using LoadBalancer with MetalLB
+# externalTrafficPolicy: Cluster ensures kube-proxy creates DNAT rules on ALL
+# nodes, required for Tailscale subnet router to forward DNS to 10.0.0.201
 serviceDns:
   type: LoadBalancer
+  externalTrafficPolicy: Cluster
   loadBalancerIP: "10.0.0.201"
   port: 53
   annotations:

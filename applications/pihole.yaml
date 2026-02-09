@@ -26,9 +26,14 @@ spec:
             accessModes:
               - ReadWriteOnce
           # DNS Service Configuration - using LoadBalancer with MetalLB
+          # externalTrafficPolicy: Cluster ensures kube-proxy creates DNAT rules
+          # on ALL nodes, not just the node running Pi-hole. This is required for
+          # Tailscale subnet router (on a different node) to forward DNS queries
+          # to 10.0.0.201.
           serviceDns:
             mixedService: true
             type: LoadBalancer
+            externalTrafficPolicy: Cluster
             loadBalancerIP: "10.0.0.201"
             port: 53
             annotations:

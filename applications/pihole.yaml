@@ -112,7 +112,6 @@ spec:
           # Additional blocklists
           adlists:
             - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-            - https://dbl.oisd.nl/
           # Monitoring
           monitoring:
             podMonitor:

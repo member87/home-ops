@@ -618,8 +618,130 @@ data:
         },
         {
           "type": "row",
-          "title": "Per-Pod Comparison",
+          "title": "Top Queries & Clients",
           "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Queries",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "lineWidth": 1,
+                "scaleDistribution": {"type": "linear"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "blue", "value": null}]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+          "id": 17,
+          "options": {
+            "barRadius": 0.1,
+            "barWidth": 0.8,
+            "fullHighlight": false,
+            "groupWidth": 0.7,
+            "legend": {"displayMode": "hidden", "placement": "bottom", "showLegend": false},
+            "orientation": "horizontal",
+            "showValue": "always",
+            "stacking": "none",
+            "tooltip": {"mode": "single", "sort": "none"},
+            "xTickLabelRotation": 0
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "topk(10, sum(pihole_top_queries{kubernetes_namespace=\"pihole\"}) by (domain))",
+              "legendFormat": "{{domain}}",
+              "range": true,
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "title": "Top Queried Domains",
+          "type": "barchart"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Queries",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "lineWidth": 1,
+                "scaleDistribution": {"type": "linear"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+          "id": 18,
+          "options": {
+            "barRadius": 0.1,
+            "barWidth": 0.8,
+            "fullHighlight": false,
+            "groupWidth": 0.7,
+            "legend": {"displayMode": "hidden", "placement": "bottom", "showLegend": false},
+            "orientation": "horizontal",
+            "showValue": "always",
+            "stacking": "none",
+            "tooltip": {"mode": "single", "sort": "none"},
+            "xTickLabelRotation": 0
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "topk(10, sum(pihole_top_sources{kubernetes_namespace=\"pihole\"}) by (source, source_name))",
+              "legendFormat": "{{source}} ({{source_name}})",
+              "range": true,
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "title": "Top Clients (Sources)",
+          "type": "barchart"
+        },
+        {
+          "type": "row",
+          "title": "Per-Pod Comparison",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32},
           "collapsed": false
         },
         {
@@ -659,7 +781,7 @@ data:
               }
             ]
           },
-          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 33},
           "id": 11,
           "options": {
             "cellHeight": "md",
@@ -815,7 +937,7 @@ data:
         {
           "type": "row",
           "title": "Resource Usage",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 41},
           "collapsed": false
         },
         {
@@ -855,7 +977,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 42},
           "id": 12,
           "options": {
             "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
@@ -912,7 +1034,7 @@ data:
               "unit": "bytes"
             }
           },
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 42},
           "id": 13,
           "options": {
             "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
@@ -935,7 +1057,7 @@ data:
         {
           "type": "row",
           "title": "Reply Types",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 41},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 50},
           "collapsed": false
         },
         {
@@ -953,7 +1075,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 42},
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 51},
           "id": 14,
           "options": {
             "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
@@ -1017,7 +1139,7 @@ data:
               "unit": "percent"
             }
           },
-          "gridPos": {"h": 8, "w": 16, "x": 8, "y": 42},
+          "gridPos": {"h": 8, "w": 16, "x": 8, "y": 51},
           "id": 15,
           "options": {
             "legend": {"calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true},
@@ -1040,7 +1162,7 @@ data:
         {
           "type": "row",
           "title": "Logs",
-          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 50},
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 59},
           "collapsed": false
         },
         {
@@ -1048,7 +1170,7 @@ data:
             "type": "loki",
             "uid": "${lokiDatasource}"
           },
-          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 51},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 60},
           "id": 16,
           "options": {
             "dedupStrategy": "exact",

@@ -1,17 +1,4 @@
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pocket-id-data
-  namespace: pocket-id
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 1Gi
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,8 +8,6 @@ metadata:
     app: pocket-id
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: pocket-id
@@ -31,6 +16,13 @@ spec:
       labels:
         app: pocket-id
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: pocket-id
       containers:
         - name: pocket-id
           image: ghcr.io/pocket-id/pocket-id:v2.2.0
@@ -56,6 +48,15 @@ spec:
                 secretKeyRef:
                   name: pocket-id-secrets
                   key: ENCRYPTION_KEY
+            # Store files in database for stateless operation
+            - name: FILE_BACKEND
+              value: "database"
+            # PostgreSQL database connection
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: pocket-id-secrets
+                  key: DB_CONNECTION_STRING
             # Prometheus metrics
             - name: METRICS_ENABLED
               value: "true"
@@ -65,9 +66,6 @@ spec:
               value: "0.0.0.0"
             - name: OTEL_EXPORTER_PROMETHEUS_PORT
               value: "9464"
-          volumeMounts:
-            - name: data
-              mountPath: /app/data
           livenessProbe:
             httpGet:
               path: /health
@@ -87,7 +85,3 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-      volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: pocket-id-data

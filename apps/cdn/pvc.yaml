@@ -6,8 +6,8 @@ metadata:
   namespace: cdn
 spec:
   accessModes:
-    - ReadWriteMany
-  storageClassName: nfs
+    - ReadWriteOnce
+  storageClassName: longhorn
   resources:
     requests:
       storage: 1Gi

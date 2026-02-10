@@ -13,18 +13,39 @@ spec:
       targetRevision: 2.35.0
       helm:
         valuesObject:
+          # Scale to 3 replicas for high availability
+          replicaCount: 3
+          strategyType: RollingUpdate
+          maxSurge: 1
+          maxUnavailable: 1
           # Admin password disabled - protected by Tinyauth/Pocket ID
           # Use empty password secret to disable Pi-hole authentication
           admin:
             existingSecret: "pihole-password-empty"
             passwordKey: "password"
-          # Persistent storage using Longhorn
+          # Disable persistent storage - each replica builds its own gravity DB
+          # from the configured adlists on startup. Config is managed via Helm values.
+          # PVC with ReadWriteOnce would prevent scheduling multiple replicas.
           persistentVolumeClaim:
+            enabled: false
+          # Anti-affinity to spread Pi-hole pods across nodes
+          antiaff:
             enabled: true
-            size: "2Gi"
-            storageClass: "longhorn"
-            accessModes:
-              - ReadWriteOnce
+            avoidRelease: pihole
+            strict: false
+          # Topology spread for even distribution across nodes
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app: pihole
+                  release: pihole
+          # Pod Disruption Budget - ensure at least 2 replicas are always running
+          podDisruptionBudget:
+            enabled: true
+            minAvailable: 2
           # DNS Service Configuration - using LoadBalancer with MetalLB
           # externalTrafficPolicy: Cluster ensures kube-proxy creates DNAT rules
           # on ALL nodes, not just the node running Pi-hole. This is required for

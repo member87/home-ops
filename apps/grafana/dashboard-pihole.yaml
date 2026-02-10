@@ -107,8 +107,8 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_status{namespace=\"pihole\"}",
-              "legendFormat": "{{pod}}",
+              "expr": "pihole_status{kubernetes_namespace=\"pihole\"}",
+              "legendFormat": "{{kubernetes_pod_name}}",
               "range": true,
               "refId": "A"
             }
@@ -153,7 +153,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_dns_queries_today{namespace=\"pihole\"})",
+              "expr": "sum(pihole_dns_queries_today{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Total Queries",
               "range": true,
               "refId": "A"
@@ -199,7 +199,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_ads_blocked_today{namespace=\"pihole\"})",
+              "expr": "sum(pihole_ads_blocked_today{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Ads Blocked",
               "range": true,
               "refId": "A"
@@ -245,7 +245,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "avg(pihole_ads_percentage_today{namespace=\"pihole\"})",
+              "expr": "avg(pihole_ads_percentage_today{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Block %",
               "range": true,
               "refId": "A"
@@ -291,7 +291,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "max(pihole_domains_being_blocked{namespace=\"pihole\"})",
+              "expr": "max(pihole_domains_being_blocked{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Domains Blocked",
               "range": true,
               "refId": "A"
@@ -337,7 +337,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "max(pihole_unique_clients{namespace=\"pihole\"})",
+              "expr": "max(pihole_unique_clients{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Unique Clients",
               "range": true,
               "refId": "A"
@@ -400,8 +400,8 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_dns_queries_today{namespace=\"pihole\"}",
-              "legendFormat": "{{pod}}",
+              "expr": "pihole_dns_queries_today{kubernetes_namespace=\"pihole\"}",
+              "legendFormat": "{{kubernetes_pod_name}}",
               "range": true,
               "refId": "A"
             }
@@ -457,8 +457,8 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_ads_blocked_today{namespace=\"pihole\"}",
-              "legendFormat": "{{pod}}",
+              "expr": "pihole_ads_blocked_today{kubernetes_namespace=\"pihole\"}",
+              "legendFormat": "{{kubernetes_pod_name}}",
               "range": true,
               "refId": "A"
             }
@@ -534,7 +534,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_queries_forwarded{namespace=\"pihole\"})",
+              "expr": "sum(pihole_queries_forwarded{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Forwarded",
               "range": true,
               "refId": "A"
@@ -542,7 +542,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_queries_cached{namespace=\"pihole\"})",
+              "expr": "sum(pihole_queries_cached{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Cached",
               "range": true,
               "refId": "B"
@@ -550,7 +550,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_ads_blocked_today{namespace=\"pihole\"})",
+              "expr": "sum(pihole_ads_blocked_today{kubernetes_namespace=\"pihole\"})",
               "legendFormat": "Blocked",
               "range": true,
               "refId": "C"
@@ -607,8 +607,8 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_dns_queries_all_types{namespace=\"pihole\"}) by (record_type)",
-              "legendFormat": "{{record_type}}",
+              "expr": "sum(pihole_querytypes{kubernetes_namespace=\"pihole\"}) by (type)",
+              "legendFormat": "{{type}}",
               "range": true,
               "refId": "A"
             }
@@ -678,7 +678,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_dns_queries_today{namespace=\"pihole\"}",
+              "expr": "pihole_dns_queries_today{kubernetes_namespace=\"pihole\"}",
               "format": "table",
               "legendFormat": "__auto",
               "range": true,
@@ -688,7 +688,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_ads_blocked_today{namespace=\"pihole\"}",
+              "expr": "pihole_ads_blocked_today{kubernetes_namespace=\"pihole\"}",
               "format": "table",
               "legendFormat": "__auto",
               "range": false,
@@ -698,7 +698,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_queries_forwarded{namespace=\"pihole\"}",
+              "expr": "pihole_queries_forwarded{kubernetes_namespace=\"pihole\"}",
               "format": "table",
               "legendFormat": "__auto",
               "range": false,
@@ -708,7 +708,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_queries_cached{namespace=\"pihole\"}",
+              "expr": "pihole_queries_cached{kubernetes_namespace=\"pihole\"}",
               "format": "table",
               "legendFormat": "__auto",
               "range": false,
@@ -718,7 +718,7 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_ads_percentage_today{namespace=\"pihole\"}",
+              "expr": "pihole_ads_percentage_today{kubernetes_namespace=\"pihole\"}",
               "format": "table",
               "legendFormat": "__auto",
               "range": false,
@@ -731,7 +731,7 @@ data:
             {
               "id": "seriesToColumns",
               "options": {
-                "byField": "pod"
+                "byField": "kubernetes_pod_name"
               }
             },
             {
@@ -750,18 +750,12 @@ data:
                   "__name__ 3": true,
                   "__name__ 4": true,
                   "__name__ 5": true,
-                  "container": true,
-                  "container 1": true,
-                  "container 2": true,
-                  "container 3": true,
-                  "container 4": true,
-                  "container 5": true,
-                  "endpoint": true,
-                  "endpoint 1": true,
-                  "endpoint 2": true,
-                  "endpoint 3": true,
-                  "endpoint 4": true,
-                  "endpoint 5": true,
+                  "hostname": true,
+                  "hostname 1": true,
+                  "hostname 2": true,
+                  "hostname 3": true,
+                  "hostname 4": true,
+                  "hostname 5": true,
                   "instance": true,
                   "instance 1": true,
                   "instance 2": true,
@@ -774,27 +768,39 @@ data:
                   "job 3": true,
                   "job 4": true,
                   "job 5": true,
-                  "namespace": true,
-                  "namespace 1": true,
-                  "namespace 2": true,
-                  "namespace 3": true,
-                  "namespace 4": true,
-                  "namespace 5": true,
-                  "node": true,
-                  "node 1": true,
-                  "node 2": true,
-                  "node 3": true,
-                  "node 4": true,
-                  "node 5": true,
-                  "service": true,
-                  "service 1": true,
-                  "service 2": true,
-                  "service 3": true,
-                  "service 4": true,
-                  "service 5": true
+                  "kubernetes_namespace": true,
+                  "kubernetes_namespace 1": true,
+                  "kubernetes_namespace 2": true,
+                  "kubernetes_namespace 3": true,
+                  "kubernetes_namespace 4": true,
+                  "kubernetes_namespace 5": true,
+                  "app": true,
+                  "app 1": true,
+                  "app 2": true,
+                  "app 3": true,
+                  "app 4": true,
+                  "app 5": true,
+                  "app_kubernetes_io_name": true,
+                  "app_kubernetes_io_name 1": true,
+                  "app_kubernetes_io_name 2": true,
+                  "app_kubernetes_io_name 3": true,
+                  "app_kubernetes_io_name 4": true,
+                  "app_kubernetes_io_name 5": true,
+                  "pod_template_hash": true,
+                  "pod_template_hash 1": true,
+                  "pod_template_hash 2": true,
+                  "pod_template_hash 3": true,
+                  "pod_template_hash 4": true,
+                  "pod_template_hash 5": true,
+                  "release": true,
+                  "release 1": true,
+                  "release 2": true,
+                  "release 3": true,
+                  "release 4": true,
+                  "release 5": true
                 },
                 "renameByName": {
-                  "pod": "Pod",
+                  "kubernetes_pod_name": "Pod",
                   "Value #Queries": "Queries",
                   "Value #Blocked": "Blocked",
                   "Value #Forwarded": "Forwarded",
@@ -964,8 +970,8 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "sum(pihole_reply_type{namespace=\"pihole\"}) by (reply_type)",
-              "legendFormat": "{{reply_type}}",
+              "expr": "sum(pihole_reply{kubernetes_namespace=\"pihole\"}) by (type)",
+              "legendFormat": "{{type}}",
               "range": true,
               "refId": "A",
               "instant": true
@@ -1022,8 +1028,8 @@ data:
             {
               "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
               "editorMode": "code",
-              "expr": "pihole_ads_percentage_today{namespace=\"pihole\"}",
-              "legendFormat": "{{pod}}",
+              "expr": "pihole_ads_percentage_today{kubernetes_namespace=\"pihole\"}",
+              "legendFormat": "{{kubernetes_pod_name}}",
               "range": true,
               "refId": "A"
             }

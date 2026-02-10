@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-init
+  namespace: postgresql
+data:
+  01-create-databases.sql: |
+    -- Create database and user for Pocket ID
+    CREATE USER pocketid WITH PASSWORD 'pocketid';
+    CREATE DATABASE pocketid OWNER pocketid;
+    GRANT ALL PRIVILEGES ON DATABASE pocketid TO pocketid;

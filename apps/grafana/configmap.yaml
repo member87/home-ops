@@ -9,6 +9,14 @@ data:
     [log]
     level = debug
     
+    [database]
+    type = postgres
+    host = postgresql.postgresql.svc.cluster.local:5432
+    name = grafana
+    user = grafana
+    password = grafana
+    ssl_mode = disable
+    
     [server]
     domain = grafana.lab.jackhumes.com
     root_url = https://grafana.lab.jackhumes.com

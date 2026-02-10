@@ -5,7 +5,7 @@ metadata:
   name: grafana
   namespace: grafana
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: grafana
@@ -25,7 +25,6 @@ spec:
               mkdir -p /var/lib/grafana/dashboards/kubernetes
               mkdir -p /var/lib/grafana/dashboards/unifi
               mkdir -p /var/lib/grafana/dashboards/general
-              chown -R 472:472 /var/lib/grafana
               # Make dashboards dir writable by sidecar (runs as nobody:65534)
               chmod 777 /dashboards
           volumeMounts:
@@ -156,8 +155,7 @@ spec:
           secret:
             secretName: grafana-oidc-secret
         - name: storage
-          persistentVolumeClaim:
-            claimName: grafana-storage
+          emptyDir: {}
         - name: datasources
           configMap:
             name: grafana-datasources

@@ -112,6 +112,7 @@ spec:
           # Additional blocklists
           adlists:
             - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+            - https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt
           # Pod annotations for Prometheus auto-discovery
           podAnnotations:
             prometheus.io/scrape: "true"

@@ -8,6 +8,14 @@ metadata:
     app: tinyauth
 spec:
   type: ClusterIP
+  # Session affinity ensures ForwardAuth requests from the same Traefik pod
+  # always reach the same Tinyauth pod. This is critical because Tinyauth
+  # stores sessions in a per-pod SQLite database - without affinity, a session
+  # created on pod A won't be found on pod B, causing an auth redirect loop.
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 86400
   ports:
     - port: 3000
       targetPort: http

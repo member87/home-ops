@@ -26,6 +26,12 @@ spec:
       services:
         - name: tinyauth
           port: 3000
+          sticky:
+            cookie:
+              name: tinyauth-sticky
+              secure: true
+              httpOnly: true
+              sameSite: lax
   tls:
     secretName: tinyauth-tls
 ---

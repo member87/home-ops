@@ -7,7 +7,9 @@ metadata:
   labels:
     app: pocket-id
 spec:
-  replicas: 3
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: pocket-id
@@ -16,13 +18,6 @@ spec:
       labels:
         app: pocket-id
     spec:
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              app: pocket-id
       containers:
         - name: pocket-id
           image: ghcr.io/pocket-id/pocket-id:v2.2.0

@@ -7,7 +7,7 @@ metadata:
   labels:
     app: glance
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: glance
@@ -16,6 +16,13 @@ spec:
       labels:
         app: glance
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: glance
       containers:
         - name: glance
           image: glanceapp/glance:v0.8.4

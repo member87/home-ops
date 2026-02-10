@@ -7,7 +7,7 @@ metadata:
   labels:
     app: tinyauth
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: tinyauth
@@ -16,6 +16,13 @@ spec:
       labels:
         app: tinyauth
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: tinyauth
       containers:
         - name: tinyauth
           image: ghcr.io/steveiliop56/tinyauth:v4.1.0

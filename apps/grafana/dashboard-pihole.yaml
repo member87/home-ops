@@ -1,0 +1,1075 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-pihole
+  namespace: grafana
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "Network"
+data:
+  pihole.json: |
+    {
+      "title": "Pi-hole DNS",
+      "uid": "pihole-dashboard",
+      "timezone": "browser",
+      "schemaVersion": 40,
+      "version": 1,
+      "refresh": "30s",
+      "templating": {
+        "list": [
+          {
+            "name": "promDatasource",
+            "label": "Prometheus",
+            "type": "datasource",
+            "query": "prometheus",
+            "multi": false,
+            "current": {
+              "text": "Prometheus",
+              "value": "prometheus"
+            }
+          },
+          {
+            "name": "lokiDatasource",
+            "label": "Loki",
+            "type": "datasource",
+            "query": "loki",
+            "multi": false,
+            "current": {
+              "text": "Loki",
+              "value": "loki"
+            }
+          }
+        ]
+      },
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "row",
+          "title": "Overview",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [
+                {"options": {"0": {"color": "red", "index": 0, "text": "DOWN"}}, "type": "value"},
+                {"options": {"1": {"color": "green", "index": 1, "text": "UP"}}, "type": "value"}
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "green", "value": 1}
+                ]
+              },
+              "unit": "none"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+          "id": 1,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "value_and_name"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_status{namespace=\"pihole\"}",
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Pod Status",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "blue", "value": null}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_dns_queries_today{namespace=\"pihole\"})",
+              "legendFormat": "Total Queries",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Total DNS Queries (All Pods)",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_ads_blocked_today{namespace=\"pihole\"})",
+              "legendFormat": "Ads Blocked",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Total Ads Blocked (All Pods)",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "orange", "value": null}
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "avg(pihole_ads_percentage_today{namespace=\"pihole\"})",
+              "legendFormat": "Block %",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Avg Block Percentage",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "purple", "value": null}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "max(pihole_domains_being_blocked{namespace=\"pihole\"})",
+              "legendFormat": "Domains Blocked",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Domains on Blocklist",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "cyan", "value": null}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "max(pihole_unique_clients{namespace=\"pihole\"})",
+              "legendFormat": "Unique Clients",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Unique Clients",
+          "type": "stat"
+        },
+        {
+          "type": "row",
+          "title": "DNS Activity Over Time",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Queries",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 30,
+                "gradientMode": "opacity",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "normal"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+          "id": 7,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_dns_queries_today{namespace=\"pihole\"}",
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "DNS Queries Per Pod (Stacked)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Blocked",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 30,
+                "gradientMode": "opacity",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "normal"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "red", "value": null}]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+          "id": 8,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_ads_blocked_today{namespace=\"pihole\"}",
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Ads Blocked Per Pod (Stacked)",
+          "type": "timeseries"
+        },
+        {
+          "type": "row",
+          "title": "Query Breakdown",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Forwarded"},
+                "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Cached"},
+                "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Blocked"},
+                "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 15},
+          "id": 9,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_queries_forwarded{namespace=\"pihole\"})",
+              "legendFormat": "Forwarded",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_queries_cached{namespace=\"pihole\"})",
+              "legendFormat": "Cached",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_ads_blocked_today{namespace=\"pihole\"})",
+              "legendFormat": "Blocked",
+              "range": true,
+              "refId": "C"
+            }
+          ],
+          "title": "Query Resolution (Aggregate)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15},
+          "id": 10,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_dns_queries_all_types{namespace=\"pihole\"}) by (record_type)",
+              "legendFormat": "{{record_type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Queries by Record Type",
+          "type": "timeseries"
+        },
+        {
+          "type": "row",
+          "title": "Per-Pod Comparison",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "custom": {
+                "align": "auto",
+                "cellOptions": {"type": "auto"},
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Pod"},
+                "properties": [{"id": "custom.width", "value": 250}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Block %"},
+                "properties": [
+                  {"id": "unit", "value": "percent"},
+                  {"id": "custom.cellOptions", "value": {"mode": "gradient", "type": "gauge"}},
+                  {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 20}, {"color": "orange", "value": 40}]}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+          "id": 11,
+          "options": {
+            "cellHeight": "md",
+            "footer": {
+              "countRows": false,
+              "enablePagination": false,
+              "fields": ["Queries", "Blocked", "Forwarded", "Cached"],
+              "reducer": ["sum"],
+              "show": true
+            },
+            "showHeader": true,
+            "sortBy": [{"desc": true, "displayName": "Queries"}]
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_dns_queries_today{namespace=\"pihole\"}",
+              "format": "table",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "Queries",
+              "instant": true
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_ads_blocked_today{namespace=\"pihole\"}",
+              "format": "table",
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "Blocked",
+              "instant": true
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_queries_forwarded{namespace=\"pihole\"}",
+              "format": "table",
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "Forwarded",
+              "instant": true
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_queries_cached{namespace=\"pihole\"}",
+              "format": "table",
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "Cached",
+              "instant": true
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_ads_percentage_today{namespace=\"pihole\"}",
+              "format": "table",
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "BlockPct",
+              "instant": true
+            }
+          ],
+          "title": "Per-Pod Statistics",
+          "transformations": [
+            {
+              "id": "seriesToColumns",
+              "options": {
+                "byField": "pod"
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "Time 1": true,
+                  "Time 2": true,
+                  "Time 3": true,
+                  "Time 4": true,
+                  "Time 5": true,
+                  "__name__": true,
+                  "__name__ 1": true,
+                  "__name__ 2": true,
+                  "__name__ 3": true,
+                  "__name__ 4": true,
+                  "__name__ 5": true,
+                  "container": true,
+                  "container 1": true,
+                  "container 2": true,
+                  "container 3": true,
+                  "container 4": true,
+                  "container 5": true,
+                  "endpoint": true,
+                  "endpoint 1": true,
+                  "endpoint 2": true,
+                  "endpoint 3": true,
+                  "endpoint 4": true,
+                  "endpoint 5": true,
+                  "instance": true,
+                  "instance 1": true,
+                  "instance 2": true,
+                  "instance 3": true,
+                  "instance 4": true,
+                  "instance 5": true,
+                  "job": true,
+                  "job 1": true,
+                  "job 2": true,
+                  "job 3": true,
+                  "job 4": true,
+                  "job 5": true,
+                  "namespace": true,
+                  "namespace 1": true,
+                  "namespace 2": true,
+                  "namespace 3": true,
+                  "namespace 4": true,
+                  "namespace 5": true,
+                  "node": true,
+                  "node 1": true,
+                  "node 2": true,
+                  "node 3": true,
+                  "node 4": true,
+                  "node 5": true,
+                  "service": true,
+                  "service 1": true,
+                  "service 2": true,
+                  "service 3": true,
+                  "service 4": true,
+                  "service 5": true
+                },
+                "renameByName": {
+                  "pod": "Pod",
+                  "Value #Queries": "Queries",
+                  "Value #Blocked": "Blocked",
+                  "Value #Forwarded": "Forwarded",
+                  "Value #Cached": "Cached",
+                  "Value #BlockPct": "Block %"
+                }
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "type": "row",
+          "title": "Resource Usage",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "CPU Cores",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+          "id": 12,
+          "options": {
+            "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"pihole\", container!=\"\", container!=\"POD\"}[5m])) by (pod, container)",
+              "legendFormat": "{{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU Usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Memory",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "bytes"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
+          "id": 13,
+          "options": {
+            "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"pihole\", container!=\"\", container!=\"POD\"}) by (pod, container)",
+              "legendFormat": "{{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Memory Usage",
+          "type": "timeseries"
+        },
+        {
+          "type": "row",
+          "title": "Reply Types",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 41},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false}
+              },
+              "mappings": [],
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 42},
+          "id": 14,
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"]},
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "sum(pihole_reply_type{namespace=\"pihole\"}) by (reply_type)",
+              "legendFormat": "{{reply_type}}",
+              "range": true,
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "title": "Reply Types (Aggregate)",
+          "type": "piechart"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {"type": "linear"},
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {"h": 8, "w": 16, "x": 8, "y": 42},
+          "id": 15,
+          "options": {
+            "legend": {"calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${promDatasource}"},
+              "editorMode": "code",
+              "expr": "pihole_ads_percentage_today{namespace=\"pihole\"}",
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Block Percentage Per Pod",
+          "type": "timeseries"
+        },
+        {
+          "type": "row",
+          "title": "Logs",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 50},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 51},
+          "id": 16,
+          "options": {
+            "dedupStrategy": "exact",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "11.3.0",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
+              "editorMode": "code",
+              "expr": "{namespace=\"pihole\"}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Pi-hole Logs (All Pods)",
+          "type": "logs"
+        }
+      ],
+      "time": {"from": "now-6h", "to": "now"},
+      "timepicker": {},
+      "tags": ["dns", "pihole", "network"],
+      "description": "Unified Pi-hole DNS dashboard - aggregated stats across all replicas with per-pod breakdowns"
+    }

@@ -112,12 +112,29 @@ spec:
           # Additional blocklists
           adlists:
             - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-          # Monitoring
+          # Pod annotations for Prometheus auto-discovery
+          podAnnotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9617"
+            prometheus.io/path: "/metrics"
+          # Monitoring - pihole-exporter sidecar for Prometheus metrics
           monitoring:
             podMonitor:
               enabled: false
             sidecar:
-              enabled: false
+              enabled: true
+              port: 9617
+              image:
+                repository: ekofr/pihole-exporter
+                tag: v1.2.0
+                pullPolicy: IfNotPresent
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
     - repoURL: https://github.com/member87/home-ops.git
       targetRevision: HEAD
       path: apps/pihole

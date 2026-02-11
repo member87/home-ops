@@ -1,8 +1,0 @@
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-prune-configmap
-  namespace: metallb-system
-data:
-  test: "This resource should be auto-pruned when removed from Git"

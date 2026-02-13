@@ -17,6 +17,8 @@ This document provides guidelines for AI agents working with the home-ops Kubern
 
 ```
 home-ops/
+├── .sops.yaml             # SOPS encryption rules for Talos configs
+├── Justfile               # Task runner (Talos cluster management)
 ├── applications/          # ArgoCD Application manifests
 │   ├── pocket-id.yaml
 │   ├── tinyauth.yaml
@@ -40,6 +42,10 @@ home-ops/
 │   ├── netbird/
 │   └── ...
 ├── bootstrap/             # Bootstrap configurations
+├── talos/                 # Talos Linux node configs (SOPS-encrypted)
+│   ├── controlplane.yaml  # Control plane machine config
+│   ├── worker.yaml        # Worker node machine config
+│   └── talosconfig        # Talos API client credentials
 ├── seal-secrets.sh        # Helper script for sealing secrets
 └── AGENTS.md             # This file
 ```
@@ -49,7 +55,8 @@ home-ops/
 1. **Each application has its own directory** under `apps/` containing all its Kubernetes resources
 2. **ArgoCD Application CRDs** are stored in `applications/` directory
 3. **Kustomize is used** for resource management (kustomization.yaml in each app directory)
-4. **Sealed Secrets** are used for sensitive data (never commit plaintext secrets)
+4. **Sealed Secrets** are used for Kubernetes application secrets (never commit plaintext secrets)
+5. **SOPS with age** is used for Talos infrastructure configs (partial encryption, secrets only)
 
 ## Workflow Guidelines
 
@@ -131,6 +138,63 @@ feat(monitoring): add Grafana with Pocket ID SSO integration
 3. **Regenerate any secrets** that were accidentally exposed
 4. **Image Tags** should always be set to a specific version and NEVER lastest. Always check the latest image when adding new services
 5. **Glance dashboard** icons and links will need to be updated when removing/adding new applications
+
+### Two Secrets Systems
+
+This repository uses **two separate systems** for secrets management:
+
+| System | Used For | How It Works |
+|--------|----------|--------------|
+| **Sealed Secrets** | Kubernetes application secrets (env vars, API keys, passwords) | Encrypted by the in-cluster controller, committed as `SealedSecret` CRDs |
+| **SOPS with age** | Talos infrastructure configs (`talos/` directory) | Partial YAML encryption, decrypted locally via age private key |
+
+**When to use which:**
+- Adding a secret for a Kubernetes deployment? Use **Sealed Secrets** (`kubeseal`)
+- Editing Talos node configuration? Use **SOPS** (`sops talos/<file>`)
+
+### SOPS Encryption (Talos Configs)
+
+Talos machine configs contain highly sensitive secrets (CA private keys, cluster tokens, etc.) alongside non-sensitive configuration. SOPS encrypts **only the sensitive YAML keys** while leaving image versions and settings in plaintext.
+
+**Encrypted fields** (`encrypted_regex` in `.sops.yaml`):
+- `token` - Machine join tokens, Kubernetes bootstrap tokens
+- `key` - All private keys (machine CA, cluster CA, etcd CA, service account, etc.)
+- `secret` - Cluster shared secret
+- `secretboxEncryptionSecret` - Secret encryption key at rest
+- `id` - Cluster unique identifier
+
+**Plaintext fields** (safe, needed by Renovate for version updates):
+- All `image:` references (installer, kubelet, kube-apiserver, etc.)
+- Network configuration, node IPs, cluster settings
+- Certificate `crt` fields (public certificates)
+
+**Key location:** `~/.config/sops/age/keys.txt`
+**Public key:** Stored in `.sops.yaml` (safe to commit)
+**Private key:** MUST be backed up securely. If lost, Talos configs cannot be decrypted.
+
+#### Working with SOPS-Encrypted Files
+
+```bash
+# Edit an encrypted file (decrypts, opens editor, re-encrypts)
+just talos-edit controlplane.yaml
+# Or directly:
+sops talos/controlplane.yaml
+
+# Decrypt to stdout for inspection
+just talos-decrypt controlplane.yaml
+# Or directly:
+sops --decrypt talos/controlplane.yaml
+
+# Re-encrypt after key rotation or .sops.yaml changes
+just talos-reencrypt
+
+# IMPORTANT: talosconfig requires explicit type flags when using sops directly
+sops --input-type yaml --output-type yaml talos/talosconfig
+```
+
+#### SOPS and Renovate Compatibility
+
+SOPS files use `mac_only_encrypted: true` so that Renovate can edit plaintext fields (image versions) without invalidating the SOPS MAC. This means Renovate PRs that update Talos/Kubernetes versions will work without manual re-encryption.
 
 ### What Counts as a Secret?
 
@@ -266,6 +330,68 @@ Used for sealing secrets.
 **Installation Check:**
 ```bash
 which kubeseal && kubeseal --version
+```
+
+### just
+
+Task runner for Talos cluster management. The `Justfile` at the repo root provides commands for managing Talos nodes.
+
+**Common Commands:**
+```bash
+# List all available commands
+just help
+
+# Show cluster status
+just talos-status
+
+# Apply config to a node
+just talos-apply 10.0.0.10 controlplane.yaml
+
+# Edit encrypted Talos config
+just talos-edit controlplane.yaml
+
+# Decrypt config to stdout
+just talos-decrypt controlplane.yaml
+
+# Upgrade Talos on a node
+just talos-upgrade 10.0.0.10 1.12.2
+
+# Rolling upgrade all nodes
+just talos-rolling-upgrade 1.12.2
+```
+
+### talosctl
+
+CLI tool for managing Talos Linux nodes.
+
+**Common Commands:**
+```bash
+# All talosctl commands require decrypted talosconfig
+# Use the Justfile recipes which handle decryption automatically
+
+# Direct usage (when needed):
+talosctl --talosconfig <(sops -d --input-type yaml --output-type yaml talos/talosconfig) \
+  -e 10.0.0.10 -n 10.0.0.10 get machinestatus
+```
+
+### sops
+
+Mozilla SOPS for encrypting/decrypting Talos configuration files.
+
+**Common Commands:**
+```bash
+# Edit encrypted file (opens in $EDITOR)
+sops talos/controlplane.yaml
+
+# Decrypt to stdout
+sops --decrypt talos/controlplane.yaml
+
+# Encrypt a plaintext file in-place
+sops --encrypt --in-place talos/controlplane.yaml
+
+# For talosconfig (no .yaml extension), specify type explicitly
+sops --input-type yaml --output-type yaml talos/talosconfig
+sops --decrypt --input-type yaml --output-type yaml talos/talosconfig
 ```
 
 ### git

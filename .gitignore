@@ -1,1 +1,5 @@
 backups/
+
+# Age private keys - NEVER commit
+*.age-key
+keys.txt

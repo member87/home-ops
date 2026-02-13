@@ -1,0 +1,13 @@
+creation_rules:
+  # Talos machine configs - encrypt only secret fields, leave image versions
+  # and configuration in plaintext so Renovate can manage version updates.
+  - path_regex: talos/(controlplane|worker)\.yaml$
+    encrypted_regex: "^(token|key|secret|secretboxEncryptionSecret|id)$"
+    mac_only_encrypted: true
+    age: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
+
+  # Talos API client config - encrypt all credential fields
+  - path_regex: talos/talosconfig$
+    encrypted_regex: "^(ca|crt|key)$"
+    mac_only_encrypted: true
+    age: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj

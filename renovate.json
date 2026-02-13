@@ -9,11 +9,145 @@
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/",
+        "/^talos/worker\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: ghcr\\.io/siderolabs/installer:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "siderolabs/talos",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/",
+        "/^talos/worker\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: ghcr\\.io/siderolabs/kubelet:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: registry\\.k8s\\.io/kube-apiserver:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: registry\\.k8s\\.io/kube-controller-manager:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: registry\\.k8s\\.io/kube-scheduler:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: registry\\.k8s\\.io/kube-proxy:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/",
+        "/^talos/worker\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: registry\\.k8s\\.io/coredns/coredns:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "coredns/coredns",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^talos/controlplane\\.yaml$/",
+        "/^talos/worker\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: gcr\\.io/etcd-development/etcd:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "etcd-io/etcd",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "matchDatasources": ["docker"],
       "matchDepNames": ["traefik"],
       "sourceUrl": "https://github.com/traefik/traefik"
+    },
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["siderolabs/talos"],
+      "groupName": "Talos",
+      "commitMessageTopic": "Talos",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "talos"
+    },
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["kubernetes/kubernetes"],
+      "groupName": "Kubernetes",
+      "commitMessageTopic": "Kubernetes",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "k8s"
+    },
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["coredns/coredns"],
+      "groupName": "CoreDNS",
+      "commitMessageTopic": "CoreDNS",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "coredns"
+    },
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["etcd-io/etcd"],
+      "groupName": "etcd",
+      "commitMessageTopic": "etcd",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "etcd"
     }
   ]
 }

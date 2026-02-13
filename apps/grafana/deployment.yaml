@@ -98,7 +98,7 @@ spec:
               cpu: 100m
               memory: 128Mi
         - name: grafana
-          image: grafana/grafana:12.3.2
+          image: grafana/grafana:12.3.3
           ports:
             - containerPort: 3000
               name: http

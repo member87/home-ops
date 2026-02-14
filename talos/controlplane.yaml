@@ -492,7 +492,7 @@ cluster:
             crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lRRDd5aEhEV1lxVUhrQ0liMnRIV2paekFLQmdncWhrak9QUVFEQWpBUE1RMHcKQ3dZRFZRUUtFd1JsZEdOa01CNFhEVEkxTVRFeU5qQTVNVEkwTlZvWERUTTFNVEV5TkRBNU1USTBOVm93RHpFTgpNQXNHQTFVRUNoTUVaWFJqWkRCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkFLZGp4TTB0MWtTCldFVjJlYUgvMnZDT29sOGdkMWIrR3dHdi9hR1pFUFVndjNHRlo5Y3o4N0d2T2VGbmUxOUJ1MENBeGJKVzMxNisKa2N5R3FyQ0t4NlNqWVRCZk1BNEdBMVVkRHdFQi93UUVBd0lDaERBZEJnTlZIU1VFRmpBVUJnZ3JCZ0VGQlFjRApBUVlJS3dZQkJRVUhBd0l3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVWUh1eDVTdDZzdEV2CmRJalhkejd2bHZCbTViTXdDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWhBTGpEaERxOXM0b1FNN2NTK1FCTEVxSFYKMmFNbitscUtWa1VmSEVRR0RZME5BaUJvNmJoNkxSN2NyOVBlVHlZeFQvV0FnOWJCbTd3RktmNmJlc2dBWTBxOAo3QT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
             key: ENC[AES256_GCM,data:3GBTjzmd2Q9jseTgh/kgDyQkuoqz6XVQ8GjyFVhKikj1GFpBcrV5W3BNJlL8+jr+5mHHSlf6cw8JTGxs4m1TLF2rYGUQkpS8igBoPXjG9x+HxHCuhlO+GUjMKMK08Z5pyOygY6f88j+K3e49B8K66tSe4tQp8rdnDhgpsEYifJS/Q0nyY/uAB9ooFhx4e/+hbkw9t4pZqkWTaKVfyO3bdA0moZiq0/2O9fdkbtaBFK3GJtFq7cSSkiPaS4jMwqQhuvXdepmlafV6mfgkBwfQeDNC40fo1wNqLJiqzdce/uKxKaRYUFtV1VGExdDPX6QMx3+cvr8axneqHEDvPxtlYRMWcQlS/klM0+tsk3cjq6XG/RAsrHxbSLLTBOyiHhKUW1J/F5dvLbtFDf+APpAyqA==,iv:NiSkE8pPiAOLdZM0KFhdVCyJedE+8js6yMDA0ml7W+E=,tag:51Y45+TmVlBtfUe3hBEBAg==,type:str]
             # # The container image used to create the etcd service.
-            # image: gcr.io/etcd-development/etcd:v3.6.7
+            # image: gcr.io/etcd-development/etcd:v3.6.8
             # # The `advertisedSubnets` field configures the networks to pick etcd advertised IP from.
             # advertisedSubnets:
             #     - 10.0.0.0/8

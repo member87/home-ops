@@ -67,6 +67,9 @@ pages:
                 icon: sh:grafana
                 alt-status-codes:
                   - 401
+              - title: Checkmk
+                url: https://checkmk.lab.jackhumes.com
+                icon: sh:checkmk
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection

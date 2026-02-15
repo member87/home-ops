@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkmk
+  namespace: checkmk
+  labels:
+    app: checkmk
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: checkmk
+  template:
+    metadata:
+      labels:
+        app: checkmk
+    spec:
+      containers:
+        - name: checkmk
+          image: checkmk/check-mk-raw:2.4.0p21
+          ports:
+            - containerPort: 5000
+              name: http
+              protocol: TCP
+            - containerPort: 8000
+              name: agent-receiver
+              protocol: TCP
+          env:
+            - name: CMK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: checkmk-secrets
+                  key: CMK_PASSWORD
+            - name: TZ
+              value: "Europe/London"
+          volumeMounts:
+            - name: checkmk-data
+              mountPath: /omd/sites
+          livenessProbe:
+            httpGet:
+              path: /cmk/check_mk/login.py
+              port: 5000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /cmk/check_mk/login.py
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+      volumes:
+        - name: checkmk-data
+          persistentVolumeClaim:
+            claimName: checkmk-data

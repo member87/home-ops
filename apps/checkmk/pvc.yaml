@@ -4,10 +4,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: checkmk-data
   namespace: checkmk
+  annotations:
+    # Use single replica due to disk pressure on 2 of 3 nodes
+    longhorn.io/number-of-replicas: "1"
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-single-replica
+  storageClassName: longhorn
   resources:
     requests:
       storage: 10Gi

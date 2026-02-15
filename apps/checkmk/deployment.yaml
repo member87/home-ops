@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: checkmk
-          image: checkmk/check-mk-raw:2.4.0p21
+          image: checkmk/check-mk-raw:2.4.0
           ports:
             - containerPort: 5000
               name: http

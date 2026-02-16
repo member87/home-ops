@@ -108,23 +108,6 @@ spec:
               mountPath: /dev/net/tun
             - name: gluetun-data
               mountPath: /gluetun
-          livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            failureThreshold: 5
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
-            initialDelaySeconds: 30
-            periodSeconds: 10
           resources:
             requests:
               memory: "128Mi"

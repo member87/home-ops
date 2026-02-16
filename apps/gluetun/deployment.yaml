@@ -345,8 +345,9 @@ metadata:
 data:
   99-bypass-local-auth.sh: |
     #!/bin/bash
-    # Enable bypass_local_auth for Gluetun port forwarding command
-    # This allows localhost requests to skip authentication
+    # Ensure qBittorrent WebUI settings are compatible with Traefik.
+    # We terminate TLS at Traefik, so qBittorrent HTTPS must stay disabled.
+    # Localhost auth bypass is required for Gluetun port-forward updates.
     
     QBITTORRENT_CONF="/config/qBittorrent/qBittorrent.conf"
     
@@ -370,9 +371,17 @@ data:
           # Add setting to WebUI section
           sed -i '/\[WebUI\]/a WebUI\\LocalHostAuth=false' "$QBITTORRENT_CONF"
         fi
+        
+        # Keep app-level HTTPS disabled (Traefik handles TLS)
+        if grep -q "WebUI\\HTTPS\\Enabled" "$QBITTORRENT_CONF"; then
+          sed -i 's/WebUI\\HTTPS\\Enabled=.*/WebUI\\HTTPS\\Enabled=false/' "$QBITTORRENT_CONF"
+        else
+          sed -i '/\[WebUI\]/a WebUI\\HTTPS\\Enabled=false' "$QBITTORRENT_CONF"
+        fi
         echo "Enabled bypass_local_auth in qBittorrent config"
       else
         echo "[WebUI]" >> "$QBITTORRENT_CONF"
+        echo "WebUI\\HTTPS\\Enabled=false" >> "$QBITTORRENT_CONF"
         echo "WebUI\\LocalHostAuth=false" >> "$QBITTORRENT_CONF"
         echo "Added WebUI section with bypass_local_auth"
       fi
@@ -393,8 +402,8 @@ metadata:
 data:
   99-configure-port.sh: |
     #!/bin/bash
-    # Configure SABnzbd to use port 8085 instead of default 8080
-    # This avoids conflict with qBittorrent on the same port
+    # Configure SABnzbd WebUI for sidecar mode behind Traefik.
+    # Keep app-level HTTPS disabled and listen on 8085.
     
     SABNZBD_INI="/config/sabnzbd.ini"
     
@@ -410,10 +419,17 @@ data:
           echo "Added port 8085 to [misc] section"
         fi
       fi
+
+      # Keep app-level HTTPS disabled (Traefik handles TLS)
+      if grep -q "^enable_https = " "$SABNZBD_INI"; then
+        sed -i 's/^enable_https = .*/enable_https = 0/' "$SABNZBD_INI"
+      elif grep -q "^\[misc\]" "$SABNZBD_INI"; then
+        sed -i '/^\[misc\]/a enable_https = 0' "$SABNZBD_INI"
+      fi
     else
       # Create initial config with correct port BEFORE SABnzbd starts
       mkdir -p /config
-      printf '%s\n' '[misc]' 'port = 8085' 'host = 0.0.0.0' > "$SABNZBD_INI"
+      printf '%s\n' '[misc]' 'port = 8085' 'host = 0.0.0.0' 'enable_https = 0' > "$SABNZBD_INI"
       chown 1000:1000 "$SABNZBD_INI"
       echo "Created initial SABnzbd config with port 8085"
     fi

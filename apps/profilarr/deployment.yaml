@@ -52,10 +52,29 @@ spec:
             - name: APP_BASE_PATH
               value: "/config"
             - name: AUTH
-              value: "on"
+              value: "oidc"
+            - name: OIDC_DISCOVERY_URL
+              value: "https://auth.jackhumes.com/.well-known/openid-configuration"
+            - name: OIDC_CLIENT_ID
+              value: "723c331c-a283-48d2-acc3-0317d7b39a45"
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: profilarr-secrets
+                  key: OIDC_CLIENT_SECRET
           volumeMounts:
             - name: config
               mountPath: /config
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           resources:
             requests:
               memory: "128Mi"

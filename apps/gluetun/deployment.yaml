@@ -31,6 +31,40 @@ spec:
     requests:
       storage: 1Gi
 ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: gluetun-downloads-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gluetun-downloads
+  namespace: gluetun
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: gluetun-downloads-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
 # ============================================
 # Gluetun VPN + Download Clients
 # ============================================
@@ -294,11 +328,10 @@ spec:
           configMap:
             name: sabnzbd-init
             defaultMode: 0755
-        # Shared NFS downloads storage from NAS at 10.0.0.9
+        # Shared NFSv3 downloads storage from UGREEN NAS at 10.0.0.9
         - name: downloads
-          nfs:
-            server: 10.0.0.9
-            path: /volume1/kubernetes/downloads
+          persistentVolumeClaim:
+            claimName: gluetun-downloads
 ---
 # ============================================
 # qBittorrent Init Script

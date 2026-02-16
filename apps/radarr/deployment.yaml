@@ -12,6 +12,40 @@ spec:
     requests:
       storage: 1Gi
 ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-media-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-media
+  namespace: radarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: radarr-media-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -126,8 +160,7 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: radarr-config
-        # Shared NFS media storage from NAS at 10.0.0.9
+        # Shared NFSv3 media storage from UGREEN NAS at 10.0.0.9
         - name: media
-          nfs:
-            server: 10.0.0.9
-            path: /volume1/kubernetes/media
+          persistentVolumeClaim:
+            claimName: radarr-media

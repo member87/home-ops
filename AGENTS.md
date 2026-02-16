@@ -441,7 +441,7 @@ The cluster uses a two-tier storage architecture:
    - Paths:
      - `/volume1/kubernetes/media` - Shared media files (Jellyfin, Sonarr, Radarr, Bazarr)
      - `/volume1/kubernetes/downloads` - Downloads directory (qBittorrent, SABnzbd)
-   - Mount options: `nfsvers=4.1`, `hard`, `nointr`
+   - Mount options: `nfsvers=3`, `proto=tcp`, `hard`, `nointr`
 
 3. **local-path** (legacy, not default)
    - Kept for debugging/temporary volumes

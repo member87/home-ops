@@ -84,6 +84,8 @@ spec:
               value: "wireguard"
             - name: FIREWALL_INPUT_PORTS
               value: "8080"
+            - name: DNS_ADDRESS
+              value: "9.9.9.9"
             - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:

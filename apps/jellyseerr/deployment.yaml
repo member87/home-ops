@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: jellyseerr
-          image: fallenbagel/jellyseerr:2.7.3
+          image: fallenbagel/seerr:3.0.1
           ports:
             - containerPort: 5055
               name: http

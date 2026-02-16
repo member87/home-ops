@@ -63,9 +63,10 @@ spec:
       labels:
         app: sabnzbd
     spec:
-      containers:
+      initContainers:
         - name: gluetun
           image: qmcgaw/gluetun:v3.41.1
+          restartPolicy: Always
           securityContext:
             capabilities:
               add:
@@ -122,6 +123,14 @@ spec:
               mountPath: /dev/net/tun
             - name: gluetun-data
               mountPath: /gluetun
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
+            periodSeconds: 5
+            failureThreshold: 30
           resources:
             requests:
               memory: "128Mi"
@@ -129,6 +138,7 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+      containers:
         - name: sabnzbd
           image: lscr.io/linuxserver/sabnzbd:4.5.5
           env:

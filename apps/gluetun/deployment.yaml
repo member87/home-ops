@@ -298,7 +298,7 @@ spec:
         - name: downloads
           nfs:
             server: 10.0.0.9
-            path: /kubernetes/downloads
+            path: /volume1/kubernetes/downloads
 ---
 # ============================================
 # qBittorrent Init Script

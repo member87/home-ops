@@ -439,8 +439,8 @@ The cluster uses a two-tier storage architecture:
 2. **Direct NFS** (for media storage)
    - NAS server: `10.0.0.9`
    - Paths:
-     - `/kubernetes/media` - Shared media files (Jellyfin, Sonarr, Radarr, Bazarr)
-     - `/kubernetes/downloads` - Downloads directory (qBittorrent, SABnzbd)
+     - `/volume1/kubernetes/media` - Shared media files (Jellyfin, Sonarr, Radarr, Bazarr)
+     - `/volume1/kubernetes/downloads` - Downloads directory (qBittorrent, SABnzbd)
    - Mount options: `nfsvers=4.1`, `hard`, `nointr`
 
 3. **local-path** (legacy, not default)

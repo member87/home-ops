@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: jellyseerr
-          image: seerr-team/seerr:3.0.1
+          image: seerr-team/seerr:3.0.0
           ports:
             - containerPort: 5055
               name: http

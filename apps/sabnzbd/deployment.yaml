@@ -117,6 +117,8 @@ spec:
               value: "Europe/London"
             - name: UPDATER_PERIOD
               value: "24h"
+            - name: HTTPPROXY
+              value: "on"
           volumeMounts:
             - name: tun
               mountPath: /dev/net/tun

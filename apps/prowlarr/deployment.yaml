@@ -101,14 +101,6 @@ spec:
               value: "auto"
             - name: PROWLARR__APP__LAUNCHBROWSER
               value: "false"
-            
-            # VPN Proxy Configuration
-            - name: HTTP_PROXY
-              value: "http://qbittorrent-gluetun.qbittorrent.svc.cluster.local:8888"
-            - name: HTTPS_PROXY
-              value: "http://qbittorrent-gluetun.qbittorrent.svc.cluster.local:8888"
-            - name: NO_PROXY
-              value: "localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc.cluster.local,.cluster.local"
           volumeMounts:
             - name: config
               mountPath: /config

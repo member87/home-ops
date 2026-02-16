@@ -14,4 +14,8 @@ spec:
       port: 8080
       targetPort: 8080
       protocol: TCP
+    - name: http-proxy
+      port: 8888
+      targetPort: 8888
   type: ClusterIP
+

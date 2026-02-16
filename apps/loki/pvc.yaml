@@ -7,6 +7,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  volumeMode: Filesystem
+  volumeName: pvc-572ceb29-c1ae-4812-8dac-0886760a3f7a
   resources:
     requests:
       storage: 50Gi

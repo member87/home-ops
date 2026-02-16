@@ -7,6 +7,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  volumeMode: Filesystem
+  volumeName: pvc-03b06a18-4b1f-4c8f-a2ab-7d498067f43a
   storageClassName: longhorn
   resources:
     requests:

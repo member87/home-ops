@@ -99,7 +99,7 @@ spec:
             - name: METADATA_PATH
               value: "/metadata"
             - name: ROUTER_BASE_PATH
-              value: "/"
+              value: "/audiobookshelf"
             - name: SOURCE
               value: "docker"
           volumeMounts:

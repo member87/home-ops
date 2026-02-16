@@ -91,6 +91,9 @@ pages:
               - title: Prowlarr
                 url: https://prowlarr.lab.jackhumes.com
                 icon: sh:prowlarr
+              - title: Profilarr
+                url: https://profilarr.lab.jackhumes.com
+                icon: sh:profilarr
               - title: Bazarr
                 url: https://bazarr.lab.jackhumes.com
                 icon: sh:bazarr

@@ -1,0 +1,44 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: profilarr
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: profilarr
+  namespace: profilarr
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`profilarr.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: profilarr
+          port: 6868
+  tls:
+    secretName: profilarr-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: profilarr-http
+  namespace: profilarr
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`profilarr.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: profilarr
+          port: 6868

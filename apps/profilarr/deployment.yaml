@@ -52,7 +52,7 @@ spec:
             - name: APP_BASE_PATH
               value: "/config"
             - name: AUTH
-              value: "oidc"
+              value: "off"
             - name: OIDC_DISCOVERY_URL
               value: "https://auth.jackhumes.com/.well-known/openid-configuration"
             - name: OIDC_CLIENT_ID

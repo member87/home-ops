@@ -26,9 +26,6 @@ spec:
       services:
         - name: pocket-id
           port: 80
-      middlewares:
-        - name: crowdsec-bouncer
-          namespace: pocket-id
   tls:
     secretName: pocket-id-tls
 ---
@@ -48,6 +45,3 @@ spec:
       services:
         - name: pocket-id
           port: 80
-      middlewares:
-        - name: crowdsec-bouncer
-          namespace: pocket-id

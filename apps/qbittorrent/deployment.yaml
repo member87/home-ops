@@ -1,0 +1,220 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-config
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qbittorrent-downloads-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-downloads
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: qbittorrent-downloads-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent
+  labels:
+    app: qbittorrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:v3.41.1
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          ports:
+            - containerPort: 8000
+              name: control
+              protocol: TCP
+            - containerPort: 8888
+              name: http-proxy
+              protocol: TCP
+            - containerPort: 8080
+              name: qbittorrent
+              protocol: TCP
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "protonvpn"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: SERVER_COUNTRIES
+              value: "Netherlands"
+            - name: PORT_FORWARD_ONLY
+              value: "on"
+            - name: VPN_PORT_FORWARDING
+              value: "on"
+            - name: VPN_PORT_FORWARDING_PROVIDER
+              value: "protonvpn"
+            - name: VPN_PORT_FORWARDING_STATUS_FILE
+              value: "/gluetun/forwarded_port"
+            - name: VPN_PORT_FORWARDING_UP_COMMAND
+              value: "/bin/sh -c 'wget -q -O- --retry-connrefused --tries=30 --waitretry=2 --post-data \"json={\\\"listen_port\\\":{{PORT}}}\" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1 || echo Failed to update qBittorrent port'"
+            - name: FIREWALL
+              value: "on"
+            - name: FIREWALL_DEBUG
+              value: "off"
+            - name: DOT
+              value: "on"
+            - name: DOT_PROVIDERS
+              value: "cloudflare"
+            - name: BLOCK_MALICIOUS
+              value: "on"
+            - name: BLOCK_SURVEILLANCE
+              value: "on"
+            - name: HTTPPROXY
+              value: "on"
+            - name: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+            - name: GLUETUN_CONTROL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: GLUETUN_CONTROL_API_KEY
+            - name: LOG_LEVEL
+              value: "info"
+            - name: TZ
+              value: "Europe/London"
+            - name: UPDATER_PERIOD
+              value: "24h"
+          volumeMounts:
+            - name: tun
+              mountPath: /dev/net/tun
+            - name: gluetun-data
+              mountPath: /gluetun
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:20.04.1
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/London"
+            - name: UMASK
+              value: "022"
+            - name: WEBUI_PORT
+              value: "8080"
+          volumeMounts:
+            - name: qbittorrent-config
+              mountPath: /config
+            - name: downloads
+              mountPath: /downloads
+            - name: qbittorrent-init
+              mountPath: /custom-cont-init.d
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+      volumes:
+        - name: tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: gluetun-data
+          emptyDir: {}
+        - name: qbittorrent-config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: qbittorrent-init
+          configMap:
+            name: qbittorrent-init
+            defaultMode: 0755
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: qbittorrent-downloads

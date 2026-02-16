@@ -1,0 +1,203 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sabnzbd-config
+  namespace: sabnzbd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sabnzbd-downloads-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sabnzbd-downloads
+  namespace: sabnzbd
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: sabnzbd-downloads-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sabnzbd
+  namespace: sabnzbd
+  labels:
+    app: sabnzbd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sabnzbd
+  template:
+    metadata:
+      labels:
+        app: sabnzbd
+    spec:
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:v3.41.1
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          ports:
+            - containerPort: 8000
+              name: control
+              protocol: TCP
+            - containerPort: 8080
+              name: sabnzbd
+              protocol: TCP
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "protonvpn"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: SERVER_COUNTRIES
+              value: "Netherlands"
+            - name: FIREWALL
+              value: "on"
+            - name: FIREWALL_DEBUG
+              value: "off"
+            - name: DOT
+              value: "on"
+            - name: DOT_PROVIDERS
+              value: "cloudflare"
+            - name: BLOCK_MALICIOUS
+              value: "on"
+            - name: BLOCK_SURVEILLANCE
+              value: "on"
+            - name: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+            - name: GLUETUN_CONTROL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: GLUETUN_CONTROL_API_KEY
+            - name: LOG_LEVEL
+              value: "info"
+            - name: TZ
+              value: "Europe/London"
+            - name: UPDATER_PERIOD
+              value: "24h"
+          volumeMounts:
+            - name: tun
+              mountPath: /dev/net/tun
+            - name: gluetun-data
+              mountPath: /gluetun
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+        - name: sabnzbd
+          image: lscr.io/linuxserver/sabnzbd:4.5.5
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/London"
+            - name: UMASK
+              value: "022"
+          volumeMounts:
+            - name: sabnzbd-config
+              mountPath: /config
+            - name: sabnzbd-init
+              mountPath: /custom-cont-init.d
+            - name: downloads
+              mountPath: /downloads
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+      volumes:
+        - name: tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: gluetun-data
+          emptyDir: {}
+        - name: sabnzbd-config
+          persistentVolumeClaim:
+            claimName: sabnzbd-config
+        - name: sabnzbd-init
+          configMap:
+            name: sabnzbd-init
+            defaultMode: 0755
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: sabnzbd-downloads

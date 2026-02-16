@@ -29,8 +29,8 @@ spec:
       labels:
         app: prowlarr
     spec:
-      # Use cluster DNS so we can resolve gluetun service
-      # VPN routing is done via HTTP_PROXY, not network namespace
+      # Use cluster DNS to resolve qBittorrent's dedicated Gluetun proxy
+      # Prowlarr traffic is routed through HTTP_PROXY
       dnsPolicy: ClusterFirst
       containers:
         - name: prowlarr
@@ -104,9 +104,9 @@ spec:
             
             # VPN Proxy Configuration
             - name: HTTP_PROXY
-              value: "http://gluetun.gluetun.svc.cluster.local:8888"
+              value: "http://qbittorrent-gluetun.qbittorrent.svc.cluster.local:8888"
             - name: HTTPS_PROXY
-              value: "http://gluetun.gluetun.svc.cluster.local:8888"
+              value: "http://qbittorrent-gluetun.qbittorrent.svc.cluster.local:8888"
             - name: NO_PROXY
               value: "localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc.cluster.local,.cluster.local"
           volumeMounts:

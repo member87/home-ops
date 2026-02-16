@@ -1,10 +1,9 @@
 ---
-# ForwardAuth middleware for download clients
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: tinyauth-forwardauth
-  namespace: gluetun
+  namespace: qbittorrent
 spec:
   forwardAuth:
     address: http://tinyauth.tinyauth.svc.cluster.local:3000/api/auth/traefik
@@ -15,42 +14,19 @@ spec:
       - Remote-Name
       - Remote-Email
 ---
-# qBittorrent Web UI
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: qbittorrent
-  namespace: gluetun
+  namespace: qbittorrent
 spec:
   entryPoints:
     - websecure
   routes:
     - match: Host(`qbittorrent.lab.jackhumes.com`)
       kind: Rule
-      middlewares:
-        - name: tinyauth-forwardauth
       services:
         - name: qbittorrent
           port: 8080
   tls:
     secretName: qbittorrent-tls
----
-# SABnzbd Web UI
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: sabnzbd
-  namespace: gluetun
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`sabnzbd.lab.jackhumes.com`)
-      kind: Rule
-      middlewares:
-        - name: tinyauth-forwardauth
-      services:
-        - name: sabnzbd
-          port: 8085
-  tls:
-    secretName: sabnzbd-tls

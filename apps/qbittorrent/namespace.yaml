@@ -2,10 +2,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: gluetun
+  name: qbittorrent
   labels:
-    app.kubernetes.io/name: gluetun
-    # Allow privileged workloads for VPN (requires NET_ADMIN and /dev/net/tun)
+    app.kubernetes.io/name: qbittorrent
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged

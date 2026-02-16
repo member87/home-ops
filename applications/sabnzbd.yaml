@@ -2,17 +2,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: gluetun
+  name: sabnzbd
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/member87/home-ops.git
     targetRevision: HEAD
-    path: apps/gluetun
+    path: apps/sabnzbd
   destination:
     server: https://kubernetes.default.svc
-    namespace: gluetun
+    namespace: sabnzbd
   syncPolicy:
     automated:
       prune: true

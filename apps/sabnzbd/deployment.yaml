@@ -61,6 +61,10 @@ spec:
     matchLabels:
       app: sabnzbd
   template:
+    metadata:
+      labels:
+        app: sabnzbd
+    spec:
       containers:
         - name: sabnzbd
           image: lscr.io/linuxserver/sabnzbd:4.5.5

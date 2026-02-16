@@ -1,0 +1,213 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: readmeabook-config
+  namespace: readmeabook
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: readmeabook-cache
+  namespace: readmeabook
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: readmeabook-pgdata
+  namespace: readmeabook
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: readmeabook-redis
+  namespace: readmeabook
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: readmeabook-media-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: readmeabook-media
+  namespace: readmeabook
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: readmeabook-media-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: readmeabook-downloads-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: readmeabook-downloads
+  namespace: readmeabook
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: readmeabook-downloads-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: readmeabook
+  namespace: readmeabook
+  labels:
+    app: readmeabook
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: readmeabook
+  template:
+    metadata:
+      labels:
+        app: readmeabook
+    spec:
+      containers:
+        - name: readmeabook
+          image: ghcr.io/kikootwo/readmeabook:1.0.8
+          ports:
+            - containerPort: 3030
+              name: http
+              protocol: TCP
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: PUBLIC_URL
+              value: "https://readmeabook.lab.jackhumes.com"
+            - name: LOG_LEVEL
+              value: "info"
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: cache
+              mountPath: /app/cache
+            - name: downloads
+              mountPath: /downloads
+            - name: media
+              mountPath: /media
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: redis
+              mountPath: /var/lib/redis
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "3Gi"
+              cpu: "3000m"
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: readmeabook-config
+        - name: cache
+          persistentVolumeClaim:
+            claimName: readmeabook-cache
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: readmeabook-pgdata
+        - name: redis
+          persistentVolumeClaim:
+            claimName: readmeabook-redis
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: readmeabook-downloads
+        - name: media
+          persistentVolumeClaim:
+            claimName: readmeabook-media

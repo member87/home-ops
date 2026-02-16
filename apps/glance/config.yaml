@@ -82,6 +82,12 @@ pages:
               - title: Jellyseerr
                 url: https://jellyseerr.lab.jackhumes.com
                 icon: sh:jellyseerr
+              - title: Audiobookshelf
+                url: https://audiobookshelf.lab.jackhumes.com
+                icon: sh:audiobookshelf
+              - title: ReadMeABook
+                url: https://readmeabook.lab.jackhumes.com
+                icon: sh:bookstack
               - title: Sonarr
                 url: https://sonarr.lab.jackhumes.com
                 icon: sh:sonarr

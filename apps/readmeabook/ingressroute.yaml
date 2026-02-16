@@ -1,0 +1,44 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: readmeabook
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: readmeabook
+  namespace: readmeabook
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`readmeabook.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: readmeabook
+          port: 3030
+  tls:
+    secretName: readmeabook-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: readmeabook-http
+  namespace: readmeabook
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`readmeabook.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: readmeabook
+          port: 3030

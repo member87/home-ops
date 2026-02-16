@@ -1,0 +1,60 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: readmeabook-bootstrap
+  namespace: readmeabook
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 604800
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels:
+        app: readmeabook-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: ghcr.io/kikootwo/readmeabook:1.0.8
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - /bootstrap/bootstrap.mjs
+          envFrom:
+            - secretRef:
+                name: readmeabook-bootstrap-secrets
+          env:
+            - name: ABS_URL
+              value: "http://audiobookshelf.audiobookshelf.svc.cluster.local"
+            - name: RMAB_URL
+              value: "http://readmeabook.readmeabook.svc.cluster.local:3030"
+            - name: PROWLARR_URL
+              value: "http://prowlarr.prowlarr.svc.cluster.local:9696"
+            - name: SABNZBD_URL
+              value: "http://sabnzbd.sabnzbd.svc.cluster.local:8080"
+            - name: RMAB_PUBLIC_URL
+              value: "https://readmeabook.lab.jackhumes.com"
+            - name: DOWNLOAD_DIR
+              value: "/downloads/readmeabook"
+            - name: MEDIA_DIR
+              value: "/media/audiobooks"
+            - name: AUDIBLE_REGION
+              value: "us"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: bootstrap-script
+              mountPath: /bootstrap/bootstrap.mjs
+              subPath: bootstrap.mjs
+      volumes:
+        - name: bootstrap-script
+          configMap:
+            name: readmeabook-bootstrap-script

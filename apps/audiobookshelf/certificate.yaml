@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: audiobookshelf-cert
+  namespace: audiobookshelf
+spec:
+  secretName: audiobookshelf-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - audiobookshelf.lab.jackhumes.com

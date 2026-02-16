@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: readmeabook
+  namespace: readmeabook
+  labels:
+    app: readmeabook
+spec:
+  selector:
+    app: readmeabook
+  ports:
+    - name: http
+      port: 3030
+      targetPort: 3030
+      protocol: TCP
+  type: ClusterIP

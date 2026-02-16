@@ -29,6 +29,9 @@ spec:
       labels:
         app: jellyseerr
     spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: jellyseerr
           image: ghcr.io/seerr-team/seerr:v3.0.0

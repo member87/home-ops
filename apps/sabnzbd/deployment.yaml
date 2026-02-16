@@ -82,17 +82,15 @@ spec:
               value: "protonvpn"
             - name: VPN_TYPE
               value: "wireguard"
+            - name: FIREWALL_INPUT_PORTS
+              value: "8080"
             - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   name: gluetun-secrets
                   key: WIREGUARD_PRIVATE_KEY
             - name: SERVER_COUNTRIES
-              value: "Netherlands"
-            - name: FIREWALL
-              value: "on"
-            - name: FIREWALL_DEBUG
-              value: "off"
+              value: "United Kingdom"
             - name: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
               valueFrom:
                 secretKeyRef:
@@ -103,12 +101,6 @@ spec:
                 secretKeyRef:
                   name: gluetun-secrets
                   key: GLUETUN_CONTROL_API_KEY
-            - name: LOG_LEVEL
-              value: "info"
-            - name: TZ
-              value: "Europe/London"
-            - name: UPDATER_PERIOD
-              value: "24h"
             - name: HTTPPROXY
               value: "on"
           volumeMounts:

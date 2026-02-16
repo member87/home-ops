@@ -184,6 +184,16 @@ spec:
             # ============================================
             # Logging & General
             # ============================================
+            - name: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
+            - name: GLUETUN_CONTROL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: GLUETUN_CONTROL_API_KEY
             - name: LOG_LEVEL
               value: "info"
             - name: TZ
@@ -196,16 +206,20 @@ spec:
             - name: gluetun-data
               mountPath: /gluetun
           livenessProbe:
-            httpGet:
-              path: /v1/publicip/ip
-              port: 8000
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 5
           readinessProbe:
-            httpGet:
-              path: /v1/publicip/ip
-              port: 8000
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'wget -q --header "X-API-Key: ${GLUETUN_CONTROL_API_KEY}" -O- http://127.0.0.1:8000/v1/publicip/ip >/dev/null'
             initialDelaySeconds: 30
             periodSeconds: 10
           resources:

@@ -103,6 +103,18 @@ spec:
                   key: GLUETUN_CONTROL_API_KEY
             - name: HTTPPROXY
               value: "on"
+            - name: UPDATER_PROTONVPN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: proton-email
+            - name: UPDATER_PROTONVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-secrets
+                  key: proton-password
+            - name: UPDATER_PERIOD
+              value: "24h"
           volumeMounts:
             - name: tun
               mountPath: /dev/net/tun

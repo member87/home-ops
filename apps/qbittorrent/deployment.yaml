@@ -120,7 +120,6 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: gluetun-secrets
-                  key: HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE
             - name: GLUETUN_CONTROL_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -179,8 +178,6 @@ spec:
               mountPath: /config
             - name: downloads
               mountPath: /downloads
-            - name: qbittorrent-init
-              mountPath: /custom-cont-init.d
           livenessProbe:
             httpGet:
               path: /
@@ -211,10 +208,6 @@ spec:
         - name: qbittorrent-config
           persistentVolumeClaim:
             claimName: qbittorrent-config
-        - name: qbittorrent-init
-          configMap:
-            name: qbittorrent-init
-            defaultMode: 0755
         - name: downloads
           persistentVolumeClaim:
             claimName: qbittorrent-downloads

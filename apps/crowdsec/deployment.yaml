@@ -67,8 +67,7 @@ spec:
             periodSeconds: 5
       volumes:
         - name: crowdsec-data
-          persistentVolumeClaim:
-            claimName: crowdsec-data
+          emptyDir: {}
         - name: acquis-config
           configMap:
             name: crowdsec-acquis

@@ -1,0 +1,155 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audiobookshelf-oidc-reconciler
+  namespace: audiobookshelf
+data:
+  reconcile_oidc.py: |
+    import json
+    import os
+    import sqlite3
+    import time
+    import urllib.error
+    import urllib.request
+
+
+    ABS_URL = os.environ.get("ABS_URL", "http://audiobookshelf.audiobookshelf.svc.cluster.local").rstrip("/")
+    DB_PATH = os.environ.get("ABS_DB_PATH", "/config/absdatabase.sqlite")
+    OIDC_ISSUER_URL = os.environ.get("OIDC_ISSUER_URL", "https://auth.jackhumes.com")
+    OIDC_CLIENT_ID = os.environ.get("OIDC_CLIENT_ID", "")
+    OIDC_CLIENT_SECRET = os.environ.get("OIDC_CLIENT_SECRET", "")
+
+
+    def log(message):
+      print(f"[abs-oidc-reconciler] {message}", flush=True)
+
+
+    def http_json(method, path, token=None, payload=None):
+      url = f"{ABS_URL}{path}"
+      headers = {"Accept": "application/json"}
+      body = None
+
+      if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+      if payload is not None:
+        headers["Content-Type"] = "application/json"
+        body = json.dumps(payload).encode("utf-8")
+
+      req = urllib.request.Request(url=url, method=method, headers=headers, data=body)
+
+      try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+          raw = response.read().decode("utf-8")
+          parsed = json.loads(raw) if raw else {}
+          return response.status, parsed, raw
+      except urllib.error.HTTPError as error:
+        raw = error.read().decode("utf-8")
+        parsed = {}
+        try:
+          parsed = json.loads(raw) if raw else {}
+        except json.JSONDecodeError:
+          parsed = {}
+        return error.code, parsed, raw
+
+
+    def get_admin_token():
+      if not os.path.exists(DB_PATH):
+        return None, None
+
+      try:
+        connection = sqlite3.connect(DB_PATH, timeout=5)
+        cursor = connection.cursor()
+        cursor.execute(
+          """
+          SELECT token, username
+          FROM users
+          WHERE token IS NOT NULL
+            AND token != ''
+            AND isActive = 1
+            AND type IN ('root', 'admin')
+          ORDER BY CASE WHEN type = 'root' THEN 0 ELSE 1 END
+          LIMIT 1
+          """
+        )
+        row = cursor.fetchone()
+        connection.close()
+      except sqlite3.Error as error:
+        log(f"failed to query database for admin token: {error}")
+        return None, None
+
+      if not row:
+        return None, None
+
+      return row[0], row[1]
+
+
+    def desired_settings(current):
+      active_auth_methods = set(current.get("authActiveAuthMethods", ["local"]))
+      active_auth_methods.add("local")
+      active_auth_methods.add("openid")
+
+      return {
+        "authActiveAuthMethods": sorted(active_auth_methods),
+        "authOpenIDIssuerURL": OIDC_ISSUER_URL,
+        "authOpenIDAuthorizationURL": f"{OIDC_ISSUER_URL}/authorize",
+        "authOpenIDTokenURL": f"{OIDC_ISSUER_URL}/api/oidc/token",
+        "authOpenIDUserInfoURL": f"{OIDC_ISSUER_URL}/api/oidc/userinfo",
+        "authOpenIDJwksURL": f"{OIDC_ISSUER_URL}/.well-known/jwks.json",
+        "authOpenIDLogoutURL": f"{OIDC_ISSUER_URL}/api/oidc/end-session",
+        "authOpenIDClientID": OIDC_CLIENT_ID,
+        "authOpenIDClientSecret": OIDC_CLIENT_SECRET,
+        "authOpenIDTokenSigningAlgorithm": "RS256",
+        "authOpenIDButtonText": "Login with Pocket ID",
+        "authOpenIDAutoLaunch": True,
+        "authOpenIDAutoRegister": True,
+        "authOpenIDMatchExistingBy": "email",
+        "authOpenIDSubfolderForRedirectURLs": "",
+      }
+
+
+    def needs_update(current, desired):
+      for key, value in desired.items():
+        if current.get(key) != value:
+          return True
+      return False
+
+
+    def main():
+      if not OIDC_CLIENT_ID or not OIDC_CLIENT_SECRET:
+        raise RuntimeError("missing OIDC_CLIENT_ID and/or OIDC_CLIENT_SECRET")
+
+      token = None
+      username = None
+      for _ in range(60):
+        token, username = get_admin_token()
+        if token:
+          break
+        log("no active admin/root token found yet; waiting")
+        time.sleep(10)
+
+      if not token:
+        log("skipping run: no active admin/root token available in database")
+        return
+
+      log(f"using token for user '{username}'")
+
+      status, current_auth_settings, raw_body = http_json("GET", "/api/auth-settings", token=token)
+      if status != 200:
+        raise RuntimeError(f"failed to fetch current auth settings ({status}): {raw_body}")
+
+      desired = desired_settings(current_auth_settings)
+      if not needs_update(current_auth_settings, desired):
+        log("OIDC settings already up to date")
+        return
+
+      status, _, raw_body = http_json("PATCH", "/api/auth-settings", token=token, payload=desired)
+      if status != 200:
+        raise RuntimeError(f"failed to update auth settings ({status}): {raw_body}")
+
+      log("OIDC settings updated successfully")
+
+
+    if __name__ == "__main__":
+      main()

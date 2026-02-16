@@ -1,0 +1,65 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: audiobookshelf-oidc-reconciler
+  namespace: audiobookshelf
+spec:
+  schedule: "17 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: audiobookshelf-oidc-reconciler
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reconcile-oidc
+              image: python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - /scripts/reconcile_oidc.py
+              env:
+                - name: ABS_URL
+                  value: "http://audiobookshelf.audiobookshelf.svc.cluster.local"
+                - name: ABS_DB_PATH
+                  value: "/config/absdatabase.sqlite"
+                - name: OIDC_ISSUER_URL
+                  value: "https://auth.jackhumes.com"
+                - name: OIDC_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: audiobookshelf-oidc-secrets
+                      key: OIDC_CLIENT_ID
+                - name: OIDC_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: audiobookshelf-oidc-secrets
+                      key: OIDC_CLIENT_SECRET
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "25m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "250m"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts/reconcile_oidc.py
+                  subPath: reconcile_oidc.py
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: audiobookshelf-oidc-reconciler
+            - name: config
+              persistentVolumeClaim:
+                claimName: audiobookshelf-config

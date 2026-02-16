@@ -33,7 +33,7 @@ spec:
         - name: qbittorrent
           port: 8080
   tls:
-    certResolver: letsencrypt-production
+    secretName: qbittorrent-tls
 ---
 # SABnzbd Web UI
 apiVersion: traefik.io/v1alpha1
@@ -53,4 +53,4 @@ spec:
         - name: sabnzbd
           port: 8085
   tls:
-    certResolver: letsencrypt-production
+    secretName: sabnzbd-tls

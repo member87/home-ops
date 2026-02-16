@@ -350,6 +350,11 @@ data:
     # Localhost auth bypass is required for Gluetun port-forward updates.
     
     QBITTORRENT_CONF="/config/qBittorrent/qBittorrent.conf"
+    DOWNLOADS_COMPLETE="/downloads/complete"
+    DOWNLOADS_INCOMPLETE="/downloads/incomplete"
+
+    mkdir -p "$DOWNLOADS_COMPLETE" "$DOWNLOADS_INCOMPLETE"
+    chown 1000:1000 "$DOWNLOADS_COMPLETE" "$DOWNLOADS_INCOMPLETE" 2>/dev/null || true
     
     # Wait for config file to exist (first run creates it)
     for i in $(seq 1 30); do
@@ -378,12 +383,39 @@ data:
         else
           sed -i '/\[WebUI\]/a WebUI\\HTTPS\\Enabled=false' "$QBITTORRENT_CONF"
         fi
-        echo "Enabled bypass_local_auth in qBittorrent config"
+
+        if ! grep -q "\[Preferences\]" "$QBITTORRENT_CONF"; then
+          echo "[Preferences]" >> "$QBITTORRENT_CONF"
+        fi
+
+        if grep -q "^Downloads\\\\SavePath=" "$QBITTORRENT_CONF"; then
+          sed -i 's|^Downloads\\SavePath=.*|Downloads\\SavePath=/downloads/complete/|' "$QBITTORRENT_CONF"
+        else
+          sed -i '/\[Preferences\]/a Downloads\\SavePath=/downloads/complete/' "$QBITTORRENT_CONF"
+        fi
+
+        if grep -q "^Downloads\\\\TempPath=" "$QBITTORRENT_CONF"; then
+          sed -i 's|^Downloads\\TempPath=.*|Downloads\\TempPath=/downloads/incomplete/|' "$QBITTORRENT_CONF"
+        else
+          sed -i '/\[Preferences\]/a Downloads\\TempPath=/downloads/incomplete/' "$QBITTORRENT_CONF"
+        fi
+
+        if grep -q "^Downloads\\\\TempPathEnabled=" "$QBITTORRENT_CONF"; then
+          sed -i 's|^Downloads\\TempPathEnabled=.*|Downloads\\TempPathEnabled=true|' "$QBITTORRENT_CONF"
+        else
+          sed -i '/\[Preferences\]/a Downloads\\TempPathEnabled=true' "$QBITTORRENT_CONF"
+        fi
+
+        echo "Configured qBittorrent auth, TLS, and download paths"
       else
         echo "[WebUI]" >> "$QBITTORRENT_CONF"
         echo "WebUI\\HTTPS\\Enabled=false" >> "$QBITTORRENT_CONF"
         echo "WebUI\\LocalHostAuth=false" >> "$QBITTORRENT_CONF"
-        echo "Added WebUI section with bypass_local_auth"
+        echo "[Preferences]" >> "$QBITTORRENT_CONF"
+        echo "Downloads\\SavePath=/downloads/complete/" >> "$QBITTORRENT_CONF"
+        echo "Downloads\\TempPath=/downloads/incomplete/" >> "$QBITTORRENT_CONF"
+        echo "Downloads\\TempPathEnabled=true" >> "$QBITTORRENT_CONF"
+        echo "Added qBittorrent WebUI and download path defaults"
       fi
     else
       echo "Warning: qBittorrent config file not found, bypass_local_auth not set"
@@ -403,33 +435,42 @@ data:
   99-configure-port.sh: |
     #!/bin/bash
     # Configure SABnzbd WebUI for sidecar mode behind Traefik.
-    # Keep app-level HTTPS disabled and listen on 8085.
+    # Keep app-level HTTPS disabled and store downloads on NAS.
     
     SABNZBD_INI="/config/sabnzbd.ini"
+    DOWNLOADS_COMPLETE="/downloads/complete"
+    DOWNLOADS_INCOMPLETE="/downloads/incomplete"
+
+    mkdir -p "$DOWNLOADS_COMPLETE" "$DOWNLOADS_INCOMPLETE"
+    chown 1000:1000 "$DOWNLOADS_COMPLETE" "$DOWNLOADS_INCOMPLETE" 2>/dev/null || true
+
+    set_misc_key() {
+      local key="$1"
+      local value="$2"
+
+      if grep -q "^${key} = " "$SABNZBD_INI"; then
+        sed -i "s|^${key} = .*|${key} = ${value}|" "$SABNZBD_INI"
+      elif grep -q "^\[misc\]" "$SABNZBD_INI"; then
+        sed -i "/^\[misc\]/a ${key} = ${value}" "$SABNZBD_INI"
+      fi
+    }
     
     # If config exists, update the port
     if [ -f "$SABNZBD_INI" ]; then
-      if grep -q "^port = " "$SABNZBD_INI"; then
-        sed -i 's/^port = .*/port = 8085/' "$SABNZBD_INI"
-        echo "Updated SABnzbd port to 8085"
-      else
-        # Add port to [misc] section if it exists
-        if grep -q "^\[misc\]" "$SABNZBD_INI"; then
-          sed -i '/^\[misc\]/a port = 8085' "$SABNZBD_INI"
-          echo "Added port 8085 to [misc] section"
-        fi
+      if ! grep -q "^\[misc\]" "$SABNZBD_INI"; then
+        printf '\n[misc]\n' >> "$SABNZBD_INI"
       fi
 
-      # Keep app-level HTTPS disabled (Traefik handles TLS)
-      if grep -q "^enable_https = " "$SABNZBD_INI"; then
-        sed -i 's/^enable_https = .*/enable_https = 0/' "$SABNZBD_INI"
-      elif grep -q "^\[misc\]" "$SABNZBD_INI"; then
-        sed -i '/^\[misc\]/a enable_https = 0' "$SABNZBD_INI"
-      fi
+      set_misc_key "port" "8085"
+      set_misc_key "host" "0.0.0.0"
+      set_misc_key "enable_https" "0"
+      set_misc_key "download_dir" "/downloads/incomplete"
+      set_misc_key "complete_dir" "/downloads/complete"
+      echo "Configured SABnzbd web and download directories"
     else
       # Create initial config with correct port BEFORE SABnzbd starts
       mkdir -p /config
-      printf '%s\n' '[misc]' 'port = 8085' 'host = 0.0.0.0' 'enable_https = 0' > "$SABNZBD_INI"
+      printf '%s\n' '[misc]' 'port = 8085' 'host = 0.0.0.0' 'enable_https = 0' 'download_dir = /downloads/incomplete' 'complete_dir = /downloads/complete' > "$SABNZBD_INI"
       chown 1000:1000 "$SABNZBD_INI"
-      echo "Created initial SABnzbd config with port 8085"
+      echo "Created initial SABnzbd config with NAS download directories"
     fi

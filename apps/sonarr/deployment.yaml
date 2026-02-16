@@ -46,6 +46,40 @@ spec:
     requests:
       storage: 1Ti
 ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonarr-downloads-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-downloads
+  namespace: sonarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: sonarr-downloads-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -137,6 +171,8 @@ spec:
               mountPath: /config
             - name: media
               mountPath: /data
+            - name: downloads
+              mountPath: /downloads
           livenessProbe:
             httpGet:
               path: /ping
@@ -164,3 +200,7 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: sonarr-media
+        # Shared NFSv3 downloads storage from UGREEN NAS at 10.0.0.9
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: sonarr-downloads

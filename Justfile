@@ -9,8 +9,8 @@ WORKER_IPS       := "10.0.0.20,10.0.0.21"
 ALL_NODES        := CONTROL_PLANE_IP + "," + WORKER_IPS
 CLUSTER_NAME     := "talos-cluster"
 
-# Talos Factory schematic ID (includes iscsi-tools + util-linux-tools extensions)
-TALOS_SCHEMATIC  := "613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245"
+# Talos Factory schematic ID (includes iscsi-tools + util-linux-tools + i915 extensions)
+TALOS_SCHEMATIC  := "056d8e12ba2b9711c613665c43f0ebf86eb451839a22f360a42110362f84faa1"
 TALOS_IMAGE      := "factory.talos.dev/installer/" + TALOS_SCHEMATIC
 
 # Internal: decrypt talosconfig to a temp file, export TALOSCONFIG, run command

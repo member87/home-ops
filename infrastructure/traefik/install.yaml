@@ -88,8 +88,9 @@ metadata:
   namespace: traefik
 spec:
   type: LoadBalancer
-  # Preserve client source IP - required for CrowdSec to see real IPs
-  externalTrafficPolicy: Local
+  # Use Cluster policy so traffic is accepted regardless of announcing node,
+  # which helps subnet-routed clients on overlapping RFC1918 networks.
+  externalTrafficPolicy: Cluster
   ports:
     - name: web
       port: 80

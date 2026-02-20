@@ -17,6 +17,14 @@ spec:
       targetRevision: 1.11.0
       helm:
         valuesObject:
+          # Hotfix for Longhorn 1.11.0 regressions
+          image:
+            longhorn:
+              manager:
+                tag: v1.11.0-hotfix-1
+              instanceManager:
+                tag: v1.11.0-hotfix-1
+
           # Longhorn settings
           defaultSettings:
             # Default replica count - 2 for multi-node redundancy

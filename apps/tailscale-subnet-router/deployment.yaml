@@ -47,7 +47,7 @@ spec:
             - name: TS_HOSTNAME
               value: "k8s-subnet-router"
             - name: TS_ROUTES
-              value: "10.0.0.0/24"
+              value: "10.0.0.200/32,10.0.0.201/32"
             - name: TS_STATE_DIR
               value: "/var/lib/tailscale"
             - name: TS_USERSPACE

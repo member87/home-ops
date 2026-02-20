@@ -55,7 +55,7 @@ spec:
             - name: TS_ACCEPT_DNS
               value: "false"
             - name: TS_EXTRA_ARGS
-              value: "--login-server=https://headscale.lab.jackhumes.com --advertise-exit-node"
+              value: "--login-server=https://headscale.lab.jackhumes.com"
           securityContext:
             capabilities:
               add:

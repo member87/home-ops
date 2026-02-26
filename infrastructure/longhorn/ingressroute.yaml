@@ -1,0 +1,57 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: longhorn-cert
+  namespace: longhorn-system
+spec:
+  secretName: longhorn-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - longhorn.lab.jackhumes.com
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`longhorn.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: longhorn-frontend
+          port: 80
+  tls:
+    secretName: longhorn-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: longhorn-http
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`longhorn.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: longhorn-frontend
+          port: 80
+      middlewares:
+        - name: longhorn-redirect-https
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-redirect-https
+  namespace: longhorn-system
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

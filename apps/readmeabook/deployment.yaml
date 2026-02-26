@@ -140,7 +140,7 @@ spec:
     spec:
       containers:
         - name: readmeabook
-          image: ghcr.io/kikootwo/readmeabook:1.0.12
+          image: ghcr.io/kikootwo/readmeabook:1.0.14
           ports:
             - containerPort: 3030
               name: http

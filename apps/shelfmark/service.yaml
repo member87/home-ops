@@ -2,16 +2,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: readmeabook
-  namespace: readmeabook
+  name: shelfmark
+  namespace: shelfmark
   labels:
-    app: readmeabook
+    app: shelfmark
 spec:
   selector:
-    app: readmeabook
+    app: shelfmark
   ports:
     - name: http
-      port: 3030
-      targetPort: 3030
+      port: 8084
+      targetPort: 8084
       protocol: TCP
   type: ClusterIP

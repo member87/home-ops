@@ -69,7 +69,7 @@ pages:
                   - 401
               - title: Longhorn
                 url: https://longhorn.lab.jackhumes.com
-                icon: sh:longhorn
+                icon: sh:rancher-longhorn
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection
@@ -88,8 +88,8 @@ pages:
               - title: Audiobookshelf
                 url: https://audiobookshelf.lab.jackhumes.com
                 icon: sh:audiobookshelf
-              - title: ReadMeABook
-                url: https://readmeabook.lab.jackhumes.com
+              - title: Shelfmark
+                url: https://shelfmark.lab.jackhumes.com
                 icon: sh:bookstack
               - title: Sonarr
                 url: https://sonarr.lab.jackhumes.com

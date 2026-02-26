@@ -2,12 +2,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: readmeabook-cert
-  namespace: readmeabook
+  name: shelfmark-cert
+  namespace: shelfmark
 spec:
-  secretName: readmeabook-tls
+  secretName: shelfmark-tls
   issuerRef:
     name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
-    - readmeabook.lab.jackhumes.com
+    - shelfmark.lab.jackhumes.com

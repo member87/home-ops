@@ -2,17 +2,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: readmeabook
+  name: shelfmark
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/member87/home-ops.git
     targetRevision: HEAD
-    path: apps/readmeabook
+    path: apps/shelfmark
   destination:
     server: https://kubernetes.default.svc
-    namespace: readmeabook
+    namespace: shelfmark
   syncPolicy:
     automated:
       prune: true

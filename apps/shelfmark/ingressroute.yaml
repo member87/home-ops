@@ -3,7 +3,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: redirect-https
-  namespace: readmeabook
+  namespace: shelfmark
 spec:
   redirectScheme:
     scheme: https
@@ -12,33 +12,33 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: readmeabook
-  namespace: readmeabook
+  name: shelfmark
+  namespace: shelfmark
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`readmeabook.lab.jackhumes.com`)
+    - match: Host(`shelfmark.lab.jackhumes.com`)
       kind: Rule
       services:
-        - name: readmeabook
-          port: 3030
+        - name: shelfmark
+          port: 8084
   tls:
-    secretName: readmeabook-tls
+    secretName: shelfmark-tls
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: readmeabook-http
-  namespace: readmeabook
+  name: shelfmark-http
+  namespace: shelfmark
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`readmeabook.lab.jackhumes.com`)
+    - match: Host(`shelfmark.lab.jackhumes.com`)
       kind: Rule
       middlewares:
         - name: redirect-https
       services:
-        - name: readmeabook
-          port: 3030
+        - name: shelfmark
+          port: 8084

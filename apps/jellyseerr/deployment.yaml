@@ -34,7 +34,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: jellyseerr
-          image: ghcr.io/seerr-team/seerr:v3.0.1
+          image: ghcr.io/seerr-team/seerr:v3.1.0
           ports:
             - containerPort: 5055
               name: http

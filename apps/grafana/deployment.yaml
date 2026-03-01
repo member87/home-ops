@@ -34,7 +34,7 @@ spec:
               mountPath: /dashboards
         # Pre-populate dashboards before Grafana starts to avoid race condition
         - name: init-dashboards
-          image: alpine/k8s:1.35.1
+          image: alpine/k8s:1.35.2
           command:
             - sh
             - -c

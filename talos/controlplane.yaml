@@ -513,7 +513,7 @@ cluster:
 # aescbcEncryptionSecret: z01mye6j16bspJYtTB/5SFX8j7Ph4JXxM2Xuu4vsBPM=
 # # Core DNS specific configuration options.
 # coreDNS:
-#     image: registry.k8s.io/coredns/coredns:v1.14.1 # The `image` field is an override to the default coredns image.
+#     image: registry.k8s.io/coredns/coredns:v1.14.2 # The `image` field is an override to the default coredns image.
 # # External cloud provider configuration.
 # externalCloudProvider:
 #     enabled: true # Enable external cloud provider.

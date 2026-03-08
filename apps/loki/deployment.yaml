@@ -58,4 +58,5 @@ spec:
           configMap:
             name: loki-config
         - name: storage
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 25Gi

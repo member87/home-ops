@@ -27,7 +27,6 @@ resources:
   - dashboard-pocket-id.yaml
   - dashboard-pihole.yaml
   - alerting.yaml
-  - pvc.yaml
   - deployment.yaml
   - service.yaml
   - certificate.yaml

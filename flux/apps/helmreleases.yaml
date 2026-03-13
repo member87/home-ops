@@ -5,7 +5,7 @@ metadata:
   name: alloy
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: alloy
   targetNamespace: alloy

@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gotty
+  name: ttyd
   namespace: ttyd
   labels:
-    app: gotty
+    app: ttyd
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gotty
+      app: ttyd
   template:
     metadata:
       labels:
-        app: gotty
+        app: ttyd
     spec:
-      serviceAccountName: gotty
+      serviceAccountName: ttyd
       containers:
         - name: ttyd-k9s
           image: dylanbstorey/ttyd-k9s:v0.0.2
@@ -26,7 +26,7 @@ spec:
               protocol: TCP
           env:
             - name: HOME
-              value: /home/gotty
+              value: /home/ttyd
           command:
             - ttyd
           args:

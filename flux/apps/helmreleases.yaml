@@ -275,12 +275,12 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: gotty
+  name: ttyd
   namespace: flux-system
 spec:
   suspend: false
   interval: 10m0s
-  releaseName: gotty
+  releaseName: ttyd
   targetNamespace: ttyd
   install:
     createNamespace: true
@@ -291,7 +291,7 @@ spec:
       retries: 3
   chart:
     spec:
-      chart: apps/gotty
+      chart: apps/ttyd
       reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository

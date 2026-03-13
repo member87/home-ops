@@ -12,7 +12,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: gotty
+  name: ttyd
   namespace: ttyd
 spec:
   entryPoints:
@@ -23,15 +23,15 @@ spec:
       middlewares:
         - name: tinyauth-forwardauth
       services:
-        - name: gotty
+        - name: ttyd
           port: 8080
   tls:
-    secretName: gotty-tls
+    secretName: ttyd-tls
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: gotty-http
+  name: ttyd-http
   namespace: ttyd
 spec:
   entryPoints:
@@ -42,5 +42,5 @@ spec:
       middlewares:
         - name: redirect-https
       services:
-        - name: gotty
+        - name: ttyd
           port: 8080

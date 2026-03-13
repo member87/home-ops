@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gotty
+  name: ttyd
   namespace: ttyd
   labels:
-    app: gotty
+    app: ttyd
 spec:
   type: ClusterIP
   selector:
-    app: gotty
+    app: ttyd
   ports:
     - name: http
       port: 8080

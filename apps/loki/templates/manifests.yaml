@@ -1,26 +1,20 @@
 {{- $includeFiles := default (list) .Values.includeFiles -}}
 {{- if gt (len $includeFiles) 0 -}}
 {{- range $pattern := $includeFiles -}}
-{{- $paths := list -}}
 {{- range $path, $_ := $.Files.Glob $pattern -}}
-{{- $paths = append $paths $path -}}
-{{- end -}}
-{{- range $path := sortAlpha $paths -}}
 ---
 {{ $.Files.Get $path }}
 {{- end -}}
 {{- end -}}
 {{- else -}}
-{{- $manifestGlob := default "**/*.yaml" .Values.manifestGlob -}}
+{{- $manifestGlobs := default (list "*.yaml" "*/*.yaml") .Values.manifestGlobs -}}
 {{- $excludeFiles := default (list "Chart.yaml" "values.yaml" "kustomization.yaml") .Values.excludeFiles -}}
-{{- $paths := list -}}
-{{- range $path, $_ := .Files.Glob $manifestGlob -}}
-{{- $paths = append $paths $path -}}
-{{- end -}}
-{{- range $path := sortAlpha $paths -}}
+{{- range $pattern := $manifestGlobs -}}
+{{- range $path, $_ := $.Files.Glob $pattern -}}
 {{- if not (has (base $path) $excludeFiles) -}}
 ---
 {{ $.Files.Get $path }}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

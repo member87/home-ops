@@ -970,7 +970,7 @@ metadata:
   name: sealed-secrets
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: sealed-secrets
   targetNamespace: sealed-secrets

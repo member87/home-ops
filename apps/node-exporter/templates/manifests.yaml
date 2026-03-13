@@ -1,20 +1,111 @@
-{{- $includeFiles := default (list) .Values.includeFiles -}}
-{{- if gt (len $includeFiles) 0 -}}
-{{- range $pattern := $includeFiles -}}
-{{- range $path, $_ := $.Files.Glob $pattern -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+  name: node-exporter
 ---
-{{ $.Files.Get $path }}
-{{- end -}}
-{{- end -}}
-{{- else -}}
-{{- $manifestGlobs := default (list "*.yaml" "*/*.yaml") .Values.manifestGlobs -}}
-{{- $excludeFiles := default (list "Chart.yaml" "values.yaml" "kustomization.yaml") .Values.excludeFiles -}}
-{{- range $pattern := $manifestGlobs -}}
-{{- range $path, $_ := $.Files.Glob $pattern -}}
-{{- if not (has (base $path) $excludeFiles) -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: node-exporter
+  namespace: node-exporter
 ---
-{{ $.Files.Get $path }}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "9100"
+    prometheus.io/scrape: "true"
+  labels:
+    app: node-exporter
+  name: node-exporter
+  namespace: node-exporter
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 9100
+    protocol: TCP
+    targetPort: http-metrics
+  selector:
+    app: node-exporter
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: node-exporter
+  name: node-exporter
+  namespace: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      containers:
+      - args:
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        - --path.rootfs=/host/root
+        - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+        - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+        image: prom/node-exporter:v1.10.2
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http-metrics
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: node-exporter
+        ports:
+        - containerPort: 9100
+          name: http-metrics
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http-metrics
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /host/proc
+          name: proc
+          readOnly: true
+        - mountPath: /host/sys
+          name: sys
+          readOnly: true
+        - mountPath: /host/root
+          mountPropagation: HostToContainer
+          name: root
+          readOnly: true
+      hostNetwork: true
+      hostPID: true
+      serviceAccountName: node-exporter
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /proc
+        name: proc
+      - hostPath:
+          path: /sys
+        name: sys
+      - hostPath:
+          path: /
+        name: root

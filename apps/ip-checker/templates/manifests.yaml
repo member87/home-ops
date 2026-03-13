@@ -1,20 +1,129 @@
-{{- $includeFiles := default (list) .Values.includeFiles -}}
-{{- if gt (len $includeFiles) 0 -}}
-{{- range $pattern := $includeFiles -}}
-{{- range $path, $_ := $.Files.Glob $pattern -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: baseline
+  name: ip-checker
 ---
-{{ $.Files.Get $path }}
-{{- end -}}
-{{- end -}}
-{{- else -}}
-{{- $manifestGlobs := default (list "*.yaml" "*/*.yaml") .Values.manifestGlobs -}}
-{{- $excludeFiles := default (list "Chart.yaml" "values.yaml" "kustomization.yaml") .Values.excludeFiles -}}
-{{- range $pattern := $manifestGlobs -}}
-{{- range $path, $_ := $.Files.Glob $pattern -}}
-{{- if not (has (base $path) $excludeFiles) -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ip-checker
+  name: ip-checker
+  namespace: ip-checker
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: ip-checker
+  type: ClusterIP
 ---
-{{ $.Files.Get $path }}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ip-checker
+  name: ip-checker
+  namespace: ip-checker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ip-checker
+  template:
+    metadata:
+      labels:
+        app: ip-checker
+    spec:
+      containers:
+      - env:
+        - name: WHOAMI_PORT_NUMBER
+          value: "80"
+        image: traefik/whoami:v1.11.0
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        name: whoami
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 50m
+            memory: 32Mi
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ip-checker-cert
+  namespace: ip-checker
+spec:
+  dnsNames:
+  - ip-checker.lab.jackhumes.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  secretName: ip-checker-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ip-checker
+  namespace: ip-checker
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host(`ip-checker.lab.jackhumes.com`)
+    services:
+    - name: ip-checker
+      port: 80
+  tls:
+    secretName: ip-checker-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ip-checker-http
+  namespace: ip-checker
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host(`ip-checker.lab.jackhumes.com`)
+    middlewares:
+    - name: redirect-https
+    services:
+    - name: ip-checker
+      port: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: ip-checker
+spec:
+  redirectScheme:
+    permanent: true
+    scheme: https

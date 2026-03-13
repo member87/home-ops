@@ -808,7 +808,7 @@ metadata:
   name: prometheus
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: prometheus
   targetNamespace: prometheus

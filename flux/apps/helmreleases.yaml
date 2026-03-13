@@ -197,7 +197,7 @@ metadata:
   name: crowdsec
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: crowdsec
   targetNamespace: crowdsec

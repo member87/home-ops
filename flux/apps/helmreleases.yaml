@@ -582,7 +582,7 @@ metadata:
   name: metallb-config
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: metallb-config
   targetNamespace: metallb-system

@@ -862,7 +862,7 @@ metadata:
   name: prowlarr
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: prowlarr
   targetNamespace: prowlarr

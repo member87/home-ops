@@ -278,7 +278,7 @@ metadata:
   name: grafana
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: grafana
   targetNamespace: grafana

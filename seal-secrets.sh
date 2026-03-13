@@ -110,9 +110,8 @@ interactive_mode() {
     echo "Which application do you want to create sealed secrets for?"
     echo "1) Authelia"
     echo "2) LLDAP"
-    echo "3) ArgoCD Repository"
-    echo "4) Custom"
-    read -p "Enter choice [1-4]: " app_choice
+    echo "3) Custom"
+    read -p "Enter choice [1-3]: " app_choice
     
     case "$app_choice" in
         1)
@@ -122,9 +121,6 @@ interactive_mode() {
             seal_lldap_secrets
             ;;
         3)
-            seal_argocd_secrets
-            ;;
-        4)
             seal_custom_secret
             ;;
         *)
@@ -188,35 +184,6 @@ seal_lldap_secrets() {
     echo "  encryptedData:"
     echo "    LLDAP_LDAP_USER_PASS: $SEALED_PASS"
     echo "    LLDAP_JWT_SECRET: $SEALED_JWT"
-}
-
-# Seal ArgoCD secrets
-seal_argocd_secrets() {
-    print_info "=== Sealing ArgoCD Repository Secrets ==="
-    
-    read -p "Is this a private repository? (y/n): " is_private
-    
-    # Seal type and URL
-    SEALED_TYPE=$(seal_value "git" "argocd" "home-ops-repo" "type")
-    read -p "Enter repository URL: " repo_url
-    SEALED_URL=$(seal_value "$repo_url" "argocd" "home-ops-repo" "url")
-    
-    echo ""
-    echo "  encryptedData:"
-    echo "    type: $SEALED_TYPE"
-    echo "    url: $SEALED_URL"
-    
-    if [[ "$is_private" == "y" ]]; then
-        read -p "Enter GitHub username: " username
-        read -sp "Enter GitHub token/password: " password
-        echo ""
-        
-        SEALED_USER=$(seal_value "$username" "argocd" "home-ops-repo" "username")
-        SEALED_PASS=$(seal_value "$password" "argocd" "home-ops-repo" "password")
-        
-        echo "    username: $SEALED_USER"
-        echo "    password: $SEALED_PASS"
-    fi
 }
 
 # Seal custom secret

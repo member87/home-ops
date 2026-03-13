@@ -73,12 +73,12 @@ longhorn:
   ingress:
     enabled: false
 
-  # Disable pre-upgrade checker (not needed for fresh install, causes issues with ArgoCD hooks)
+  # Disable pre-upgrade checker (not needed for this cluster)
   preUpgradeChecker:
     jobEnabled: false
     upgradeVersionCheck: false
 
-  # Disable post-delete job for Helm to avoid ArgoCD hook issues
+  # Disable post-delete job to avoid unnecessary cleanup jobs
   longhornPostDelete:
     enabled: false
 

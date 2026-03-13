@@ -26,11 +26,6 @@ pages:
                 icon: sh:pi-hole
                 alt-status-codes:
                   - 401
-              - title: ArgoCD
-                url: https://argocd.lab.jackhumes.com
-                icon: sh:argo-cd
-                alt-status-codes:
-                  - 401
               - title: Pocket ID
                 url: https://auth.jackhumes.com
                 icon: sh:pocket-id

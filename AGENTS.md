@@ -19,11 +19,9 @@ This document provides guidelines for AI agents working with the home-ops Kubern
 home-ops/
 ├── .sops.yaml             # SOPS encryption rules for Talos configs
 ├── Justfile               # Task runner (Talos cluster management)
-├── applications/          # ArgoCD Application manifests
-│   ├── pocket-id.yaml
-│   ├── tinyauth.yaml
-│   ├── netbird.yaml
-│   └── ...
+├── flux/                  # Flux GitOps resources
+│   ├── system/            # GitRepository + root Kustomization
+│   └── apps/              # HelmRelease inventory
 ├── apps/                  # Kubernetes manifests for each application
 │   ├── pocket-id/
 │   │   ├── deployment.yaml
@@ -41,7 +39,7 @@ home-ops/
 │   │   └── kustomization.yaml
 │   ├── netbird/
 │   └── ...
-├── bootstrap/             # Bootstrap configurations
+├── charts/                # Shared Helm charts
 ├── talos/                 # Talos Linux node configs (SOPS-encrypted)
 │   ├── controlplane.yaml  # Control plane machine config
 │   ├── worker.yaml        # Worker node machine config
@@ -53,8 +51,8 @@ home-ops/
 ### Key Principles
 
 1. **Each application has its own directory** under `apps/` containing all its Kubernetes resources
-2. **ArgoCD Application CRDs** are stored in `applications/` directory
-3. **Kustomize is used** for resource management (kustomization.yaml in each app directory)
+2. **Flux is the GitOps controller** (`GitRepository` + `Kustomization` in `flux/system/`)
+3. **Applications are managed as Flux HelmReleases** in `flux/apps/helmreleases.yaml`
 4. **Sealed Secrets** are used for Kubernetes application secrets (never commit plaintext secrets)
 5. **SOPS with age** is used for Talos infrastructure configs (partial encryption, secrets only)
 
@@ -78,8 +76,10 @@ home-ops/
    - Commit and push in a single operation when ready
 
 4. **Deployment**
-   - ArgoCD automatically syncs changes (automated sync policy enabled)
-   - If manual sync needed: `kubectl -n argocd patch app <app-name> --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}'`
+   - Flux automatically reconciles changes from Git
+   - If manual sync is needed:
+     - `flux reconcile source git home-ops -n flux-system`
+     - `flux reconcile kustomization home-ops -n flux-system --with-source`
    - Monitor pod status after deployment
 
 ### Commit Message Convention
@@ -307,7 +307,8 @@ Primary tool for interacting with the Kubernetes cluster.
 ```bash
 # Get resources
 kubectl get pods -n <namespace>
-kubectl get app -n argocd
+kubectl get helmreleases.helm.toolkit.fluxcd.io -A
+kubectl -n flux-system get kustomizations.kustomize.toolkit.fluxcd.io
 
 # View logs
 kubectl logs -n <namespace> <pod-name>
@@ -321,6 +322,24 @@ kubectl exec -n <namespace> <pod-name> -- <command>
 
 # Port forwarding
 kubectl port-forward -n <namespace> svc/<service> <local-port>:<remote-port>
+```
+
+### flux
+
+CLI for interacting with Flux controllers.
+
+**Common Commands:**
+```bash
+# Check Flux state
+flux get all -A
+
+# Reconcile source and root kustomization
+flux reconcile source git home-ops -n flux-system
+flux reconcile kustomization home-ops -n flux-system --with-source
+
+# Check a specific app release
+flux get helmreleases -A
+flux reconcile helmrelease <app-name> -n flux-system --with-source
 ```
 
 ### kubeseal
@@ -458,10 +477,10 @@ The cluster uses a two-tier storage architecture:
 
 ### Installed Components
 
-1. **ArgoCD** (namespace: `argocd`)
+1. **FluxCD** (namespace: `flux-system`)
    - GitOps continuous deployment
-   - Automated sync enabled for all applications
    - Source repo: https://github.com/member87/home-ops.git
+   - Root resources: `flux/system/gitrepository.yaml` and `flux/system/flux-kustomization.yaml`
 
 2. **Sealed Secrets** (namespace: `sealed-secrets`)
    - Controller: `sealed-secrets-controller`
@@ -688,7 +707,7 @@ env:
 ### Namespaces
 
 - `alloy` - Alloy log shipping (replaces Promtail)
-- `argocd` - ArgoCD deployment
+- `flux-system` - Flux controllers (source, kustomize, helm, notification)
 - `crowdsec` - CrowdSec IPS (agent and LAPI)
 - `grafana` - Grafana visualization
 - `headplane` - Headplane web UI for Headscale
@@ -720,37 +739,43 @@ cd apps/<app-name>
    - `configmap.yaml` - Configuration
    - `sealedsecret.yaml` - Sealed secrets
    - `ingressroute.yaml` - Ingress (if external access needed)
-   - `kustomization.yaml` - Kustomize resource list
+   - `Chart.yaml` - App Helm chart wrapper
+   - `templates/manifests.yaml` - Include local manifests
 
-3. Create ArgoCD Application:
+3. Add a Flux HelmRelease in `flux/apps/helmreleases.yaml`:
 ```yaml
-# applications/<app-name>.yaml
 ---
-apiVersion: argoproj.io/v1alpha1
-kind: Application
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
 metadata:
   name: <app-name>
-  namespace: argocd
+  namespace: flux-system
 spec:
-  project: default
-  source:
-    repoURL: https://github.com/member87/home-ops.git
-    targetRevision: HEAD
-    path: apps/<app-name>
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: <app-name>
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+  suspend: false
+  interval: 10m0s
+  releaseName: <app-name>
+  targetNamespace: <app-name>
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/<app-name>
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
 ```
 
 4. Commit and push:
 ```bash
-git add applications/<app-name>.yaml apps/<app-name>/
+git add apps/<app-name>/ flux/apps/helmreleases.yaml
 git commit -m "feat(<app-name>): add <description>"
 git push
 ```
@@ -1139,7 +1164,7 @@ spec:
 1. **For ConfigMaps**:
    - Edit the configmap.yaml file
    - Commit and push
-   - Wait for ArgoCD sync
+   - Wait for Flux reconciliation (`flux get kustomizations -n flux-system`)
    - Restart affected pods if config is not hot-reloaded
 
 2. **For Secrets**:
@@ -1152,7 +1177,7 @@ spec:
 3. **For Deployments**:
    - Edit deployment.yaml
    - Commit and push
-   - ArgoCD will automatically roll out changes
+   - Flux will automatically reconcile and roll out changes
 
 ### Health Checks
 
@@ -1190,20 +1215,21 @@ readinessProbe:
 
 ### Application Not Syncing
 
-1. Check ArgoCD application status:
+1. Check Flux root kustomization status:
 ```bash
-kubectl get app -n argocd <app-name>
+kubectl -n flux-system get kustomization home-ops
 ```
 
-2. View detailed sync status:
+2. Check the app HelmRelease:
 ```bash
-kubectl describe app -n argocd <app-name>
+kubectl -n flux-system get helmrelease <app-name>
+kubectl -n flux-system describe helmrelease <app-name>
 ```
 
 3. Manually trigger sync:
 ```bash
-kubectl -n argocd patch app <app-name> --type merge \
-  -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}'
+flux reconcile source git home-ops -n flux-system
+flux reconcile kustomization home-ops -n flux-system --with-source
 ```
 
 ### Pods Not Starting
@@ -1354,9 +1380,10 @@ kubectl logs -n tinyauth deployment/tinyauth
 
 **Symptoms**: Dashboard changes in ConfigMap not reflected in Grafana UI.
 
-1. **Check ArgoCD sync status**:
+1. **Check Flux reconciliation status**:
    ```bash
-   kubectl get app grafana -n argocd -o jsonpath='{.status.sync.status}'
+   kubectl -n flux-system get helmrelease grafana
+   kubectl -n flux-system get kustomization home-ops
    ```
 
 2. **Check ConfigMap has updated content**:
@@ -1370,9 +1397,10 @@ kubectl logs -n tinyauth deployment/tinyauth
    ```
    Look for "Writing" messages indicating dashboard updates.
 
-4. **Force ArgoCD refresh**:
+4. **Force Flux refresh**:
    ```bash
-   kubectl -n argocd patch app grafana --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+   flux reconcile source git home-ops -n flux-system
+   flux reconcile helmrelease grafana -n flux-system --with-source
    ```
 
 5. **Verify dashboard file on disk**:
@@ -1434,12 +1462,12 @@ curl http://localhost:8080
 6. **Use proper health checks** (TCP vs HTTP based on service)
 7. **Document non-obvious decisions** in commit messages
 8. **Restart pods after config changes** when needed
-9. **Monitor ArgoCD sync status** after pushing changes
+9. **Monitor Flux reconciliation status** after pushing changes
 10. **Keep this document updated** as the infrastructure evolves
 
 ## Additional Resources
 
-- ArgoCD UI: `https://argocd.lab.jackhumes.com`
 - Pocket ID UI: `https://auth.lab.jackhumes.com`
+- Flux Docs: https://fluxcd.io/flux/
 - Sealed Secrets: https://github.com/bitnami-labs/sealed-secrets
 - Pocket ID Docs: https://pocket-id.org/docs

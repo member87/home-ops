@@ -3,9 +3,6 @@
   "extends": ["config:recommended"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
-  "argocd": { 
-    "managerFilePatterns": ["/\\.yaml$/"] 
-  },
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
   },

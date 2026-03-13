@@ -19,7 +19,7 @@ spec:
       serviceAccountName: gotty
       initContainers:
         - name: download-binaries
-          image: alpine:3.22.1
+          image: alpine:3.23.3
           command:
             - /bin/sh
             - -c
@@ -53,7 +53,7 @@ spec:
               mountPath: /tools
       containers:
         - name: gotty
-          image: alpine:3.22.1
+          image: alpine:3.23.3
           ports:
             - containerPort: 8080
               name: http

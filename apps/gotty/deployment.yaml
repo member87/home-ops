@@ -17,43 +17,9 @@ spec:
         app: gotty
     spec:
       serviceAccountName: gotty
-      initContainers:
-        - name: download-binaries
-          image: alpine:3.22.1
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -eu
-              apk add --no-cache ca-certificates curl tar
-
-              arch="$(uname -m)"
-              case "${arch}" in
-                x86_64)
-                  k9s_arch="amd64"
-                  gotty_arch="amd64"
-                  ;;
-                aarch64|arm64)
-                  k9s_arch="arm64"
-                  gotty_arch="arm64"
-                  ;;
-                *)
-                  echo "unsupported architecture: ${arch}" >&2
-                  exit 1
-                  ;;
-              esac
-
-              curl -fsSL -o /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v0.50.18/k9s_Linux_${k9s_arch}.tar.gz"
-              tar -xzf /tmp/k9s.tar.gz -C /tools k9s
-              curl -fsSL -o /tmp/gotty.tar.gz "https://github.com/sorenisanerd/gotty/releases/download/v1.6.0/gotty_v1.6.0_linux_${gotty_arch}.tar.gz"
-              tar -xzf /tmp/gotty.tar.gz -C /tools gotty
-              chmod +x /tools/k9s /tools/gotty
-          volumeMounts:
-            - name: tools
-              mountPath: /tools
       containers:
-        - name: gotty
-          image: alpine:3.22.1
+        - name: ttyd-k9s
+          image: dylanbstorey/ttyd-k9s:v0.0.2
           ports:
             - containerPort: 8080
               name: http
@@ -61,55 +27,13 @@ spec:
           env:
             - name: HOME
               value: /home/gotty
-            - name: TERM
-              value: xterm-256color
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
           command:
-            - /bin/sh
-            - -c
-            - |
-              set -eu
-
-              cat <<EOF >/home/gotty/kubeconfig
-              apiVersion: v1
-              kind: Config
-              clusters:
-                - name: in-cluster
-                  cluster:
-                    certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                    server: https://${KUBERNETES_SERVICE_HOST}:443
-              contexts:
-                - name: in-cluster
-                  context:
-                    cluster: in-cluster
-                    namespace: ${POD_NAMESPACE}
-                    user: in-cluster
-              current-context: in-cluster
-              users:
-                - name: in-cluster
-                  user:
-                    tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-              EOF
-
-              exec /tools/gotty \
-                --address 0.0.0.0 \
-                --port 8080 \
-                --permit-write \
-                --reconnect \
-                --ws-origin "^https://k9s\\.lab\\.jackhumes\\.com$" \
-                --title-format "k9s" \
-                /tools/k9s \
-                --kubeconfig /home/gotty/kubeconfig \
-                --readonly
-          volumeMounts:
-            - name: tools
-              mountPath: /tools
-              readOnly: true
-            - name: home
-              mountPath: /home/gotty
+            - ttyd
+          args:
+            - -p
+            - "8080"
+            - k9s
+            - --readonly
           readinessProbe:
             httpGet:
               path: /
@@ -129,8 +53,3 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-      volumes:
-        - name: tools
-          emptyDir: {}
-        - name: home
-          emptyDir: {}

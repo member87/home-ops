@@ -1051,7 +1051,7 @@ metadata:
   name: sonarr
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: sonarr
   targetNamespace: sonarr

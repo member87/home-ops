@@ -548,7 +548,7 @@ metadata:
   name: longhorn
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: longhorn
   targetNamespace: longhorn-system

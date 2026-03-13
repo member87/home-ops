@@ -699,7 +699,7 @@ metadata:
   name: pocket-id
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: pocket-id
   targetNamespace: pocket-id

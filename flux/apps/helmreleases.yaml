@@ -642,7 +642,7 @@ metadata:
   name: node-exporter
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: node-exporter
   targetNamespace: node-exporter

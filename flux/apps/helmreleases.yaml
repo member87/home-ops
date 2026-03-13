@@ -440,7 +440,7 @@ metadata:
   name: jellyseerr
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: jellyseerr
   targetNamespace: jellyseerr

@@ -251,7 +251,7 @@ metadata:
   name: glance
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: glance
   targetNamespace: glance

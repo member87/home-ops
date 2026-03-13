@@ -113,7 +113,7 @@ metadata:
   name: cert-manager
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: cert-manager
   targetNamespace: cert-manager

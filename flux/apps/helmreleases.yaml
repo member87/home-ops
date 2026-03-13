@@ -889,7 +889,7 @@ metadata:
   name: qbittorrent
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: qbittorrent
   targetNamespace: qbittorrent

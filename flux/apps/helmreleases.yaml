@@ -970,7 +970,7 @@ metadata:
   name: sabnzbd
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: sabnzbd
   targetNamespace: sabnzbd

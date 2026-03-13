@@ -1,0 +1,20 @@
+{{- $includeFiles := default (list) .Values.includeFiles -}}
+{{- if gt (len $includeFiles) 0 -}}
+{{- range $pattern := $includeFiles -}}
+{{- $matched := $.Files.Glob $pattern -}}
+{{- range $path := keys $matched | sortAlpha -}}
+---
+{{ $.Files.Get $path }}
+{{- end -}}
+{{- end -}}
+{{- else -}}
+{{- $manifestGlob := default "*.yaml" .Values.manifestGlob -}}
+{{- $excludeFiles := default (list "Chart.yaml" "values.yaml" "kustomization.yaml") .Values.excludeFiles -}}
+{{- $matched := .Files.Glob $manifestGlob -}}
+{{- range $path := keys $matched | sortAlpha -}}
+{{- if not (has $path $excludeFiles) -}}
+---
+{{ $.Files.Get $path }}
+{{- end -}}
+{{- end -}}
+{{- end -}}

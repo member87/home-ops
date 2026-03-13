@@ -1,0 +1,5 @@
+apiVersion: v2
+name: kube-state-metrics
+type: application
+version: 0.1.0
+description: Home Ops kube-state-metrics manifests packaged as a Helm chart.

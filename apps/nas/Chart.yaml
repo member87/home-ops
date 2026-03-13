@@ -1,0 +1,5 @@
+apiVersion: v2
+name: nas
+type: application
+version: 0.1.0
+description: Home Ops nas manifests packaged as a Helm chart.

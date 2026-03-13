@@ -1,0 +1,15 @@
+replicaCount: 1
+service:
+  enabled: true
+  type: ClusterIP
+  httpPort: 9898
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+ui:
+  color: "#34577c"
+  message: "Welcome to Podinfo - Home Lab"

@@ -1,0 +1,123 @@
+# Scale to 3 replicas for high availability
+replicaCount: 3
+strategyType: RollingUpdate
+maxSurge: 1
+maxUnavailable: 1
+# Admin password disabled - protected by Tinyauth/Pocket ID
+# Use empty password secret to disable Pi-hole authentication
+admin:
+  existingSecret: "pihole-password-empty"
+  passwordKey: "password"
+# Disable persistent storage - each replica builds its own gravity DB
+# from the configured adlists on startup. Config is managed via Helm values.
+# PVC with ReadWriteOnce would prevent scheduling multiple replicas.
+persistentVolumeClaim:
+  enabled: false
+# Anti-affinity to spread Pi-hole pods across nodes
+antiaff:
+  enabled: true
+  avoidRelease: pihole
+  strict: false
+# Topology spread for even distribution across nodes
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: pihole
+        release: pihole
+# Pod Disruption Budget - ensure at least 2 replicas are always running
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+# DNS Service Configuration - using LoadBalancer with MetalLB
+# externalTrafficPolicy: Cluster ensures kube-proxy creates DNAT rules
+# on ALL nodes, not just the node running Pi-hole. This is required for
+# Tailscale subnet router (on a different node) to forward DNS queries
+# to 10.0.0.201.
+serviceDns:
+  mixedService: true
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  loadBalancerIP: "10.0.0.201"
+  port: 53
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+# Web Interface Service Configuration
+# externalTrafficPolicy must match serviceDns for MetalLB shared IP
+serviceWeb:
+  http:
+    enabled: true
+    port: 80
+  https:
+    enabled: true
+    port: 443
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  loadBalancerIP: "10.0.0.201"
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+# DHCP Service - disable if not needed
+serviceDhcp:
+  enabled: false
+# DNS Configuration
+DNS1: "1.1.1.1"
+DNS2: "1.0.0.1"
+# DNSMasq custom configuration
+dnsmasq:
+  enableCustomDnsMasq: true
+  customDnsEntries:
+    # Wildcard DNS for lab domain - routes all *.lab.jackhumes.com to Traefik
+    - address=/.lab.jackhumes.com/10.0.0.200
+  customCnameEntries: []
+  upstreamServers: []
+# Environment variables
+extraEnvVars:
+  TZ: "UTC"
+  WEBPASSWORD: ""
+  FTLCONF_dns_listeningMode: "all"
+  FTLCONF_misc_dnsmasq_lines: "address=/.lab.jackhumes.com/10.0.0.200"
+# Pod DNS Configuration
+# Use external DNS during startup to avoid chicken-and-egg problem
+podDnsConfig:
+  enabled: true
+  policy: "None"
+  nameservers:
+    - 1.1.1.1
+    - 1.0.0.1
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+# Additional blocklists
+adlists:
+  - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  - https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt
+# Pod annotations for Prometheus auto-discovery
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9617"
+  prometheus.io/path: "/metrics"
+# Monitoring - pihole-exporter sidecar for Prometheus metrics
+monitoring:
+  podMonitor:
+    enabled: false
+  sidecar:
+    enabled: true
+    port: 9617
+    image:
+      repository: ekofr/pihole-exporter
+      tag: v1.2.0
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi

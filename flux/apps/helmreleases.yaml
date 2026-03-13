@@ -1,0 +1,1110 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: alloy
+  targetNamespace: alloy
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/alloy
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: audiobookshelf
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: audiobookshelf
+  targetNamespace: audiobookshelf
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/audiobookshelf
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: bazarr
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: bazarr
+  targetNamespace: bazarr
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/bazarr
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cdn
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: cdn
+  targetNamespace: cdn
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/cdn
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: cert-manager
+  targetNamespace: cert-manager
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: charts/cert-manager
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-issuers
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: cert-manager-issuers
+  targetNamespace: cert-manager
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: cert-manager
+      namespace: flux-system
+  chart:
+    spec:
+      chart: infrastructure/cert-manager
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: changedetection
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: changedetection
+  targetNamespace: changedetection
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/changedetection
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: crowdsec
+  targetNamespace: crowdsec
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/crowdsec
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: frp-client
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: frp-client
+  targetNamespace: frp-client
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/frp-client
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: glance
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: glance
+  targetNamespace: glance
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/glance
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: grafana
+  targetNamespace: grafana
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/grafana
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: headplane
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: headplane
+  targetNamespace: headplane
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/headplane
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: headscale
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: headscale
+  targetNamespace: headscale
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/headscale
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ip-checker
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: ip-checker
+  targetNamespace: ip-checker
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/ip-checker
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: jellyfin
+  targetNamespace: jellyfin
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/jellyfin
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyseerr
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: jellyseerr
+  targetNamespace: jellyseerr
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/jellyseerr
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: kube-state-metrics
+  targetNamespace: kube-state-metrics
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/kube-state-metrics
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lldap
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: lldap
+  targetNamespace: lldap
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/lldap
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: loki
+  targetNamespace: loki
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/loki
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: longhorn
+  targetNamespace: longhorn-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: infrastructure/longhorn
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metallb
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: metallb
+  targetNamespace: metallb-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: infrastructure/metallb
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+  values:
+    excludeFiles:
+      - Chart.yaml
+      - values.yaml
+      - kustomization.yaml
+      - config.yaml
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metallb-config
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: metallb-config
+  targetNamespace: metallb-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: metallb
+      namespace: flux-system
+  chart:
+    spec:
+      chart: infrastructure/metallb
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+  values:
+    includeFiles:
+      - config.yaml
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nas
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: nas
+  targetNamespace: nas
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/nas
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: node-exporter
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: node-exporter
+  targetNamespace: node-exporter
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/node-exporter
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pihole
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: pihole
+  targetNamespace: pihole
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: metallb-config
+      namespace: flux-system
+  chart:
+    spec:
+      chart: apps/pihole
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pocket-id
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: pocket-id
+  targetNamespace: pocket-id
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/pocket-id
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: podinfo
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: podinfo
+  targetNamespace: podinfo
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/podinfo
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postgresql
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: postgresql
+  targetNamespace: postgresql
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/postgresql
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: profilarr
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: profilarr
+  targetNamespace: profilarr
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/profilarr
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: prometheus
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: prometheus
+  targetNamespace: prometheus
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/prometheus
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: prowlarr
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: prowlarr
+  targetNamespace: prowlarr
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/prowlarr
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbittorrent
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: qbittorrent
+  targetNamespace: qbittorrent
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/qbittorrent
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qui
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: qui
+  targetNamespace: qui
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/qui
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: radarr
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: radarr
+  targetNamespace: radarr
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/radarr
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sabnzbd
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: sabnzbd
+  targetNamespace: sabnzbd
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/sabnzbd
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sealed-secrets
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: sealed-secrets
+  targetNamespace: sealed-secrets
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: infrastructure/sealed-secrets
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: shelfmark
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: shelfmark
+  targetNamespace: shelfmark
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/shelfmark
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sonarr
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: sonarr
+  targetNamespace: sonarr
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/sonarr
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tailscale-subnet-router
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: tailscale-subnet-router
+  targetNamespace: tailscale-subnet-router
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/tailscale-subnet-router
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tinyauth
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: tinyauth
+  targetNamespace: tinyauth
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/tinyauth
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: traefik
+  targetNamespace: traefik
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: infrastructure/traefik
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: unpoller
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: unpoller
+  targetNamespace: unpoller
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/unpoller
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s

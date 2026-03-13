@@ -11,14 +11,14 @@
 {{- end -}}
 {{- end -}}
 {{- else -}}
-{{- $manifestGlob := default "*.yaml" .Values.manifestGlob -}}
+{{- $manifestGlob := default "**/*.yaml" .Values.manifestGlob -}}
 {{- $excludeFiles := default (list "Chart.yaml" "values.yaml" "kustomization.yaml") .Values.excludeFiles -}}
 {{- $paths := list -}}
 {{- range $path, $_ := .Files.Glob $manifestGlob -}}
 {{- $paths = append $paths $path -}}
 {{- end -}}
 {{- range $path := sortAlpha $paths -}}
-{{- if not (has $path $excludeFiles) -}}
+{{- if not (has (base $path) $excludeFiles) -}}
 ---
 {{ $.Files.Get $path }}
 {{- end -}}

@@ -943,7 +943,7 @@ metadata:
   name: radarr
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: radarr
   targetNamespace: radarr

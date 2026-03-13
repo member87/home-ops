@@ -19,6 +19,7 @@ spec:
   chart:
     spec:
       chart: apps/alloy
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -45,6 +46,7 @@ spec:
   chart:
     spec:
       chart: apps/audiobookshelf
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -71,6 +73,7 @@ spec:
   chart:
     spec:
       chart: apps/bazarr
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -97,6 +100,7 @@ spec:
   chart:
     spec:
       chart: apps/cdn
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -123,6 +127,7 @@ spec:
   chart:
     spec:
       chart: charts/cert-manager
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -152,6 +157,7 @@ spec:
   chart:
     spec:
       chart: infrastructure/cert-manager
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -178,6 +184,7 @@ spec:
   chart:
     spec:
       chart: apps/changedetection
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -204,6 +211,7 @@ spec:
   chart:
     spec:
       chart: apps/crowdsec
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -230,6 +238,7 @@ spec:
   chart:
     spec:
       chart: apps/frp-client
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -256,6 +265,7 @@ spec:
   chart:
     spec:
       chart: apps/glance
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -282,6 +292,7 @@ spec:
   chart:
     spec:
       chart: apps/grafana
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -308,6 +319,7 @@ spec:
   chart:
     spec:
       chart: apps/headplane
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -334,6 +346,7 @@ spec:
   chart:
     spec:
       chart: apps/headscale
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -360,6 +373,7 @@ spec:
   chart:
     spec:
       chart: apps/ip-checker
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -386,6 +400,7 @@ spec:
   chart:
     spec:
       chart: apps/jellyfin
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -412,6 +427,7 @@ spec:
   chart:
     spec:
       chart: apps/jellyseerr
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -438,6 +454,7 @@ spec:
   chart:
     spec:
       chart: apps/kube-state-metrics
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -464,6 +481,7 @@ spec:
   chart:
     spec:
       chart: apps/lldap
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -490,6 +508,7 @@ spec:
   chart:
     spec:
       chart: apps/loki
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -516,6 +535,7 @@ spec:
   chart:
     spec:
       chart: infrastructure/longhorn
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -542,6 +562,7 @@ spec:
   chart:
     spec:
       chart: infrastructure/metallb
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -577,6 +598,7 @@ spec:
   chart:
     spec:
       chart: infrastructure/metallb
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -606,6 +628,7 @@ spec:
   chart:
     spec:
       chart: apps/nas
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -632,6 +655,7 @@ spec:
   chart:
     spec:
       chart: apps/node-exporter
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -661,6 +685,7 @@ spec:
   chart:
     spec:
       chart: apps/pihole
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -687,6 +712,7 @@ spec:
   chart:
     spec:
       chart: apps/pocket-id
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -713,6 +739,7 @@ spec:
   chart:
     spec:
       chart: apps/podinfo
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -739,6 +766,7 @@ spec:
   chart:
     spec:
       chart: apps/postgresql
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -765,6 +793,7 @@ spec:
   chart:
     spec:
       chart: apps/profilarr
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -791,6 +820,7 @@ spec:
   chart:
     spec:
       chart: apps/prometheus
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -817,6 +847,7 @@ spec:
   chart:
     spec:
       chart: apps/prowlarr
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -843,6 +874,7 @@ spec:
   chart:
     spec:
       chart: apps/qbittorrent
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -869,6 +901,7 @@ spec:
   chart:
     spec:
       chart: apps/qui
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -895,6 +928,7 @@ spec:
   chart:
     spec:
       chart: apps/radarr
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -921,6 +955,7 @@ spec:
   chart:
     spec:
       chart: apps/sabnzbd
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -947,6 +982,7 @@ spec:
   chart:
     spec:
       chart: infrastructure/sealed-secrets
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -973,6 +1009,7 @@ spec:
   chart:
     spec:
       chart: apps/shelfmark
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -999,6 +1036,7 @@ spec:
   chart:
     spec:
       chart: apps/sonarr
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -1025,6 +1063,7 @@ spec:
   chart:
     spec:
       chart: apps/tailscale-subnet-router
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -1051,6 +1090,7 @@ spec:
   chart:
     spec:
       chart: apps/tinyauth
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -1077,6 +1117,7 @@ spec:
   chart:
     spec:
       chart: infrastructure/traefik
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops
@@ -1103,6 +1144,7 @@ spec:
   chart:
     spec:
       chart: apps/unpoller
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-ops

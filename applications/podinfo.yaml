@@ -36,10 +36,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: podinfo
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
     retry:

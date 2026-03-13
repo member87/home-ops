@@ -1105,7 +1105,7 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: traefik
   targetNamespace: traefik

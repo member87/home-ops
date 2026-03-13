@@ -1024,7 +1024,7 @@ metadata:
   name: shelfmark
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: shelfmark
   targetNamespace: shelfmark

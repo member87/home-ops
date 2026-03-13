@@ -413,7 +413,7 @@ metadata:
   name: jellyfin
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: jellyfin
   targetNamespace: jellyfin

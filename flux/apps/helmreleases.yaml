@@ -359,7 +359,7 @@ metadata:
   name: ip-checker
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: ip-checker
   targetNamespace: ip-checker

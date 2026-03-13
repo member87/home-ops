@@ -170,7 +170,7 @@ metadata:
   name: changedetection
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: changedetection
   targetNamespace: changedetection

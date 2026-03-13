@@ -1077,7 +1077,7 @@ metadata:
   name: tinyauth
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: tinyauth
   targetNamespace: tinyauth

@@ -26,7 +26,9 @@ data:
     \               icon: sh:glance\n              - title: IP Checker\n                url:
     https://ip-checker.lab.jackhumes.com\n                icon: sh:speedtest\n              -
     title: Podinfo\n                url: https://podinfo.lab.jackhumes.com\n                icon:
-    sh:kubernetes\n              - title: Headscale\n                url: https://headscale.lab.jackhumes.com/health\n
+    sh:kubernetes\n              - title: K9s\n                url: https://k9s.lab.jackhumes.com\n
+    \               icon: sh:kubernetes\n                alt-status-codes:\n                  -
+    401\n              - title: Headscale\n                url: https://headscale.lab.jackhumes.com/health\n
     \               icon: sh:headscale\n              - title: Headplane\n                url:
     https://headplane.lab.jackhumes.com\n                icon: sh:headscale\n              -
     title: NAS\n                url: https://nas.lab.jackhumes.com\n                icon:
@@ -116,7 +118,7 @@ data:
     240 15 10\n  primary-color: 220 15 85\n  contrast-multiplier: 1.2\n"
 kind: ConfigMap
 metadata:
-  name: glance-config-9k52772c5h
+  name: glance-config-ccbm875tm2
   namespace: glance
 ---
 apiVersion: v1
@@ -195,7 +197,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
       volumes:
       - configMap:
-          name: glance-config-9k52772c5h
+          name: glance-config-ccbm875tm2
         name: config
 ---
 apiVersion: bitnami.com/v1alpha1

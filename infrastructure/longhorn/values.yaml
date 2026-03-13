@@ -3,9 +3,9 @@ longhorn:
   image:
     longhorn:
       manager:
-        tag: v1.11.0-hotfix-1
+        tag: v1.11.1
       instanceManager:
-        tag: v1.11.0-hotfix-1
+        tag: v1.11.1
 
   # Longhorn settings
   defaultSettings:

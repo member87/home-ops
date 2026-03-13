@@ -1051,7 +1051,7 @@ metadata:
   name: tailscale-subnet-router
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: tailscale-subnet-router
   targetNamespace: tailscale-subnet-router

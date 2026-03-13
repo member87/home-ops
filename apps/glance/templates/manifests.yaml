@@ -1,1 +1,5 @@
-{{ .Files.Get "rendered.yaml" }}
+{{- $files := list "namespace.yaml" "service.yaml" "sealedsecret.yaml" "ingressroute.yaml" -}}
+{{- range $file := $files }}
+---
+{{ $.Files.Get $file }}
+{{- end }}

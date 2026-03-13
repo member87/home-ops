@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glance
+  namespace: glance
+  labels:
+    app: glance
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: glance
+  template:
+    metadata:
+      labels:
+        app: glance
+      annotations:
+        glance-config-checksum: {{ .Files.Get "config.yaml" | sha256sum | quote }}
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: glance
+      containers:
+        - name: glance
+          image: glanceapp/glance:v0.8.4
+          envFrom:
+            - secretRef:
+                name: glance-secrets
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /app/config/glance.yml
+              subPath: glance.yml
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: glance-config

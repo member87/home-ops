@@ -781,7 +781,7 @@ metadata:
   name: postgresql
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: postgresql
   targetNamespace: postgresql

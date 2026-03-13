@@ -281,7 +281,7 @@ spec:
   suspend: false
   interval: 10m0s
   releaseName: gotty
-  targetNamespace: gotty
+  targetNamespace: ttyd
   install:
     createNamespace: true
     remediation:

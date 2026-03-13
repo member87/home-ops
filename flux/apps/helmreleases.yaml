@@ -305,7 +305,7 @@ metadata:
   name: headplane
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: headplane
   targetNamespace: headplane

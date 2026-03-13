@@ -467,7 +467,7 @@ metadata:
   name: lldap
   namespace: flux-system
 spec:
-  suspend: true
+  suspend: false
   interval: 10m0s
   releaseName: lldap
   targetNamespace: lldap

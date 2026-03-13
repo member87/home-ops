@@ -48,6 +48,11 @@ pages:
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
                 icon: sh:kubernetes
+              - title: K9s
+                url: https://k9s.lab.jackhumes.com
+                icon: sh:kubernetes
+                alt-status-codes:
+                  - 401
               - title: Headscale
                 url: https://headscale.lab.jackhumes.com/health
                 icon: sh:headscale

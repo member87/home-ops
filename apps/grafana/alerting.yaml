@@ -266,6 +266,51 @@ data:
             labels:
               severity: warning
 
+          - uid: crowdsec-ban-activity
+            title: CrowdSec Ban Activity
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 900
+                  to: 0
+                datasourceUid: loki
+                model:
+                  expr: 'sum(count_over_time({namespace="crowdsec", filename=~".+"} |~ "ban on Ip" [15m]))'
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 900
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 900
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 1m
+            annotations:
+              summary: CrowdSec is actively banning IPs
+              description: CrowdSec has issued {{ $value }} ban decisions in the last 15 minutes.
+            labels:
+              severity: warning
+
           - uid: pod-cpu-throttling
             title: Pod CPU Throttling
             condition: C
@@ -276,7 +321,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: rate(container_cpu_cfs_throttled_seconds_total{namespace!~"podinfo|node-exporter",container!="",image!=""}[5m]) > 0.2
+                  expr: sum by (namespace,pod,container,instance,node) (rate(container_cpu_cfs_throttled_seconds_total{namespace!~"podinfo|node-exporter",container!="",image!=""}[5m])) * on(namespace,pod) group_left() max by (namespace,pod) (kube_pod_status_phase{phase="Running"} == 1)
                   refId: A
               - refId: B
                 relativeTimeRange:
@@ -300,14 +345,14 @@ data:
                   conditions:
                     - evaluator:
                         params:
-                          - 0.1
+                          - 0.2
                         type: gt
             noDataState: OK
             execErrState: OK
             for: 10m
             annotations:
               summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} experiencing CPU throttling
-              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is sustaining high CPU throttling (more than 0.2s/s) for 10 minutes. Consider increasing CPU limits.
+              description: Running container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is sustaining high CPU throttling (more than 0.2s/s) for 10 minutes. Consider increasing CPU limits.
             labels:
               severity: warning
 

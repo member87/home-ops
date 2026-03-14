@@ -4,9 +4,9 @@
 set shell := ["bash", "-c"]
 
 # Cluster Configuration
-CONTROL_PLANE_IP := "10.0.0.10"
-WORKER_IPS       := "10.0.0.20,10.0.0.21"
-ALL_NODES        := CONTROL_PLANE_IP + "," + WORKER_IPS
+PRIMARY_CONTROL_PLANE_IP := "10.0.0.10"
+CONTROL_PLANE_IPS        := "10.0.0.10,10.0.0.20,10.0.0.21"
+ALL_NODES                := CONTROL_PLANE_IPS
 CLUSTER_NAME     := "talos-cluster"
 
 # Talos Factory schematic ID (includes iscsi-tools + util-linux-tools + i915 extensions)
@@ -22,7 +22,7 @@ _talosctl *ARGS:
     TMPCONFIG=$(mktemp /tmp/talosconfig.XXXXXX)
     trap "rm -f ${TMPCONFIG}" EXIT
     sops --decrypt --input-type yaml --output-type yaml talos/talosconfig > "${TMPCONFIG}"
-    talosctl --talosconfig "${TMPCONFIG}" -e {{CONTROL_PLANE_IP}} {{ARGS}}
+    talosctl --talosconfig "${TMPCONFIG}" -e {{CONTROL_PLANE_IPS}} {{ARGS}}
 
 # --- Status & Info ---
 
@@ -32,48 +32,44 @@ talos-status:
 
 # List all nodes in the cluster
 talos-nodes:
-    just _talosctl -n {{CONTROL_PLANE_IP}} get nodes
+    just _talosctl -n {{PRIMARY_CONTROL_PLANE_IP}} get nodes
 
 # Fetch the kubeconfig for the cluster
 talos-get-kubeconfig:
-    just _talosctl -n {{CONTROL_PLANE_IP}} kubeconfig .
+    just _talosctl -n {{PRIMARY_CONTROL_PLANE_IP}} kubeconfig .
 
 # Watch the dashboard for a specific node
-talos-dash node_ip=CONTROL_PLANE_IP:
+talos-dash node_ip=PRIMARY_CONTROL_PLANE_IP:
     just _talosctl -n {{node_ip}} dashboard
 
 # --- Cluster Management ---
 
 # Bootstrap the cluster (run after applying the first config)
 talos-bootstrap:
-    just _talosctl -n {{CONTROL_PLANE_IP}} bootstrap
+    just _talosctl -n {{PRIMARY_CONTROL_PLANE_IP}} bootstrap
 
 # Upgrade Talos on a specific node (uses factory image with extensions)
 talos-upgrade node_ip image_version:
     just _talosctl -n {{node_ip}} upgrade --image "{{TALOS_IMAGE}}:v{{image_version}}"
 
-# Rolling upgrade of all nodes (workers first, then control plane)
+# Rolling upgrade of all control plane nodes
 talos-rolling-upgrade image_version:
     #!/usr/bin/env bash
     set -euo pipefail
     TMPCONFIG=$(mktemp /tmp/talosconfig.XXXXXX)
     trap "rm -f ${TMPCONFIG}" EXIT
     sops --decrypt --input-type yaml --output-type yaml talos/talosconfig > "${TMPCONFIG}"
-    TALOS="talosctl --talosconfig ${TMPCONFIG} -e {{CONTROL_PLANE_IP}}"
+    TALOS="talosctl --talosconfig ${TMPCONFIG} -e {{CONTROL_PLANE_IPS}}"
     IMAGE="{{TALOS_IMAGE}}:v{{image_version}}"
-    IFS=',' read -ra WORKERS <<< "{{WORKER_IPS}}"
+    IFS=',' read -ra NODES <<< "{{CONTROL_PLANE_IPS}}"
     echo "==> Starting rolling upgrade to ${IMAGE}"
     echo ""
-    for node in "${WORKERS[@]}"; do
-        echo "==> Upgrading worker node ${node}..."
+    for node in "${NODES[@]}"; do
+        echo "==> Upgrading control plane node ${node}..."
         ${TALOS} -n "${node}" upgrade --image "${IMAGE}" --wait
-        echo "==> Worker node ${node} upgraded successfully"
+        echo "==> Control plane node ${node} upgraded successfully"
         echo ""
     done
-    echo "==> Upgrading control plane node {{CONTROL_PLANE_IP}}..."
-    ${TALOS} -n {{CONTROL_PLANE_IP}} upgrade --image "${IMAGE}" --wait
-    echo "==> Control plane node {{CONTROL_PLANE_IP}} upgraded successfully"
-    echo ""
     echo "==> Rolling upgrade complete. Checking cluster status..."
     ${TALOS} -n {{ALL_NODES}} get machinestatus
 
@@ -86,7 +82,7 @@ talos-apply node_ip config_file mode="reboot":
     trap "rm -f ${TMPCONFIG} ${TMPFILE}" EXIT
     sops --decrypt --input-type yaml --output-type yaml talos/talosconfig > "${TMPCONFIG}"
     sops --decrypt talos/{{config_file}} > "${TMPFILE}"
-    talosctl --talosconfig "${TMPCONFIG}" -e {{CONTROL_PLANE_IP}} -n {{node_ip}} apply-config --file "${TMPFILE}" --mode {{mode}}
+    talosctl --talosconfig "${TMPCONFIG}" -e {{CONTROL_PLANE_IPS}} -n {{node_ip}} apply-config --file "${TMPFILE}" --mode {{mode}}
 
 # --- Debugging & Maintenance ---
 

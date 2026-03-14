@@ -364,7 +364,7 @@ cluster:
     # Provides control plane specific configuration options.
     controlPlane:
         # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-        endpoint: https://10.0.0.10:6443
+        endpoint: https://10.0.0.15:6443
     # Configures the cluster's name.
     clusterName: home
     # Provides cluster specific network configuration options.

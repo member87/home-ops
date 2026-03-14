@@ -83,6 +83,11 @@ machine:
         nameservers:
             - 10.0.0.201
             - 9.9.9.9
+        interfaces:
+            - interface: eno1
+              dhcp: true
+              vip:
+                  ip: 10.0.0.15
     # # `interfaces` is used to define the network interface configuration.
     # interfaces:
     #     - interface: enp0s1 # The interface name.
@@ -257,10 +262,7 @@ machine:
             #     # The list of Kubernetes namespaces Talos API access is available from.
             #     allowedKubernetesNamespaces:
             #         - kube-system
-    # Configures the node labels for the machine.
-    nodeLabels:
-        node.kubernetes.io/exclude-from-external-load-balancers: ""
-        # # Provides machine specific control plane configuration options.
+    # # Provides machine specific control plane configuration options.
         # # ControlPlane definition example.
         # controlPlane:
         #     # Controller manager machine specific configuration options.
@@ -363,7 +365,7 @@ cluster:
     # Provides control plane specific configuration options.
     controlPlane:
         # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-        endpoint: https://10.0.0.10:6443
+        endpoint: https://10.0.0.15:6443
     # Configures the cluster's name.
     clusterName: home
     # Provides cluster specific network configuration options.
@@ -404,6 +406,7 @@ cluster:
         # Extra certificate subject alternative names for the API server's certificate.
         certSANs:
             - 10.0.0.10
+            - 10.0.0.15
         # Disable PodSecurityPolicy in the API server and default manifests.
         disablePodSecurityPolicy: true
         # Configure the API server admission plugins.
@@ -528,8 +531,8 @@ cluster:
 # # Settings for admin kubeconfig generation.
 # adminKubeconfig:
 #     certLifetime: 1h0m0s # Admin kubeconfig certificate lifetime (default is 1 year).
-# # Allows running workload on control-plane nodes.
-# allowSchedulingOnControlPlanes: true
+    # Allows running workload on control-plane nodes.
+    allowSchedulingOnControlPlanes: true
 sops:
     age:
         - recipient: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj

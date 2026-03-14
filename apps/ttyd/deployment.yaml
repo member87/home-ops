@@ -27,15 +27,31 @@ spec:
           env:
             - name: HOME
               value: /home/ttyd
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           command:
-            - ttyd
+            - /bin/sh
+            - -c
           args:
-            - -p
-            - "8080"
-            - -W
-            - k9s
-            - -A
-            - --readonly
+            - >-
+              kubectl config set-cluster in-cluster
+              --server="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+              --certificate-authority="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              --embed-certs=true
+              --kubeconfig=/tmp/kubeconfig &&
+              kubectl config set-credentials in-cluster
+              --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+              --kubeconfig=/tmp/kubeconfig &&
+              kubectl config set-context in-cluster
+              --cluster=in-cluster
+              --user=in-cluster
+              --namespace="${POD_NAMESPACE}"
+              --kubeconfig=/tmp/kubeconfig &&
+              kubectl config use-context in-cluster --kubeconfig=/tmp/kubeconfig &&
+              export KUBECONFIG=/tmp/kubeconfig &&
+              exec ttyd -p 8080 -W k9s -A --readonly
           readinessProbe:
             httpGet:
               path: /

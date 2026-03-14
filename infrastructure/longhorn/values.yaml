@@ -1,4 +1,7 @@
 longhorn:
+  global:
+    timezone: Europe/London
+
   # Hotfix for Longhorn 1.11.0 regressions
   image:
     longhorn:
@@ -16,8 +19,6 @@ longhorn:
     # Storage reservation for system operations
     storageMinimalAvailablePercentage: 15
     storageOverProvisioningPercentage: 100
-    # Backup settings (can configure S3 later)
-    backupTarget: ""
     # Auto-delete workload pods when volume is detached unexpectedly
     autoDeletePodWhenVolumeDetachedUnexpectedly: true
     # Node drain policy
@@ -39,6 +40,10 @@ longhorn:
     systemManagedComponentsNodeSelector: ""
     # V2 Data Engine disabled - using standard iSCSI with Talos extensions
     v2DataEngine: false
+
+  defaultBackupStore:
+    backupTarget: nfs://10.0.0.9:/volume1/kubernetes/longhorn-backups
+    pollInterval: 300
 
   # Storage Class settings
   persistence:

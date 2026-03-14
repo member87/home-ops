@@ -681,7 +681,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: rate(kube_pod_container_status_restarts_total{namespace!="longhorn-system"}[15m]) * 3600 > 5
+                  expr: (rate(kube_pod_container_status_restarts_total{namespace!="longhorn-system"}[15m]) * 3600) * on(namespace,pod) group_left(owner_kind) kube_pod_owner{owner_kind!="Job"} > 5
                   refId: A
               - refId: B
                 relativeTimeRange:
@@ -712,7 +712,7 @@ data:
             for: 5m
             annotations:
               summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting frequently
-              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting more than 5 times per hour
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} (excluding Job pods) is restarting more than 5 times per hour
             labels:
               severity: critical
 

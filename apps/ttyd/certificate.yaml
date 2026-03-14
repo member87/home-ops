@@ -11,3 +11,4 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - k9s.lab.jackhumes.com
+    - ttyd.lab.jackhumes.com

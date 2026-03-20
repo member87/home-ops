@@ -89,7 +89,4 @@ immich:
                   app.kubernetes.io/name: machine-learning
     persistence:
       cache:
-        type: persistentVolumeClaim
-        storageClass: longhorn
-        size: 20Gi
-        accessMode: ReadWriteMany
+        type: emptyDir

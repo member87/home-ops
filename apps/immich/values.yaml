@@ -17,12 +17,22 @@ immich:
   persistence:
     library:
       existingClaim: immich-library
-  configuration:
-    server:
-      externalDomain: https://immich.lab.jackhumes.com
-    storageTemplate:
+
+server:
+  controllers:
+    main:
+      containers:
+        main:
+          env:
+            IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
+  persistence:
+    immich-config:
       enabled: true
-      template: "immich/{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+      type: secret
+      name: immich-oidc-config
+      globalMounts:
+        - path: /immich-config
+          readOnly: true
 
 valkey:
   enabled: true

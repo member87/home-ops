@@ -23,7 +23,9 @@ immich:
     controllers:
       main:
         replicas: 3
-        strategy: Recreate
+        rollingUpdate:
+          unavailable: 1
+          surge: 0
         pod:
           affinity:
             podAntiAffinity:
@@ -69,7 +71,9 @@ immich:
     controllers:
       main:
         replicas: 3
-        strategy: Recreate
+        rollingUpdate:
+          unavailable: 1
+          surge: 0
         pod:
           affinity:
             podAffinity:

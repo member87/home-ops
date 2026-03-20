@@ -23,6 +23,7 @@ immich:
     controllers:
       main:
         replicas: 3
+        strategy: Recreate
         pod:
           affinity:
             podAntiAffinity:
@@ -68,6 +69,7 @@ immich:
     controllers:
       main:
         replicas: 3
+        strategy: Recreate
         pod:
           affinity:
             podAffinity:

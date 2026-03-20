@@ -24,10 +24,19 @@ immich:
       main:
         replicas: 3
         pod:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/controller: main
+                      app.kubernetes.io/instance: immich
+                      app.kubernetes.io/name: server
+                  topologyKey: kubernetes.io/hostname
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
-              whenUnsatisfiable: ScheduleAnyway
+              whenUnsatisfiable: DoNotSchedule
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/controller: main
@@ -56,9 +65,31 @@ immich:
         accessMode: ReadWriteOnce
 
   machine-learning:
+    controllers:
+      main:
+        replicas: 3
+        pod:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/controller: main
+                      app.kubernetes.io/instance: immich
+                      app.kubernetes.io/name: machine-learning
+                  topologyKey: kubernetes.io/hostname
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/controller: main
+                  app.kubernetes.io/instance: immich
+                  app.kubernetes.io/name: machine-learning
     persistence:
       cache:
         type: persistentVolumeClaim
         storageClass: longhorn
         size: 20Gi
-        accessMode: ReadWriteOnce
+        accessMode: ReadWriteMany

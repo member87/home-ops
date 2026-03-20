@@ -1,63 +1,64 @@
-controllers:
-  main:
-    containers:
-      main:
-        image:
-          tag: v2.0.0
-        env:
-          DB_URL:
-            valueFrom:
-              secretKeyRef:
-                name: immich-secrets
-                key: DB_URL
-          DB_VECTOR_EXTENSION: pgvector
-          TZ: Europe/London
-
 immich:
-  persistence:
-    library:
-      existingClaim: immich-library
-
-server:
   controllers:
     main:
-      replicas: 3
-      pod:
-        topologySpreadConstraints:
-          - maxSkew: 1
-            topologyKey: kubernetes.io/hostname
-            whenUnsatisfiable: ScheduleAnyway
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/controller: main
-                app.kubernetes.io/instance: immich
-                app.kubernetes.io/name: server
       containers:
         main:
+          image:
+            tag: v2.0.0
           env:
-            IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
-  persistence:
-    immich-config:
-      enabled: true
-      type: secret
-      name: immich-oidc-config
-      globalMounts:
-        - path: /immich-config
-          readOnly: true
+            DB_URL:
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: DB_URL
+            DB_VECTOR_EXTENSION: pgvector
+            TZ: Europe/London
 
-valkey:
-  enabled: true
-  persistence:
-    data:
-      type: persistentVolumeClaim
-      storageClass: longhorn
-      size: 2Gi
-      accessMode: ReadWriteOnce
+  immich:
+    persistence:
+      library:
+        existingClaim: immich-library
 
-machine-learning:
-  persistence:
-    cache:
-      type: persistentVolumeClaim
-      storageClass: longhorn
-      size: 20Gi
-      accessMode: ReadWriteOnce
+  server:
+    controllers:
+      main:
+        replicas: 3
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/controller: main
+                  app.kubernetes.io/instance: immich
+                  app.kubernetes.io/name: server
+        containers:
+          main:
+            env:
+              IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
+    persistence:
+      immich-config:
+        enabled: true
+        type: secret
+        name: immich-oidc-config
+        globalMounts:
+          - path: /immich-config
+            readOnly: true
+
+  valkey:
+    enabled: true
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: longhorn
+        size: 2Gi
+        accessMode: ReadWriteOnce
+
+  machine-learning:
+    persistence:
+      cache:
+        type: persistentVolumeClaim
+        storageClass: longhorn
+        size: 20Gi
+        accessMode: ReadWriteOnce

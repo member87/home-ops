@@ -1,0 +1,42 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          tag: v2.0.0
+        env:
+          DB_URL:
+            valueFrom:
+              secretKeyRef:
+                name: immich-secrets
+                key: DB_URL
+          DB_VECTOR_EXTENSION: pgvector
+          TZ: Europe/London
+
+immich:
+  persistence:
+    library:
+      existingClaim: immich-library
+  configuration:
+    server:
+      externalDomain: https://immich.lab.jackhumes.com
+    storageTemplate:
+      enabled: true
+      template: "immich/{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+
+valkey:
+  enabled: true
+  persistence:
+    data:
+      type: persistentVolumeClaim
+      storageClass: longhorn
+      size: 2Gi
+      accessMode: ReadWriteOnce
+
+machine-learning:
+  persistence:
+    cache:
+      type: persistentVolumeClaim
+      storageClass: longhorn
+      size: 20Gi
+      accessMode: ReadWriteOnce

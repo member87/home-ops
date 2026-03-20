@@ -131,6 +131,8 @@ spec:
             - --providers.kubernetescrd.allowCrossNamespace=true
             - --entrypoints.web.address=:80
             - --entrypoints.websecure.address=:443
+            - --entrypoints.websecure.transport.respondingTimeouts.readTimeout=600s
+            - --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=600s
             # Trust forwarded headers from any source (for real client IP)
             - --entrypoints.web.forwardedHeaders.insecure=true
             - --entrypoints.websecure.forwardedHeaders.insecure=true

@@ -22,7 +22,7 @@ immich:
   server:
     controllers:
       main:
-        replicas: 3
+        replicas: 1
         strategy: RollingUpdate
         rollingUpdate:
           unavailable: 1
@@ -74,7 +74,7 @@ immich:
   machine-learning:
     controllers:
       main:
-        replicas: 3
+        replicas: 1
         strategy: RollingUpdate
         rollingUpdate:
           unavailable: 1

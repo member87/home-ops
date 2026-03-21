@@ -50,6 +50,9 @@ immich:
           main:
             env:
               IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
+            resources:
+              limits:
+                memory: 1536Mi
     persistence:
       immich-config:
         enabled: true

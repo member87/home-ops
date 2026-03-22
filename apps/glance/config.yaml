@@ -82,9 +82,6 @@ pages:
               - title: Jellyfin
                 url: https://jellyfin.lab.jackhumes.com
                 icon: sh:jellyfin
-              - title: Immich
-                url: https://immich.lab.jackhumes.com
-                icon: sh:immich
               - title: Jellyseerr
                 url: https://jellyseerr.lab.jackhumes.com
                 icon: sh:jellyseerr

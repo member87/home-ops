@@ -5,5 +5,6 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - configmap.yaml
+  - geoip-cronjob.yaml
   - daemonset.yaml
   - service.yaml

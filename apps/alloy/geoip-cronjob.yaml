@@ -1,0 +1,87 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: alloy-geoip-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alloy-geoip
+  namespace: alloy
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: alloy-geoip-pv
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: alloy-geoip-updater
+  namespace: alloy
+spec:
+  schedule: "0 0 * * *"
+  timeZone: "Europe/London"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: update-geoip
+              image: curlimages/curl:8.18.0
+              command:
+                - sh
+                - -c
+                - |
+                  set +e
+                  mkdir -p /geoip/alloy
+                  tmpdir="$(mktemp -d /geoip/alloy/.tmp.XXXXXX)"
+                  trap 'rm -rf "$tmpdir"' EXIT
+
+                  curl -fsSL -o "$tmpdir/GeoLite2-City.tar.gz" "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz"
+                  tar -xzf "$tmpdir/GeoLite2-City.tar.gz" -C "$tmpdir"
+
+                  mmdb_file="$(find "$tmpdir" -name GeoLite2-City.mmdb -print -quit)"
+                  test -n "$mmdb_file"
+
+                  cp "$mmdb_file" /geoip/alloy/GeoLite2-City.mmdb.new
+                  chmod 0644 /geoip/alloy/GeoLite2-City.mmdb.new
+                  mv /geoip/alloy/GeoLite2-City.mmdb.new /geoip/alloy/GeoLite2-City.mmdb
+                  exit 0
+              env:
+                - name: MAXMIND_LICENSE_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: maxmind-license
+                      key: license_key
+              volumeMounts:
+                - name: geoip-data
+                  mountPath: /geoip
+          volumes:
+            - name: geoip-data
+              persistentVolumeClaim:
+                claimName: alloy-geoip

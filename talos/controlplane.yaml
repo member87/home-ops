@@ -263,14 +263,14 @@ machine:
             #     allowedKubernetesNamespaces:
             #         - kube-system
     # # Provides machine specific control plane configuration options.
-        # # ControlPlane definition example.
-        # controlPlane:
-        #     # Controller manager machine specific configuration options.
-        #     controllerManager:
-        #         disabled: false # Disable kube-controller-manager on the node.
-        #     # Scheduler machine specific configuration options.
-        #     scheduler:
-        #         disabled: true # Disable kube-scheduler on the node.
+    # # ControlPlane definition example.
+    # controlPlane:
+    #     # Controller manager machine specific configuration options.
+    #     controllerManager:
+    #         disabled: false # Disable kube-controller-manager on the node.
+    #     # Scheduler machine specific configuration options.
+    #     scheduler:
+    #         disabled: true # Disable kube-scheduler on the node.
         # # Used to provide static pod definitions to be run by the kubelet directly bypassing the kube-apiserver.
         # # nginx static pod.
         # pods:
@@ -365,7 +365,7 @@ cluster:
     # Provides control plane specific configuration options.
     controlPlane:
         # Endpoint is the canonical controlplane endpoint, which can be an IP address or a DNS hostname.
-        endpoint: https://10.0.0.15:6443
+        endpoint: https://10.0.0.10:6443
     # Configures the cluster's name.
     clusterName: home
     # Provides cluster specific network configuration options.

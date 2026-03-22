@@ -127,7 +127,7 @@ feat(monitoring): add Grafana with Pocket ID SSO integration
 
 - **Base domain**: `lab.jackhumes.com`
 - **Application URLs**: `<app>.lab.jackhumes.com`
-- **Auth server**: `auth.lab.jackhumes.com`
+- **Auth server**: `auth.jackhumes.com`
 
 ## Secrets Management
 

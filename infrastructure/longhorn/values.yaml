@@ -42,7 +42,7 @@ longhorn:
     v2DataEngine: false
 
   defaultBackupStore:
-    backupTarget: nfs://10.0.0.9:/volume1/kubernetes/longhorn-backups
+    backupTarget: nfs://10.0.0.9:/volume1/kubernetes/longhorn-backups?nfsOptions=nfsvers=3,proto=tcp,nolock,soft,timeo=300,retry=2
     pollInterval: 300
 
   # Storage Class settings

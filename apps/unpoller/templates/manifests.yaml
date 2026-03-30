@@ -60,7 +60,7 @@ spec:
           value: "false"
         - name: UP_INFLUXDB_DISABLE
           value: "true"
-        image: ghcr.io/unpoller/unpoller:v2.38.0
+        image: ghcr.io/unpoller/unpoller:v2.39.0
         livenessProbe:
           httpGet:
             path: /metrics

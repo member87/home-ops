@@ -26,6 +26,9 @@ spec:
             - name: frpc-config
               mountPath: /etc/frp
               readOnly: true
+            - name: frpc-secrets
+              mountPath: /etc/frp/secrets
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -37,3 +40,6 @@ spec:
         - name: frpc-config
           configMap:
             name: frpc-config
+        - name: frpc-secrets
+          secret:
+            secretName: frpc-secrets

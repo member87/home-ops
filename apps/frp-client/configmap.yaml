@@ -12,7 +12,8 @@ data:
 
     # Authentication token (must match server)
     auth.method = "token"
-    auth.token = "cUPijuqvpbl4SEKndzdskwKfzTWOIvSzypaAijzXObg"
+    auth.tokenSource.type = "file"
+    auth.tokenSource.file.path = "/etc/frp/secrets/auth_token"
 
     # Pocket ID tunnel - routes through Traefik for CrowdSec protection
     [[proxies]]

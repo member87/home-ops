@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: qui
-          image: ghcr.io/autobrr/qui:v1.16.0
+          image: ghcr.io/autobrr/qui:v1.16.1
           args:
             - serve
           ports:

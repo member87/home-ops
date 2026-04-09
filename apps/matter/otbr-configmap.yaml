@@ -72,7 +72,7 @@ data:
     python3 -m pip install --break-system-packages zeroconf 2>/dev/null
 
     echo "[otbr] Starting mDNS advertiser..."
-    python3 /scripts/mdns-advertise.py &
+    python3 /scripts/mdns-advertise.py > /tmp/mdns.log 2>&1 &
 
     echo "[otbr] Starting otbr-agent..."
     exec /opt/otbr-beta/sbin/otbr-agent \
@@ -151,8 +151,11 @@ data:
     try:
         while True:
             time.sleep(3600)
-    except KeyboardInterrupt:
-        pass
+    except Exception as e:
+        print(f"[mdns] Error: {e}")
     finally:
-        zeroconf.unregister_service(info)
-        zeroconf.close()
+        try:
+            zeroconf.unregister_service(info)
+            zeroconf.close()
+        except Exception:
+            pass

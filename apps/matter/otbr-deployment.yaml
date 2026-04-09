@@ -24,8 +24,21 @@ spec:
         - name: otbr
           image: homeassistant/amd64-addon-otbr:2.16.6
           command:
-            - /bin/sh
-            - /scripts/entrypoint.sh
+            - /opt/otbr-beta/sbin/otbr-agent
+          args:
+            - -I
+            - wpan0
+            - -B
+            - eno1
+            - --rest-listen-address
+            - 0.0.0.0
+            - --rest-listen-port
+            - "8081"
+            - -d5
+            - -v
+            - -s
+            - spinel+hdlc+forkpty:///usr/bin/python3?forkpty-arg=-u&forkpty-arg=/etc/otbr/slzb-tcp-bridge.py&forkpty-arg=192.168.1.226&forkpty-arg=6638
+            - trel://eno1
           securityContext:
             capabilities:
               add:
@@ -40,12 +53,6 @@ spec:
               readOnly: true
             - name: dev-net-tun
               mountPath: /dev/net/tun
-            - name: init-script
-              mountPath: /scripts
-              readOnly: true
-            - name: thread-dataset
-              mountPath: /tmp/thread-dataset
-              readOnly: true
           ports:
             - containerPort: 8081
               name: rest
@@ -53,12 +60,12 @@ spec:
           readinessProbe:
             tcpSocket:
               port: rest
-            initialDelaySeconds: 30
+            initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
               port: rest
-            initialDelaySeconds: 60
+            initialDelaySeconds: 40
             periodSeconds: 20
           resources:
             requests:
@@ -79,10 +86,3 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
-        - name: init-script
-          configMap:
-            name: otbr-init
-            defaultMode: 0755
-        - name: thread-dataset
-          secret:
-            secretName: thread-dataset

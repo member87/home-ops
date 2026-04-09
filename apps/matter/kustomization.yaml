@@ -9,6 +9,5 @@ resources:
   - matter-server-deployment.yaml
   - matter-server-service.yaml
   - otbr-configmap.yaml
-  - otbr-init-configmap.yaml
   - otbr-deployment.yaml
   - otbr-service.yaml

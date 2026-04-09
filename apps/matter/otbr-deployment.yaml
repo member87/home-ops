@@ -22,9 +22,9 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: otbr
-          image: openthread/otbr:focal@sha256:a93af30375c2fe5caa28dcaf28f16e1b2204254e6678ab81bbab4c716977b7da
+          image: homeassistant/amd64-addon-otbr:2.16.6
           command:
-            - /usr/sbin/otbr-agent
+            - /opt/otbr-beta/sbin/otbr-agent
           args:
             - -I
             - wpan0

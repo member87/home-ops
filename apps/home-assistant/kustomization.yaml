@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - configmap.yaml
+  - otbr-scripts.yaml
+  - sealedsecret-thread-dataset.yaml
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml

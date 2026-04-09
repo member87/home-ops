@@ -13,5 +13,13 @@ spec:
   ports:
     - name: http
       port: 8123
-      targetPort: http
+      targetPort: 8123
+      protocol: TCP
+    - name: otbr-rest
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+    - name: matter-ws
+      port: 5580
+      targetPort: 5580
       protocol: TCP

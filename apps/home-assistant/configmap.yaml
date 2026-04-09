@@ -15,10 +15,10 @@ data:
 
     # Matter integration - requires manual setup via UI on first deploy:
     #   Settings > Devices & Services > Add Integration > Matter
-    #   URL: http://matter-server.matter.svc.cluster.local:5580/ws
+    #   URL: http://localhost:5580/ws
     #
     # OTBR integration - requires manual setup via UI on first deploy:
     #   Settings > Devices & Services > Add Integration > Open Thread Border Router
-    #   URL: http://otbr.matter.svc.cluster.local:8081
+    #   URL: http://localhost:8081
     #
     # Thread integration - auto-discovered after OTBR is configured

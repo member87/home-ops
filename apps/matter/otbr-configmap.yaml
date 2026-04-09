@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otbr-bridge
+  namespace: matter
+data:
+  slzb-tcp-bridge.py: |
+    #!/usr/bin/env python3
+    import os
+    import selectors
+    import socket
+    import sys
+
+
+    def main() -> None:
+      if len(sys.argv) != 3:
+        raise SystemExit("usage: slzb-tcp-bridge.py <host> <port>")
+
+      host = sys.argv[1]
+      port = int(sys.argv[2])
+
+      sock = socket.create_connection((host, port))
+      sock.setblocking(False)
+
+      selector = selectors.DefaultSelector()
+      stdin_fd = sys.stdin.fileno()
+      stdout = sys.stdout.buffer
+
+      selector.register(sock, selectors.EVENT_READ, "socket")
+      selector.register(stdin_fd, selectors.EVENT_READ, "stdin")
+
+      try:
+        while True:
+          for key, _ in selector.select():
+            if key.data == "socket":
+              data = sock.recv(4096)
+              if not data:
+                return
+              stdout.write(data)
+              stdout.flush()
+              continue
+
+            data = os.read(stdin_fd, 4096)
+            if not data:
+              try:
+                sock.shutdown(socket.SHUT_WR)
+              except OSError:
+                pass
+              selector.unregister(stdin_fd)
+              continue
+
+            sock.sendall(data)
+      finally:
+        sock.close()
+
+
+    if __name__ == "__main__":
+      main()

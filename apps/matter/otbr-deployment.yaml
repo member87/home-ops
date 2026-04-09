@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otbr
+  namespace: matter
+  labels:
+    app: otbr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: otbr
+  template:
+    metadata:
+      labels:
+        app: otbr
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: otbr
+          image: openthread/otbr:focal@sha256:a93af30375c2fe5caa28dcaf28f16e1b2204254e6678ab81bbab4c716977b7da
+          command:
+            - /usr/sbin/otbr-agent
+          args:
+            - -I
+            - wpan0
+            - -B
+            - eno1
+            - --rest-listen-address
+            - 0.0.0.0
+            - --rest-listen-port
+            - "8081"
+            - -d5
+            - -v
+            - -s
+            - spinel+hdlc+forkpty:///usr/bin/python3?forkpty-arg=-u&forkpty-arg=/etc/otbr/slzb-tcp-bridge.py&forkpty-arg=192.168.1.226&forkpty-arg=6638
+            - trel://eno1
+          ports:
+            - containerPort: 8081
+              name: rest
+              protocol: TCP
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          volumeMounts:
+            - name: otbr-data
+              mountPath: /var/lib/thread
+            - name: bridge-script
+              mountPath: /etc/otbr/slzb-tcp-bridge.py
+              subPath: slzb-tcp-bridge.py
+              readOnly: true
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+          readinessProbe:
+            tcpSocket:
+              port: rest
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: rest
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: otbr-data
+          persistentVolumeClaim:
+            claimName: otbr-data
+        - name: bridge-script
+          configMap:
+            name: otbr-bridge
+            defaultMode: 0755
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice

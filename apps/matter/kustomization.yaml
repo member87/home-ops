@@ -1,0 +1,12 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - pvc-matter-server.yaml
+  - pvc-otbr.yaml
+  - matter-server-deployment.yaml
+  - matter-server-service.yaml
+  - otbr-configmap.yaml
+  - otbr-deployment.yaml
+  - otbr-service.yaml

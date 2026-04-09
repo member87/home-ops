@@ -65,7 +65,6 @@ data:
     DATASET_FILE="/tmp/thread-dataset/dataset_hex"
 
     mkdir -p /var/lib/thread
-    ln -sft /var/lib /data/thread 2>/dev/null || true
 
     ipset create -exist otbr-ingress-deny-src hash:net family inet6 2>/dev/null || true
     ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6 2>/dev/null || true

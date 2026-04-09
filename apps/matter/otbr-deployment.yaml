@@ -33,7 +33,7 @@ spec:
                 - NET_RAW
           volumeMounts:
             - name: otbr-data
-              mountPath: /data/thread
+              mountPath: /var/lib/thread
             - name: scripts
               mountPath: /scripts
               readOnly: true

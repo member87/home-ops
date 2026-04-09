@@ -14,6 +14,11 @@ data:
 
     mkdir -p /var/lib/thread
 
+    if [ -f "${DATASET_FILE}" ]; then
+      echo "[otbr-entrypoint] Clearing stale Thread state from PVC..."
+      rm -f /var/lib/thread/*.data /var/lib/thread/*.tmp
+    fi
+
     echo "[otbr-entrypoint] Creating ipsets..."
     ipset create -exist otbr-ingress-deny-src hash:net family inet6 2>/dev/null || true
     ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6 2>/dev/null || true
@@ -54,41 +59,43 @@ data:
     CURRENT_STATE=$(${OT_CTL} state 2>/dev/null | head -1 | tr -d '\r')
     echo "[otbr-entrypoint] Current Thread state: '${CURRENT_STATE}'"
 
-    case "${CURRENT_STATE}" in
-      disabled|detached)
-        if [ -f "${DATASET_FILE}" ]; then
-          DATASET=$(cat "${DATASET_FILE}" | tr -d '\r\n ')
-          echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
-          ${OT_CTL} dataset set active "${DATASET}" || {
-            echo "[otbr-entrypoint] WARNING: Failed to set dataset"
-          }
-        else
-          echo "[otbr-entrypoint] No dataset file found, using existing dataset"
-        fi
+    if [ -f "${DATASET_FILE}" ]; then
+      echo "[otbr-entrypoint] Stopping Thread to apply sealed secret dataset..."
+      ${OT_CTL} thread stop 2>/dev/null || true
+      sleep 2
 
-        echo "[otbr-entrypoint] Starting Thread..."
-        ${OT_CTL} thread start
+      DATASET=$(cat "${DATASET_FILE}" | tr -d '\r\n ')
+      echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
+      ${OT_CTL} dataset set active "${DATASET}" || {
+        echo "[otbr-entrypoint] WARNING: Failed to set dataset"
+      }
 
-        echo "[otbr-entrypoint] Waiting for Thread to attach..."
-        attach_attempts=0
-        max_attach=30
-        while [ ${attach_attempts} -lt ${max_attach} ]; do
-          STATE=$(${OT_CTL} state 2>/dev/null | head -1 | tr -d '\r')
-          case "${STATE}" in
-            leader|router|child)
-              echo "[otbr-entrypoint] Thread attached as: ${STATE}"
-              break
-              ;;
-          esac
-          attach_attempts=$((attach_attempts + 1))
-          echo "[otbr-entrypoint] Waiting to attach... (state: ${STATE}, attempt ${attach_attempts}/${max_attach})"
-          sleep 5
-        done
-        ;;
-      *)
-        echo "[otbr-entrypoint] Thread already running as: ${CURRENT_STATE}"
-        ;;
-    esac
+      echo "[otbr-entrypoint] Starting Thread..."
+      ${OT_CTL} thread start
+
+      echo "[otbr-entrypoint] Waiting for Thread to attach..."
+      attach_attempts=0
+      max_attach=30
+      while [ ${attach_attempts} -lt ${max_attach} ]; do
+        STATE=$(${OT_CTL} state 2>/dev/null | head -1 | tr -d '\r')
+        case "${STATE}" in
+          leader|router|child)
+            echo "[otbr-entrypoint] Thread attached as: ${STATE}"
+            break
+            ;;
+        esac
+        attach_attempts=$((attach_attempts + 1))
+        echo "[otbr-entrypoint] Waiting to attach... (state: ${STATE}, attempt ${attach_attempts}/${max_attach})"
+        sleep 5
+      done
+    else
+      echo "[otbr-entrypoint] No sealed secret dataset, using existing data"
+      case "${CURRENT_STATE}" in
+        disabled|detached)
+          ${OT_CTL} thread start || true
+          ;;
+      esac
+    fi
 
     echo "[otbr-entrypoint] Enabling TREL..."
     ${OT_CTL} trel enable || true

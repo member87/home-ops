@@ -69,6 +69,7 @@ data:
       ${OT_CTL} dataset set active "${DATASET}" || {
         echo "[otbr-entrypoint] WARNING: Failed to set dataset"
       }
+      ${OT_CTL} dataset commit active || true
 
       echo "[otbr-entrypoint] Starting Thread..."
       ${OT_CTL} thread start

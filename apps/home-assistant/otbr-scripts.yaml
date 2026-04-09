@@ -119,7 +119,7 @@ data:
 
     zeroconf = Zeroconf()
     print(f"[mdns] Registering _meshcop._udp service on 10.0.0.21:8081")
-    zeroconf.register_service(info)
+    zeroconf.register_service(info, allow_name_change=True)
     print("[mdns] Service registered")
 
     try:

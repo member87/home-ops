@@ -5,8 +5,10 @@ resources:
   - namespace.yaml
   - pvc-matter-server.yaml
   - pvc-otbr.yaml
+  - sealedsecret-thread-dataset.yaml
   - matter-server-deployment.yaml
   - matter-server-service.yaml
   - otbr-configmap.yaml
+  - otbr-init-configmap.yaml
   - otbr-deployment.yaml
   - otbr-service.yaml

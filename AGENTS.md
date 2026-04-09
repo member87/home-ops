@@ -565,6 +565,49 @@ The cluster uses a two-tier storage architecture:
     - Uses Pocket ID as OAuth provider
     - Protects: Prometheus, Pi-hole, LLDAP
 
+13. **Home Assistant** (namespace: `home-assistant`)
+    - Home automation platform
+    - Image: `ghcr.io/home-assistant/home-assistant:2026.4.1`
+    - URL: `https://homeassistant.lab.jackhumes.com`
+    - Config bootstrap: `apps/home-assistant/configmap.yaml`
+    - Persistent config stored in PVC (`/config`)
+
+14. **Matter/Thread Stack** (namespace: `matter`)
+    - Self-hosted Matter controller and OpenThread Border Router
+    - **Components**:
+      - **Matter Server**: `ghcr.io/matter-js/python-matter-server:8.1.2` - Matter controller for Home Assistant
+      - **OTBR**: `homeassistant/amd64-addon-otbr:2.16.6` - OpenThread Border Router
+    - **Hardware**: SLZB dongle at `192.168.1.226:6638` (TCP serial bridge)
+    - **Architecture**:
+      ```
+      Home Assistant --> Matter Server (ws:5580) --> OTBR (rest:8081) --> SLZB Dongle --> Thread Mesh
+      ```
+    - **Key Files**:
+      - `apps/matter/otbr-init-configmap.yaml` - Entrypoint wrapper that auto-configures Thread on boot
+      - `apps/matter/sealedsecret-thread-dataset.yaml` - Encrypted Thread network credentials
+      - `apps/matter/otbr-configmap.yaml` - TCP serial bridge script for SLZB dongle
+    - **Thread Dataset** (stored in SealedSecret `thread-dataset`):
+      - Network Key, PSKc, Extended PAN ID, Channel, Mesh Local Prefix, Network Name
+      - This is critical for disaster recovery - without it, all Thread devices must be factory-reset
+    - **OTBR Auto-Initialization**:
+      - On pod start, the entrypoint wrapper (`otbr-init-configmap.yaml`) automatically:
+        1. Starts `otbr-agent` in the background
+        2. Waits for REST API to become ready
+        3. Sets active dataset from sealed secret
+        4. Starts Thread and waits for attachment (leader/router)
+        5. Enables TREL and sets TX power
+        6. Starts the commissioner (required for adding new devices)
+    - **Home Assistant Integrations** (configured via UI, stored in PVC):
+      - Matter: `http://matter-server.matter.svc.cluster.local:5580/ws`
+      - OTBR: `http://otbr.matter.svc.cluster.local:8081`
+      - Thread: Auto-discovered after OTBR setup
+    - **Troubleshooting**:
+      - Check OTBR state: `kubectl exec -n matter deployment/otbr -- /opt/otbr-beta/sbin/ot-ctl state`
+      - Check commissioner: `kubectl exec -n matter deployment/otbr -- /opt/otbr-beta/sbin/ot-ctl commissioner state`
+      - Check init logs: `kubectl logs -n matter deployment/otbr --tail=50`
+      - If devices can't be added, ensure commissioner is `active`
+      - `ot-ctl` is at `/opt/otbr-beta/sbin/ot-ctl` (not in PATH)
+
 ### External Access Architecture
 
 The cluster uses **FRP (Fast Reverse Proxy)** to expose services to the public internet through an Oracle Cloud VPS.

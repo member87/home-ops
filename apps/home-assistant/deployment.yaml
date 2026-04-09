@@ -44,6 +44,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: home-assistant-bootstrap
+              mountPath: /config/configuration.yaml
+              subPath: configuration.yaml
           startupProbe:
             httpGet:
               path: /
@@ -73,3 +76,6 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: home-assistant-config
+        - name: home-assistant-bootstrap
+          configMap:
+            name: home-assistant-config

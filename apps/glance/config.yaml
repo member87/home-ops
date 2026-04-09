@@ -37,6 +37,9 @@ pages:
               - title: Glance
                 url: https://glance.lab.jackhumes.com
                 icon: sh:glance
+              - title: Home Assistant
+                url: https://home.lab.jackhumes.com
+                icon: sh:home-assistant
               - title: IP Checker
                 url: https://ip-checker.lab.jackhumes.com
                 icon: sh:speedtest

@@ -14,11 +14,6 @@ data:
 
     mkdir -p /var/lib/thread
 
-    if [ -f "${DATASET_FILE}" ]; then
-      echo "[otbr-entrypoint] Clearing stale Thread state from PVC..."
-      rm -f /var/lib/thread/*.data /var/lib/thread/*.tmp
-    fi
-
     echo "[otbr-entrypoint] Creating ipsets..."
     ipset create -exist otbr-ingress-deny-src hash:net family inet6 2>/dev/null || true
     ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6 2>/dev/null || true
@@ -60,11 +55,14 @@ data:
     echo "[otbr-entrypoint] Current Thread state: '${CURRENT_STATE}'"
 
     if [ -f "${DATASET_FILE}" ]; then
-      echo "[otbr-entrypoint] Stopping Thread to apply sealed secret dataset..."
-      ${OT_CTL} thread stop 2>/dev/null || true
-      sleep 2
-
       DATASET=$(cat "${DATASET_FILE}" | tr -d '\r\n ')
+
+      if [ "${CURRENT_STATE}" != "disabled" ]; then
+        echo "[otbr-entrypoint] Stopping Thread to apply sealed secret dataset..."
+        ${OT_CTL} thread stop 2>/dev/null || true
+        sleep 2
+      fi
+
       echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
       ${OT_CTL} dataset set active "${DATASET}" || {
         echo "[otbr-entrypoint] WARNING: Failed to set dataset"

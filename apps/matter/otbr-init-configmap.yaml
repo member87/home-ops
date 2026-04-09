@@ -51,39 +51,44 @@ data:
       exit 1
     fi
 
-    CURRENT_STATE=$(${OT_CTL} state 2>/dev/null | head -1)
-    echo "[otbr-entrypoint] Current Thread state: $CURRENT_STATE"
+    CURRENT_STATE=$(${OT_CTL} state 2>/dev/null | tr -d '[:space:]')
+    echo "[otbr-entrypoint] Current Thread state: '${CURRENT_STATE}'"
 
-    if [ "$CURRENT_STATE" = "disabled" ] || [ "$CURRENT_STATE" = "detached" ]; then
-      if [ -f "$DATASET_FILE" ]; then
-        DATASET=$(cat "$DATASET_FILE")
-        echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
-        ${OT_CTL} dataset set active "$DATASET" || {
-          echo "[otbr-entrypoint] WARNING: Failed to set dataset"
-        }
-      else
-        echo "[otbr-entrypoint] No dataset file found, using existing dataset"
-      fi
-
-      echo "[otbr-entrypoint] Starting Thread..."
-      ${OT_CTL} thread start
-
-      echo "[otbr-entrypoint] Waiting for Thread to attach..."
-      attach_attempts=0
-      max_attach=30
-      while [ $attach_attempts -lt $max_attach ]; do
-        STATE=$(${OT_CTL} state 2>/dev/null | head -1)
-        if [ "$STATE" = "leader" ] || [ "$STATE" = "router" ] || [ "$STATE" = "child" ]; then
-          echo "[otbr-entrypoint] Thread attached as: $STATE"
-          break
+    case "$CURRENT_STATE" in
+      disabled|detached)
+        if [ -f "$DATASET_FILE" ]; then
+          DATASET=$(cat "$DATASET_FILE" | tr -d '[:space:]')
+          echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
+          ${OT_CTL} dataset set active "$DATASET" || {
+            echo "[otbr-entrypoint] WARNING: Failed to set dataset"
+          }
+        else
+          echo "[otbr-entrypoint] No dataset file found, using existing dataset"
         fi
-        attach_attempts=$((attach_attempts + 1))
-        echo "[otbr-entrypoint] Waiting to attach... (state: $STATE, attempt $attach_attempts/$max_attach)"
-        sleep 5
-      done
-    else
-      echo "[otbr-entrypoint] Thread already running as: $CURRENT_STATE"
-    fi
+
+        echo "[otbr-entrypoint] Starting Thread..."
+        ${OT_CTL} thread start
+
+        echo "[otbr-entrypoint] Waiting for Thread to attach..."
+        attach_attempts=0
+        max_attach=30
+        while [ $attach_attempts -lt $max_attach ]; do
+          STATE=$(${OT_CTL} state 2>/dev/null | tr -d '[:space:]')
+          case "$STATE" in
+            leader|router|child)
+              echo "[otbr-entrypoint] Thread attached as: $STATE"
+              break
+              ;;
+          esac
+          attach_attempts=$((attach_attempts + 1))
+          echo "[otbr-entrypoint] Waiting to attach... (state: $STATE, attempt $attach_attempts/$max_attach)"
+          sleep 5
+        done
+        ;;
+      *)
+        echo "[otbr-entrypoint] Thread already running as: $CURRENT_STATE"
+        ;;
+    esac
 
     echo "[otbr-entrypoint] Enabling TREL..."
     ${OT_CTL} trel enable || true
@@ -91,16 +96,19 @@ data:
     echo "[otbr-entrypoint] Setting TX power to 6..."
     ${OT_CTL} txpower 6 || true
 
-    COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | head -1)
-    if [ "$COMMISSIONER_STATE" = "disabled" ]; then
-      echo "[otbr-entrypoint] Starting commissioner..."
-      ${OT_CTL} commissioner start
-      sleep 2
-      COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | head -1)
-      echo "[otbr-entrypoint] Commissioner state: $COMMISSIONER_STATE"
-    else
-      echo "[otbr-entrypoint] Commissioner already: $COMMISSIONER_STATE"
-    fi
+    COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | tr -d '[:space:]')
+    case "$COMMISSIONER_STATE" in
+      disabled)
+        echo "[otbr-entrypoint] Starting commissioner..."
+        ${OT_CTL} commissioner start
+        sleep 2
+        COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | tr -d '[:space:]')
+        echo "[otbr-entrypoint] Commissioner state: $COMMISSIONER_STATE"
+        ;;
+      *)
+        echo "[otbr-entrypoint] Commissioner already: $COMMISSIONER_STATE"
+        ;;
+    esac
 
     echo "[otbr-entrypoint] Initialization complete - keeping container alive"
 

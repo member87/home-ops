@@ -51,13 +51,15 @@ data:
       exit 1
     fi
 
-    CURRENT_STATE=$(${OT_CTL} state 2>/dev/null | tr -d '[:space:]')
+    strip_cr() { printf '%s' "$1" | tr -d '\r'; }
+
+    CURRENT_STATE=$(strip_cr "$(${OT_CTL} state 2>/dev/null | head -1)")
     echo "[otbr-entrypoint] Current Thread state: '${CURRENT_STATE}'"
 
     case "$CURRENT_STATE" in
       disabled|detached)
         if [ -f "$DATASET_FILE" ]; then
-          DATASET=$(cat "$DATASET_FILE" | tr -d '[:space:]')
+          DATASET=$(cat "$DATASET_FILE" | tr -d '\r\n ')
           echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
           ${OT_CTL} dataset set active "$DATASET" || {
             echo "[otbr-entrypoint] WARNING: Failed to set dataset"
@@ -73,7 +75,7 @@ data:
         attach_attempts=0
         max_attach=30
         while [ $attach_attempts -lt $max_attach ]; do
-          STATE=$(${OT_CTL} state 2>/dev/null | tr -d '[:space:]')
+          STATE=$(strip_cr "$(${OT_CTL} state 2>/dev/null | head -1)")
           case "$STATE" in
             leader|router|child)
               echo "[otbr-entrypoint] Thread attached as: $STATE"
@@ -96,13 +98,13 @@ data:
     echo "[otbr-entrypoint] Setting TX power to 6..."
     ${OT_CTL} txpower 6 || true
 
-    COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | tr -d '[:space:]')
+    COMMISSIONER_STATE=$(strip_cr "$(${OT_CTL} commissioner state 2>/dev/null | head -1)")
     case "$COMMISSIONER_STATE" in
       disabled)
         echo "[otbr-entrypoint] Starting commissioner..."
         ${OT_CTL} commissioner start
         sleep 2
-        COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | tr -d '[:space:]')
+        COMMISSIONER_STATE=$(strip_cr "$(${OT_CTL} commissioner state 2>/dev/null | head -1)")
         echo "[otbr-entrypoint] Commissioner state: $COMMISSIONER_STATE"
         ;;
       *)

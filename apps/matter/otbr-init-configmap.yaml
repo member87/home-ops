@@ -51,17 +51,15 @@ data:
       exit 1
     fi
 
-    strip_cr() { printf '%s' "$1" | tr -d '\r'; }
-
-    CURRENT_STATE=$(strip_cr "$(${OT_CTL} state 2>/dev/null | head -1)")
+    CURRENT_STATE=$(${OT_CTL} state 2>/dev/null | head -1 | tr -d '\r')
     echo "[otbr-entrypoint] Current Thread state: '${CURRENT_STATE}'"
 
-    case "$CURRENT_STATE" in
+    case "${CURRENT_STATE}" in
       disabled|detached)
-        if [ -f "$DATASET_FILE" ]; then
-          DATASET=$(cat "$DATASET_FILE" | tr -d '\r\n ')
+        if [ -f "${DATASET_FILE}" ]; then
+          DATASET=$(cat "${DATASET_FILE}" | tr -d '\r\n ')
           echo "[otbr-entrypoint] Setting active dataset from sealed secret..."
-          ${OT_CTL} dataset set active "$DATASET" || {
+          ${OT_CTL} dataset set active "${DATASET}" || {
             echo "[otbr-entrypoint] WARNING: Failed to set dataset"
           }
         else
@@ -74,21 +72,21 @@ data:
         echo "[otbr-entrypoint] Waiting for Thread to attach..."
         attach_attempts=0
         max_attach=30
-        while [ $attach_attempts -lt $max_attach ]; do
-          STATE=$(strip_cr "$(${OT_CTL} state 2>/dev/null | head -1)")
-          case "$STATE" in
+        while [ ${attach_attempts} -lt ${max_attach} ]; do
+          STATE=$(${OT_CTL} state 2>/dev/null | head -1 | tr -d '\r')
+          case "${STATE}" in
             leader|router|child)
-              echo "[otbr-entrypoint] Thread attached as: $STATE"
+              echo "[otbr-entrypoint] Thread attached as: ${STATE}"
               break
               ;;
           esac
           attach_attempts=$((attach_attempts + 1))
-          echo "[otbr-entrypoint] Waiting to attach... (state: $STATE, attempt $attach_attempts/$max_attach)"
+          echo "[otbr-entrypoint] Waiting to attach... (state: ${STATE}, attempt ${attach_attempts}/${max_attach})"
           sleep 5
         done
         ;;
       *)
-        echo "[otbr-entrypoint] Thread already running as: $CURRENT_STATE"
+        echo "[otbr-entrypoint] Thread already running as: ${CURRENT_STATE}"
         ;;
     esac
 
@@ -98,20 +96,21 @@ data:
     echo "[otbr-entrypoint] Setting TX power to 6..."
     ${OT_CTL} txpower 6 || true
 
-    COMMISSIONER_STATE=$(strip_cr "$(${OT_CTL} commissioner state 2>/dev/null | head -1)")
-    case "$COMMISSIONER_STATE" in
+    COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | head -1 | tr -d '\r')
+    echo "[otbr-entrypoint] Commissioner state: '${COMMISSIONER_STATE}'"
+    case "${COMMISSIONER_STATE}" in
       disabled)
         echo "[otbr-entrypoint] Starting commissioner..."
         ${OT_CTL} commissioner start
         sleep 2
-        COMMISSIONER_STATE=$(strip_cr "$(${OT_CTL} commissioner state 2>/dev/null | head -1)")
-        echo "[otbr-entrypoint] Commissioner state: $COMMISSIONER_STATE"
+        COMMISSIONER_STATE=$(${OT_CTL} commissioner state 2>/dev/null | head -1 | tr -d '\r')
+        echo "[otbr-entrypoint] Commissioner state after start: '${COMMISSIONER_STATE}'"
         ;;
       *)
-        echo "[otbr-entrypoint] Commissioner already: $COMMISSIONER_STATE"
+        echo "[otbr-entrypoint] Commissioner already: ${COMMISSIONER_STATE}"
         ;;
     esac
 
     echo "[otbr-entrypoint] Initialization complete - keeping container alive"
 
-    wait $OTBR_PID
+    wait ${OTBR_PID}

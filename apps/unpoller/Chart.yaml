@@ -1,5 +1,0 @@
-apiVersion: v2
-name: unpoller
-type: application
-version: 0.1.0
-description: Home Ops unpoller manifests packaged as a Helm chart.

@@ -68,6 +68,9 @@ data:
     ipset create -exist otbr-ingress-allow-dst hash:net family inet6 2>/dev/null || true
     ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6 2>/dev/null || true
 
+    echo "[otbr] Installing python-zeroconf..."
+    python3 -m pip install --break-system-packages zeroconf 2>/dev/null
+
     echo "[otbr] Starting mDNS advertiser..."
     python3 /scripts/mdns-advertise.py &
 

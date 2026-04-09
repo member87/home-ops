@@ -109,17 +109,11 @@ data:
     if [ -f "${DATASET_FILE}" ]; then
       DATASET=$(cat "${DATASET_FILE}" | tr -d '\r\n ')
 
-      if [ "${CURRENT_STATE}" != "disabled" ]; then
-        echo "[otbr] Stopping Thread to apply sealed secret dataset..."
-        ${OT_CTL} thread stop 2>/dev/null || true
-        sleep 2
-      fi
+      echo "[otbr] Bringing up interface..."
+      ${OT_CTL} ifconfig up
 
       echo "[otbr] Setting active dataset from sealed secret..."
-      ${OT_CTL} dataset set active "${DATASET}" || {
-        echo "[otbr] WARNING: Failed to set dataset"
-      }
-      ${OT_CTL} dataset commit active || true
+      ${OT_CTL} dataset set active "${DATASET}"
 
       echo "[otbr] Starting Thread..."
       ${OT_CTL} thread start
@@ -141,6 +135,7 @@ data:
       done
     else
       echo "[otbr] No sealed secret dataset, using existing data"
+      ${OT_CTL} ifconfig up || true
       case "${CURRENT_STATE}" in
         disabled|detached)
           ${OT_CTL} thread start || true

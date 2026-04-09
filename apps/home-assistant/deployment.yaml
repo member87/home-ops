@@ -116,6 +116,9 @@ spec:
               readOnly: true
             - name: dev-net-tun
               mountPath: /dev/net/tun
+            - name: thread-dataset
+              mountPath: /tmp/thread-dataset
+              readOnly: true
           readinessProbe:
             tcpSocket:
               port: 8081
@@ -187,3 +190,6 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
+        - name: thread-dataset
+          secret:
+            secretName: thread-dataset

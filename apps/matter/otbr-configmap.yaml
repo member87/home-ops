@@ -61,9 +61,6 @@ data:
     #!/bin/sh
     set -e
 
-    OT_CTL="/opt/otbr-beta/sbin/ot-ctl"
-    DATASET_FILE="/tmp/thread-dataset/dataset_hex"
-
     mkdir -p /var/lib/thread
 
     ipset create -exist otbr-ingress-deny-src hash:net family inet6 2>/dev/null || true
@@ -71,14 +68,8 @@ data:
     ipset create -exist otbr-ingress-allow-dst hash:net family inet6 2>/dev/null || true
     ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6 2>/dev/null || true
 
-    echo "[otbr] Starting mdnsd..."
-    /opt/otbr-stable/sbin/mdnsd -debug &
-
-    echo "[otbr] Waiting for mdnsd..."
-    sleep 2
-
-    echo "[otbr] Starting otbr-web..."
-    /opt/otbr-beta/sbin/otbr-web -I wpan0 -d6 -s -a "::" -p 8080 &
+    echo "[otbr] Starting mDNS advertiser..."
+    python3 /scripts/mdns-advertise.py &
 
     echo "[otbr] Starting otbr-agent..."
     exec /opt/otbr-beta/sbin/otbr-agent \
@@ -89,3 +80,76 @@ data:
       -d5 -v -s \
       "spinel+hdlc+forkpty:///usr/bin/python3?forkpty-arg=-u&forkpty-arg=/etc/otbr/slzb-tcp-bridge.py&forkpty-arg=192.168.1.226&forkpty-arg=6638" \
       trel://eno1
+  mdns-advertise.py: |
+    import socket
+    import time
+    import json
+    import struct
+    import subprocess
+    from zeroconf import Zeroconf, ServiceInfo
+
+    def get_border_agent_id():
+        try:
+            result = subprocess.run(
+                ["curl", "-sf", "http://localhost:8081/node"],
+                capture_output=True, text=True, timeout=5
+            )
+            data = json.loads(result.stdout)
+            return data.get("baId", "")
+        except Exception:
+            return ""
+
+    def wait_for_otbr():
+        while True:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(2)
+                s.connect(("localhost", 8081))
+                s.close()
+                return
+            except Exception:
+                time.sleep(2)
+
+    print("[mdns] Waiting for OTBR REST API...")
+    wait_for_otbr()
+    print("[mdns] OTBR is ready, waiting for border agent ID...")
+
+    ba_id = ""
+    for _ in range(30):
+        ba_id = get_border_agent_id()
+        if ba_id:
+            break
+        time.sleep(2)
+
+    if not ba_id:
+        print("[mdns] WARNING: No border agent ID found, using placeholder")
+        ba_id = "unknown"
+
+    print(f"[mdns] Border agent ID: {ba_id}")
+
+    desc = {
+        "sb": ba_id,
+        "nn": "OpenThread-cb60",
+    }
+
+    info = ServiceInfo(
+        "_meshcop._udp.local.",
+        f"OpenThread-cb60._meshcop._udp.local.",
+        addresses=[socket.inet_aton("10.0.0.10")],
+        port=8081,
+        properties=desc,
+    )
+
+    zeroconf = Zeroconf(interfaces=["10.0.0.10"])
+    print(f"[mdns] Registering _meshcop._udp service on 10.0.0.10:8081")
+    zeroconf.register_service(info)
+    print("[mdns] Service registered")
+
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        zeroconf.unregister_service(info)
+        zeroconf.close()

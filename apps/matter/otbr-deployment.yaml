@@ -34,8 +34,6 @@ spec:
             - 0.0.0.0
             - --rest-listen-port
             - "8081"
-            - --data-path
-            - /var/lib/thread
             - -d5
             - -v
             - -s

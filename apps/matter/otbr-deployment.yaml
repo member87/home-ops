@@ -24,21 +24,8 @@ spec:
         - name: otbr
           image: homeassistant/amd64-addon-otbr:2.16.6
           command:
-            - /opt/otbr-beta/sbin/otbr-agent
-          args:
-            - -I
-            - wpan0
-            - -B
-            - eno1
-            - --rest-listen-address
-            - 0.0.0.0
-            - --rest-listen-port
-            - "8081"
-            - -d5
-            - -v
-            - -s
-            - spinel+hdlc+forkpty:///usr/bin/python3?forkpty-arg=-u&forkpty-arg=/etc/otbr/slzb-tcp-bridge.py&forkpty-arg=192.168.1.226&forkpty-arg=6638
-            - trel://eno1
+            - /bin/sh
+            - /scripts/entrypoint.sh
           securityContext:
             capabilities:
               add:
@@ -50,6 +37,9 @@ spec:
             - name: bridge-script
               mountPath: /etc/otbr/slzb-tcp-bridge.py
               subPath: slzb-tcp-bridge.py
+              readOnly: true
+            - name: scripts
+              mountPath: /scripts
               readOnly: true
             - name: dev-net-tun
               mountPath: /dev/net/tun
@@ -79,6 +69,10 @@ spec:
           persistentVolumeClaim:
             claimName: otbr-data
         - name: bridge-script
+          configMap:
+            name: otbr-bridge
+            defaultMode: 0755
+        - name: scripts
           configMap:
             name: otbr-bridge
             defaultMode: 0755

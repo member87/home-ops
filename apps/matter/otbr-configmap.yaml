@@ -5,6 +5,25 @@ metadata:
   name: otbr-bridge
   namespace: matter
 data:
+  entrypoint.sh: |
+    #!/bin/sh
+    ipset create -exist otbr-ingress-deny-src hash:net family inet6 2>/dev/null || true
+    ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6 2>/dev/null || true
+    ipset create -exist otbr-ingress-allow-dst hash:net family inet6 2>/dev/null || true
+    ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6 2>/dev/null || true
+
+    echo "[otbr] Starting mdnsd..."
+    /opt/otbr-stable/sbin/mdnsd -debug &
+
+    echo "[otbr] Starting otbr-agent..."
+    exec /opt/otbr-beta/sbin/otbr-agent \
+      -I wpan0 \
+      -B eno1 \
+      --rest-listen-address 0.0.0.0 \
+      --rest-listen-port 8081 \
+      -d5 -v -s \
+      "spinel+hdlc+forkpty:///usr/bin/python3?forkpty-arg=-u&forkpty-arg=/etc/otbr/slzb-tcp-bridge.py&forkpty-arg=192.168.1.226&forkpty-arg=6638" \
+      trel://eno1
   slzb-tcp-bridge.py: |
     #!/usr/bin/env python3
     import os

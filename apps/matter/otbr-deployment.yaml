@@ -23,9 +23,6 @@ spec:
       containers:
         - name: otbr
           image: homeassistant/amd64-addon-otbr:2.16.6
-          command:
-            - /bin/sh
-            - /scripts/entrypoint.sh
           securityContext:
             capabilities:
               add:
@@ -33,13 +30,13 @@ spec:
                 - NET_RAW
           volumeMounts:
             - name: otbr-data
-              mountPath: /var/lib/thread
+              mountPath: /data/thread
+            - name: config
+              mountPath: /data/options.json
+              subPath: options.json
             - name: bridge-script
               mountPath: /etc/otbr/slzb-tcp-bridge.py
               subPath: slzb-tcp-bridge.py
-              readOnly: true
-            - name: scripts
-              mountPath: /scripts
               readOnly: true
             - name: dev-net-tun
               mountPath: /dev/net/tun
@@ -50,12 +47,12 @@ spec:
           readinessProbe:
             tcpSocket:
               port: rest
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
               port: rest
-            initialDelaySeconds: 40
+            initialDelaySeconds: 60
             periodSeconds: 20
           resources:
             requests:
@@ -68,11 +65,14 @@ spec:
         - name: otbr-data
           persistentVolumeClaim:
             claimName: otbr-data
-        - name: bridge-script
+        - name: config
           configMap:
             name: otbr-bridge
-            defaultMode: 0755
-        - name: scripts
+            defaultMode: 0644
+            items:
+              - key: options.json
+                path: options.json
+        - name: bridge-script
           configMap:
             name: otbr-bridge
             defaultMode: 0755

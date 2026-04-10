@@ -120,6 +120,33 @@ spec:
               cpu: "1000m"
               memory: 1Gi
 
+        - name: mdns-advertiser
+          image: python:3.12-slim
+          command:
+            - /bin/sh
+            - -c
+            - pip install --quiet zeroconf && python3 /scripts/advertise.py
+          env:
+            - name: OTBR_HOST
+              value: "192.168.1.226"
+            - name: OTBR_PORT
+              value: "8080"
+            - name: ADVERTISE_IP
+              value: "10.0.0.21"
+            - name: ADVERTISE_PORT
+              value: "8080"
+          volumeMounts:
+            - name: mdns-scripts
+              mountPath: /scripts
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -130,3 +157,7 @@ spec:
         - name: matter-data
           persistentVolumeClaim:
             claimName: matter-server-data
+        - name: mdns-scripts
+          configMap:
+            name: mdns-advertiser
+            defaultMode: 0755

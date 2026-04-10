@@ -1,0 +1,103 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mdns-advertiser
+  namespace: home-assistant
+data:
+  advertise.py: |
+    #!/usr/bin/env python3
+    import socket
+    import time
+    import json
+    import urllib.request
+    import os
+
+    from zeroconf import Zeroconf, ServiceInfo
+
+    OTBR_HOST = os.environ.get("OTBR_HOST", "192.168.1.226")
+    OTBR_PORT = int(os.environ.get("OTBR_PORT", "8080"))
+    ADVERTISE_IP = os.environ.get("ADVERTISE_IP", "10.0.0.21")
+    ADVERTISE_PORT = int(os.environ.get("ADVERTISE_PORT", "8080"))
+
+    def get_otbr_info():
+        try:
+            req = urllib.request.Request(f"http://{OTBR_HOST}:{OTBR_PORT}/node")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read())
+                network_name = data.get("NetworkName", "OpenThread")
+                ext_pan_id = data.get("ExtPanId", "unknown")
+                return network_name, ext_pan_id
+        except Exception as e:
+            print(f"[mdns] Error fetching OTBR info: {e}")
+            return None, None
+
+    def wait_for_otbr():
+        for i in range(60):
+            try:
+                req = urllib.request.Request(f"http://{OTBR_HOST}:{OTBR_PORT}/node")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    json.loads(resp.read())
+                print(f"[mdns] OTBR at {OTBR_HOST}:{OTBR_PORT} is ready")
+                return True
+            except Exception:
+                print(f"[mdns] Waiting for OTBR at {OTBR_HOST}:{OTBR_PORT}... ({i+1}/60)")
+                time.sleep(5)
+        return False
+
+    print("[mdns] Waiting for OTBR...")
+    if not wait_for_otbr():
+        print("[mdns] ERROR: OTBR never became ready")
+        exit(1)
+
+    network_name, ext_pan_id = get_otbr_info()
+    if not network_name:
+        network_name = "OpenThread"
+        ext_pan_id = "unknown"
+    print(f"[mdns] Network: {network_name}, ExtPanId: {ext_pan_id}")
+
+    desc = {
+        "nn": network_name,
+        "sb": str(ext_pan_id),
+    }
+
+    service_name = f"{network_name}._meshcop._udp.local."
+    info = ServiceInfo(
+        "_meshcop._udp.local.",
+        service_name,
+        addresses=[socket.inet_aton(ADVERTISE_IP)],
+        port=ADVERTISE_PORT,
+        properties=desc,
+    )
+
+    zeroconf = Zeroconf(interfaces=[ADVERTISE_IP])
+    print(f"[mdns] Registering _meshcop._udp on {ADVERTISE_IP}:{ADVERTISE_PORT} -> {OTBR_HOST}:{OTBR_PORT}")
+    zeroconf.register_service(info, allow_name_change=True)
+    print("[mdns] Service registered")
+
+    try:
+        while True:
+            nn, sb = get_otbr_info()
+            if nn and nn != network_name:
+                print(f"[mdns] Network changed: {network_name} -> {nn}, re-registering")
+                zeroconf.unregister_service(info)
+                network_name = nn
+                desc["nn"] = nn
+                desc["sb"] = str(sb or ext_pan_id)
+                info = ServiceInfo(
+                    "_meshcop._udp.local.",
+                    f"{network_name}._meshcop._udp.local.",
+                    addresses=[socket.inet_aton(ADVERTISE_IP)],
+                    port=ADVERTISE_PORT,
+                    properties=desc,
+                )
+                zeroconf.register_service(info, allow_name_change=True)
+            time.sleep(60)
+    except Exception as e:
+        print(f"[mdns] Error: {e}")
+    finally:
+        try:
+            zeroconf.unregister_service(info)
+            zeroconf.close()
+        except Exception:
+            pass

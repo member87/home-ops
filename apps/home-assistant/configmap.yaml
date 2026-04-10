@@ -19,6 +19,6 @@ data:
     #
     # OTBR integration - requires manual setup via UI on first deploy:
     #   Settings > Devices & Services > Add Integration > Open Thread Border Router
-    #   URL: http://localhost:8081
+    #   URL: http://192.168.1.226:8080
     #
     # Thread integration - auto-discovered after OTBR is configured

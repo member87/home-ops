@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - configmap.yaml
+  - mdns-advertiser.yaml
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml

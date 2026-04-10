@@ -8,10 +8,12 @@ data:
   advertise.py: |
     #!/usr/bin/env python3
     import socket
+    import threading
     import time
     import json
     import urllib.request
     import os
+    import select
 
     from zeroconf import Zeroconf, ServiceInfo
 
@@ -19,6 +21,42 @@ data:
     OTBR_PORT = int(os.environ.get("OTBR_PORT", "8080"))
     ADVERTISE_IP = os.environ.get("ADVERTISE_IP", "10.0.0.21")
     ADVERTISE_PORT = int(os.environ.get("ADVERTISE_PORT", "8080"))
+
+    def tcp_proxy(listen_port, target_host, target_port):
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("0.0.0.0", listen_port))
+        server.listen(5)
+        print(f"[proxy] Listening on 0.0.0.0:{listen_port} -> {target_host}:{target_port}")
+        while True:
+            client, addr = server.accept()
+            t = threading.Thread(target=handle_client, args=(client, target_host, target_port), daemon=True)
+            t.start()
+
+    def handle_client(client, target_host, target_port):
+        try:
+            remote = socket.create_connection((target_host, target_port), timeout=5)
+        except Exception as e:
+            print(f"[proxy] Connect failed: {e}")
+            client.close()
+            return
+        sockets = [client, remote]
+        while True:
+            readable, _, errored = select.select(sockets, [], sockets, 30)
+            if errored:
+                break
+            for s in readable:
+                data = s.recv(4096)
+                if not data:
+                    remote.close()
+                    client.close()
+                    return
+                if s is client:
+                    remote.sendall(data)
+                else:
+                    client.sendall(data)
+        remote.close()
+        client.close()
 
     def get_otbr_info():
         try:
@@ -38,23 +76,26 @@ data:
                 req = urllib.request.Request(f"http://{OTBR_HOST}:{OTBR_PORT}/node")
                 with urllib.request.urlopen(req, timeout=5) as resp:
                     json.loads(resp.read())
-                print(f"[mdns] OTBR at {OTBR_HOST}:{OTBR_PORT} is ready")
+                print(f"[mdns] OTBR at {OTBR_HOST}:{OTBR_PORT} is ready", flush=True)
                 return True
             except Exception:
-                print(f"[mdns] Waiting for OTBR at {OTBR_HOST}:{OTBR_PORT}... ({i+1}/60)")
+                print(f"[mdns] Waiting for OTBR at {OTBR_HOST}:{OTBR_PORT}... ({i+1}/60)", flush=True)
                 time.sleep(5)
         return False
 
-    print("[mdns] Waiting for OTBR...")
+    print("[mdns] Waiting for OTBR...", flush=True)
     if not wait_for_otbr():
-        print("[mdns] ERROR: OTBR never became ready")
+        print("[mdns] ERROR: OTBR never became ready", flush=True)
         exit(1)
+
+    proxy_thread = threading.Thread(target=tcp_proxy, args=(ADVERTISE_PORT, OTBR_HOST, OTBR_PORT), daemon=True)
+    proxy_thread.start()
 
     network_name, ext_pan_id = get_otbr_info()
     if not network_name:
         network_name = "OpenThread"
         ext_pan_id = "unknown"
-    print(f"[mdns] Network: {network_name}, ExtPanId: {ext_pan_id}")
+    print(f"[mdns] Network: {network_name}, ExtPanId: {ext_pan_id}", flush=True)
 
     desc = {
         "nn": network_name,
@@ -71,15 +112,15 @@ data:
     )
 
     zeroconf = Zeroconf(interfaces=[ADVERTISE_IP])
-    print(f"[mdns] Registering _meshcop._udp on {ADVERTISE_IP}:{ADVERTISE_PORT} -> {OTBR_HOST}:{OTBR_PORT}")
+    print(f"[mdns] Registering _meshcop._udp on {ADVERTISE_IP}:{ADVERTISE_PORT} -> {OTBR_HOST}:{OTBR_PORT}", flush=True)
     zeroconf.register_service(info, allow_name_change=True)
-    print("[mdns] Service registered")
+    print("[mdns] Service registered", flush=True)
 
     try:
         while True:
             nn, sb = get_otbr_info()
             if nn and nn != network_name:
-                print(f"[mdns] Network changed: {network_name} -> {nn}, re-registering")
+                print(f"[mdns] Network changed: {network_name} -> {nn}, re-registering", flush=True)
                 zeroconf.unregister_service(info)
                 network_name = nn
                 desc["nn"] = nn
@@ -94,7 +135,7 @@ data:
                 zeroconf.register_service(info, allow_name_change=True)
             time.sleep(60)
     except Exception as e:
-        print(f"[mdns] Error: {e}")
+        print(f"[mdns] Error: {e}", flush=True)
     finally:
         try:
             zeroconf.unregister_service(info)

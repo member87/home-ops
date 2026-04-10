@@ -121,7 +121,7 @@ spec:
               memory: 1Gi
 
         - name: mdns-advertiser
-          image: python:3.12-slim
+          image: python:3.14-slim
           command:
             - /bin/sh
             - -c

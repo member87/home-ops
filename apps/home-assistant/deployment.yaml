@@ -121,11 +121,11 @@ spec:
               memory: 1Gi
 
         - name: mdns-advertiser
-          image: python:3.12-slim
+          image: ghcr.io/home-assistant/home-assistant:2026.4.1
           command:
             - /bin/sh
             - -c
-            - pip install --quiet zeroconf && python3 /scripts/advertise.py
+            - python3 -m pip install --break-system-packages --quiet zeroconf 2>/dev/null; python3 /scripts/advertise.py
           env:
             - name: OTBR_HOST
               value: "192.168.1.226"

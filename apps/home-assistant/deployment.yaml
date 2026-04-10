@@ -15,19 +15,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: otbr-data
-  namespace: home-assistant
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: matter-server-data
   namespace: home-assistant
 spec:
@@ -101,42 +88,6 @@ spec:
               cpu: "2000m"
               memory: "2Gi"
 
-        - name: otbr
-          image: homeassistant/amd64-addon-otbr:2.16.6
-          securityContext:
-            privileged: true
-          command:
-            - /bin/sh
-            - /scripts/entrypoint.sh
-          volumeMounts:
-            - name: otbr-data
-              mountPath: /var/lib/thread
-            - name: scripts
-              mountPath: /scripts
-              readOnly: true
-            - name: dev-net-tun
-              mountPath: /dev/net/tun
-            - name: thread-dataset
-              mountPath: /tmp/thread-dataset
-              readOnly: true
-          readinessProbe:
-            tcpSocket:
-              port: 8081
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 8081
-            initialDelaySeconds: 40
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-
         - name: matter-server
           image: ghcr.io/matter-js/python-matter-server:8.1.2
           args:
@@ -176,20 +127,6 @@ spec:
         - name: home-assistant-bootstrap
           configMap:
             name: home-assistant-config
-        - name: otbr-data
-          persistentVolumeClaim:
-            claimName: otbr-data
         - name: matter-data
           persistentVolumeClaim:
             claimName: matter-server-data
-        - name: scripts
-          configMap:
-            name: otbr-scripts
-            defaultMode: 0755
-        - name: dev-net-tun
-          hostPath:
-            path: /dev/net/tun
-            type: CharDevice
-        - name: thread-dataset
-          secret:
-            secretName: thread-dataset

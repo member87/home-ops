@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mqtt-data
+  namespace: mqtt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt
+  namespace: mqtt
+  labels:
+    app: mqtt
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mqtt
+  template:
+    metadata:
+      labels:
+        app: mqtt
+    spec:
+      initContainers:
+        - name: setup-auth
+          image: eclipse-mosquitto:2.1.2-alpine
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - cp /input/mosquitto.conf /work/mosquitto.conf && mosquitto_passwd -b -c /work/passwd "$(cat /auth/username)" "$(cat /auth/password)" && chown mosquitto:mosquitto /work/mosquitto.conf /work/passwd && chmod 600 /work/passwd && chmod 644 /work/mosquitto.conf
+          volumeMounts:
+            - name: mqtt-config-template
+              mountPath: /input
+              readOnly: true
+            - name: mqtt-auth
+              mountPath: /auth
+              readOnly: true
+            - name: mqtt-runtime-config
+              mountPath: /work
+      containers:
+        - name: mqtt
+          image: eclipse-mosquitto:2.1.2-alpine
+          command:
+            - /usr/sbin/mosquitto
+          args:
+            - -c
+            - /mosquitto/config/mosquitto.conf
+          ports:
+            - containerPort: 1883
+              name: mqtt
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: mqtt-runtime-config
+              mountPath: /mosquitto/config
+            - name: mqtt-data
+              mountPath: /mosquitto/data
+      volumes:
+        - name: mqtt-config-template
+          configMap:
+            name: mqtt-config
+        - name: mqtt-auth
+          secret:
+            secretName: mqtt-auth
+        - name: mqtt-runtime-config
+          emptyDir: {}
+        - name: mqtt-data
+          persistentVolumeClaim:
+            claimName: mqtt-data

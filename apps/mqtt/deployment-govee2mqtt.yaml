@@ -1,0 +1,87 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: govee2mqtt-data
+  namespace: mqtt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: govee2mqtt
+  namespace: mqtt
+  labels:
+    app: govee2mqtt
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: govee2mqtt
+  template:
+    metadata:
+      labels:
+        app: govee2mqtt
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      containers:
+        - name: govee2mqtt
+          image: ghcr.io/wez/govee2mqtt:2026.03.25-ab9deb66
+          env:
+            - name: GOVEE_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: govee2mqtt-secrets
+                  key: GOVEE_EMAIL
+            - name: GOVEE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: govee2mqtt-secrets
+                  key: GOVEE_PASSWORD
+            - name: GOVEE_MQTT_HOST
+              value: mqtt.mqtt.svc.cluster.local
+            - name: GOVEE_MQTT_PORT
+              value: "1883"
+            - name: GOVEE_MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-auth
+                  key: username
+            - name: GOVEE_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-auth
+                  key: password
+            - name: GOVEE_TEMPERATURE_SCALE
+              value: C
+            - name: RUST_LOG_STYLE
+              value: always
+            - name: TZ
+              value: Europe/London
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: govee2mqtt-data
+              mountPath: /data
+      volumes:
+        - name: govee2mqtt-data
+          persistentVolumeClaim:
+            claimName: govee2mqtt-data

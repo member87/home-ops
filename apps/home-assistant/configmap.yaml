@@ -13,6 +13,10 @@ data:
       trusted_proxies:
         - 10.0.0.0/8
 
+    automation: !include automations.yaml
+    script: !include scripts.yaml
+    scene: !include scenes.yaml
+
     # Matter integration - requires manual setup via UI on first deploy:
     #   Settings > Devices & Services > Add Integration > Matter
     #   URL: http://localhost:5580/ws

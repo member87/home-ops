@@ -41,6 +41,11 @@ spec:
         - name: govee2mqtt
           image: ghcr.io/wez/govee2mqtt:2026.03.25-ab9deb66
           env:
+            - name: GOVEE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: govee2mqtt-secrets
+                  key: GOVEE_API_KEY
             - name: GOVEE_EMAIL
               valueFrom:
                 secretKeyRef:

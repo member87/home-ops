@@ -133,8 +133,10 @@ spec:
               value: "8080"
             - name: ADVERTISE_IP
               value: "10.0.0.21"
-            - name: ADVERTISE_PORT
-              value: "8080"
+            - name: BORDER_AGENT_IP
+              value: "192.168.1.226"
+            - name: BORDER_AGENT_PORT
+              value: "49191"
           volumeMounts:
             - name: mdns-scripts
               mountPath: /scripts

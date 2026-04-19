@@ -120,7 +120,7 @@ spec:
       serviceAccountName: sealed-secrets-controller
       containers:
       - name: sealed-secrets-controller
-        image: bitnami/sealed-secrets-controller:0.36.1
+        image: bitnami/sealed-secrets-controller:0.36.6
         command:
         - controller
         ports:

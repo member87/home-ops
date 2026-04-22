@@ -514,7 +514,7 @@ cluster:
 #         - 10.0.0.0/8
 # # Core DNS specific configuration options.
 # coreDNS:
-#     image: registry.k8s.io/coredns/coredns:v1.14.2 # The `image` field is an override to the default coredns image.
+#     image: registry.k8s.io/coredns/coredns:v1.14.3 # The `image` field is an override to the default coredns image.
 # # External cloud provider configuration.
 # externalCloudProvider:
 #     enabled: true # Enable external cloud provider.

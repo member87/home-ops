@@ -2231,14 +2231,14 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "sum(kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{storageclass=\"longhorn\"})",
+              "expr": "sum(kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{namespace=~\"$namespace\",storageclass=\"longhorn\"})",
               "instant": true,
               "legendFormat": "",
               "range": false,
               "refId": "A"
             }
           ],
-          "title": "Longhorn PVC requested (cluster)",
+          "title": "Longhorn PVC requested (selected namespaces)",
           "type": "stat"
         },
         {
@@ -2292,14 +2292,14 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "sum(kube_persistentvolume_capacity_bytes * on(persistentvolume) group_left(storageclass) kube_persistentvolume_info{storageclass=\"longhorn\"})",
+              "expr": "sum(kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{storageclass=\"longhorn\"})",
               "instant": true,
               "legendFormat": "",
               "range": false,
               "refId": "A"
             }
           ],
-          "title": "Longhorn PV capacity (cluster)",
+          "title": "Longhorn PVC requested (all namespaces)",
           "type": "stat"
         },
         {
@@ -2363,14 +2363,14 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "sum(kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{storageclass=\"longhorn\"}) / sum(kube_persistentvolume_capacity_bytes * on(persistentvolume) group_left(storageclass) kube_persistentvolume_info{storageclass=\"longhorn\"})",
+              "expr": "sum(kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{namespace=~\"$namespace\",storageclass=\"longhorn\"}) / sum(kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{storageclass=\"longhorn\"})",
               "instant": true,
               "legendFormat": "",
               "range": false,
               "refId": "A"
             }
           ],
-          "title": "Longhorn requested / PV capacity",
+          "title": "Selected namespace share of Longhorn",
           "type": "stat"
         },
         {
@@ -2456,7 +2456,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "sum by (namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{storageclass=\"longhorn\"})",
+              "expr": "sum by (namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{namespace=~\"$namespace\",storageclass=\"longhorn\"})",
               "legendFormat": "{{namespace}}",
               "refId": "A"
             }
@@ -2547,7 +2547,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "topk(15, kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{storageclass=\"longhorn\"})",
+              "expr": "topk(15, kube_persistentvolumeclaim_resource_requests_storage_bytes * on(namespace,persistentvolumeclaim) group_left(storageclass) kube_persistentvolumeclaim_info{namespace=~\"$namespace\",storageclass=\"longhorn\"})",
               "legendFormat": "{{namespace}}/{{persistentvolumeclaim}}",
               "refId": "A"
             }

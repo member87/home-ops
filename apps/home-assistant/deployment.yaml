@@ -132,7 +132,9 @@ spec:
             - name: OTBR_PORT
               value: "8080"
             - name: ADVERTISE_IP
-              value: "10.0.0.21"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             - name: BORDER_AGENT_IP
               value: "192.168.1.226"
             - name: BORDER_AGENT_PORT

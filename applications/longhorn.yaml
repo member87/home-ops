@@ -14,7 +14,7 @@ spec:
     # Helm chart for Longhorn
     - repoURL: https://charts.longhorn.io
       chart: longhorn
-      targetRevision: 1.11.0
+      targetRevision: 1.11.1
       helm:
         valuesObject:
           # Hotfix for Longhorn 1.11.0 regressions

@@ -16,7 +16,7 @@ spec:
       serviceAccountName: alloy
       initContainers:
         - name: download-geoip
-          image: curlimages/curl:8.18.0
+          image: curlimages/curl:8.20.0
           command:
             - sh
             - -c
@@ -40,7 +40,7 @@ spec:
               mountPath: /geoip
       containers:
         - name: alloy
-          image: grafana/alloy:v1.13.2
+          image: grafana/alloy:v1.16.0
           args:
             - run
             - /etc/alloy/config.alloy

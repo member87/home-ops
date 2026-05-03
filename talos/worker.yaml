@@ -22,7 +22,7 @@ machine:
     # Used to provide additional options to the kubelet.
     kubelet:
         # The `image` field is an optional reference to an alternative kubelet image.
-        image: ghcr.io/siderolabs/kubelet:v1.35.1
+        image: ghcr.io/siderolabs/kubelet:v1.36.0
         # Enable container runtime default Seccomp profile.
         defaultRuntimeSeccompProfileEnabled: true
         # The `disableManifestsDirectory` field configures the kubelet to get static pod manifests from the /etc/kubernetes/manifests directory.
@@ -501,7 +501,7 @@ cluster:
 #         feature-gates: AllBeta=true
 # # Etcd specific configuration options.
 # etcd:
-#     image: gcr.io/etcd-development/etcd:v3.6.8 # The container image used to create the etcd service.
+#     image: gcr.io/etcd-development/etcd:v3.6.11 # The container image used to create the etcd service.
 #     # The `ca` is the root certificate authority of the PKI.
 #     ca:
 #         crt: LS0tIEVYQU1QTEUgQ0VSVElGSUNBVEUgLS0t
@@ -514,7 +514,7 @@ cluster:
 #         - 10.0.0.0/8
 # # Core DNS specific configuration options.
 # coreDNS:
-#     image: registry.k8s.io/coredns/coredns:v1.14.1 # The `image` field is an override to the default coredns image.
+#     image: registry.k8s.io/coredns/coredns:v1.14.3 # The `image` field is an override to the default coredns image.
 # # External cloud provider configuration.
 # externalCloudProvider:
 #     enabled: true # Enable external cloud provider.

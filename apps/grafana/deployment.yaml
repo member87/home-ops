@@ -34,7 +34,7 @@ spec:
               mountPath: /dashboards
         # Pre-populate dashboards before Grafana starts to avoid race condition
         - name: init-dashboards
-          image: alpine/k8s:1.35.4
+          image: alpine/k8s:1.36.0
           command:
             - sh
             - -c
@@ -73,7 +73,7 @@ spec:
       containers:
         # Sidecar that watches for dashboard ConfigMap changes and copies them
         - name: dashboard-sidecar
-          image: kiwigrid/k8s-sidecar:2.6.0
+          image: kiwigrid/k8s-sidecar:2.7.1
           env:
             - name: LABEL
               value: "grafana_dashboard"

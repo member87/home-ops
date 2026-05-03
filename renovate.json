@@ -3,6 +3,9 @@
   "extends": ["config:recommended"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
+  "argocd": { 
+    "managerFilePatterns": ["/\\.yaml$/"] 
+  },
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
   },
@@ -145,6 +148,11 @@
       "commitMessageTopic": "etcd",
       "semanticCommitType": "chore",
       "semanticCommitScope": "etcd"
+    },
+    {
+      "groupName": "high confidence minor and patch dependency updates",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
     }
   ]
 }

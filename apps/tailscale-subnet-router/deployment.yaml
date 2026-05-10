@@ -30,12 +30,12 @@ spec:
               ln -sf xtables-nft-multi /usr/sbin/ip6tables
               ln -sf xtables-nft-multi /usr/sbin/ip6tables-save
               ln -sf xtables-nft-multi /usr/sbin/ip6tables-restore
-              # SNAT masquerade: rewrite source IP for Tailscale clients (100.64.0.0/10)
-              # accessing LAN (10.0.0.0/24) so return traffic routes back through
-              # the subnet router instead of being dropped by LAN hosts that have
-              # no route to Tailscale CGNAT addresses.
-              iptables -t nat -C POSTROUTING -s 100.64.0.0/10 -d 10.0.0.0/24 -j MASQUERADE 2>/dev/null || \
-              iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -d 10.0.0.0/24 -j MASQUERADE
+
+              for route in 10.0.0.0/24 192.168.1.0/24; do
+                iptables -t nat -C POSTROUTING -s 100.64.0.0/10 -d "$route" -j MASQUERADE 2>/dev/null || \
+                iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -d "$route" -j MASQUERADE
+              done
+
               echo "SNAT masquerade configured for Tailscale-to-LAN traffic"
               exec /usr/local/bin/containerboot
           env:
@@ -47,7 +47,7 @@ spec:
             - name: TS_HOSTNAME
               value: "k8s-subnet-router"
             - name: TS_ROUTES
-              value: "10.0.0.200/32,10.0.0.201/32"
+              value: "10.0.0.200/32,10.0.0.0/24,192.168.1.0/24"
             - name: TS_STATE_DIR
               value: "/var/lib/tailscale"
             - name: TS_USERSPACE
@@ -55,7 +55,7 @@ spec:
             - name: TS_ACCEPT_DNS
               value: "false"
             - name: TS_EXTRA_ARGS
-              value: "--login-server=https://headscale.lab.jackhumes.com --advertise-exit-node --advertise-routes=10.0.0.0/24,192.168.1.0/24"
+              value: "--login-server=https://headscale.lab.jackhumes.com --advertise-exit-node"
           securityContext:
             capabilities:
               add:

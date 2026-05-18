@@ -1047,17 +1047,6 @@ spec:
         name: skyhook
         namespace: flux-system
       interval: 10m0s
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              version: v1
-              kind: Deployment
-              name: radar
-            patch: |-
-              - op: add
-                path: /spec/template/spec/containers/0/args/-
-                value: --auth-oidc-scopes=openid,profile,email,groups
   values:
     image:
       tag: "1.6.1"

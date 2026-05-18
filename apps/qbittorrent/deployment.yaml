@@ -108,9 +108,9 @@ spec:
               value: "on"
             - name: FIREWALL_DEBUG
               value: "off"
-            - name: DOT
-              value: "on"
-            - name: DOT_PROVIDERS
+            - name: DNS_UPSTREAM_RESOLVER_TYPE
+              value: "dot"
+            - name: DNS_UPSTREAM_RESOLVERS
               value: "cloudflare"
             - name: BLOCK_MALICIOUS
               value: "on"

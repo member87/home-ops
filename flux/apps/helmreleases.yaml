@@ -1035,6 +1035,9 @@ spec:
   upgrade:
     remediation:
       retries: 3
+  dependsOn:
+    - name: radar-routing
+      namespace: flux-system
   chart:
     spec:
       chart: radar
@@ -1048,10 +1051,22 @@ spec:
     image:
       tag: "1.6.1"
     auth:
-      mode: proxy
-      proxy:
-        userHeader: Remote-User
-        groupsHeader: Remote-Groups
+      mode: oidc
+      existingSecret: radar-oidc-secret
+      existingSecretKey: auth-secret
+      oidc:
+        issuerURL: https://auth.jackhumes.com
+        clientID: 0fe6c0e7-a42f-4cff-82b1-df3700417fb0
+        existingSecret: radar-oidc-secret
+        clientSecretKey: client-secret
+        redirectURL: https://radar.lab.jackhumes.com/auth/callback
+        postLogoutRedirectURL: https://radar.lab.jackhumes.com
+        groupsClaim: groups
+        scopes:
+          - openid
+          - profile
+          - email
+          - groups
     ingress:
       enabled: false
     mcp:
@@ -1090,9 +1105,6 @@ spec:
   upgrade:
     remediation:
       retries: 3
-  dependsOn:
-    - name: radar
-      namespace: flux-system
   chart:
     spec:
       chart: apps/radar

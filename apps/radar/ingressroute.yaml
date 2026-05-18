@@ -23,22 +23,6 @@ spec:
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: tinyauth-forwardauth
-  namespace: radar
-spec:
-  forwardAuth:
-    address: http://tinyauth.tinyauth.svc.cluster.local:3000/api/auth/traefik
-    authResponseHeaders:
-      - Remote-User
-      - Remote-Groups
-      - Remote-Name
-      - Remote-Email
-    authResponseHeadersRegex: ^Remote-
-    trustForwardHeader: true
----
-apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: radar
@@ -49,8 +33,6 @@ spec:
   routes:
     - match: Host(`radar.lab.jackhumes.com`)
       kind: Rule
-      middlewares:
-        - name: tinyauth-forwardauth
       services:
         - name: radar
           port: 9280

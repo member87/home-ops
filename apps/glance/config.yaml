@@ -70,6 +70,11 @@ pages:
                 icon: sh:grafana
                 alt-status-codes:
                   - 401
+              - title: Radar
+                url: https://radar.lab.jackhumes.com
+                icon: sh:kubernetes
+                alt-status-codes:
+                  - 401
               - title: Longhorn
                 url: https://longhorn.lab.jackhumes.com
                 icon: sh:rancher-longhorn

@@ -17,7 +17,7 @@ spec:
       serviceAccountName: grafana
       initContainers:
         - name: init-dirs
-          image: busybox:1.37
+          image: busybox:1.38
           command:
             - sh
             - -c

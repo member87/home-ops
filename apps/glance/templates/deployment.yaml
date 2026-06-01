@@ -26,7 +26,7 @@ spec:
               app: glance
       containers:
         - name: glance
-          image: glanceapp/glance:v0.8.4
+          image: glanceapp/glance:v0.8.5
           envFrom:
             - secretRef:
                 name: glance-secrets

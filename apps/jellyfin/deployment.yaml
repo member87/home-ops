@@ -83,7 +83,7 @@ spec:
         kubernetes.io/hostname: talos-lox-1n1
       containers:
         - name: jellyfin
-          image: lscr.io/linuxserver/jellyfin:10.11.10
+          image: lscr.io/linuxserver/jellyfin:10.11.11
           securityContext:
             privileged: true
           ports:

@@ -5,5 +5,5 @@ version: 0.1.0
 description: Longhorn with local home-ops manifests.
 dependencies:
   - name: longhorn
-    version: 1.11.2
+    version: 1.12.0
     repository: https://charts.longhorn.io

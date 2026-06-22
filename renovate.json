@@ -116,12 +116,17 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "image:\\s+(?<depName>ghcr\\.io/(?!siderolabs/)[\\w\\-\\./]+):(?<currentValue>[\\w\\-\\.]+)"
+        "image:\\s+(?<depName>ghcr\\.io/[\\w\\-\\./]+):(?<currentValue>[\\w\\-\\.]+)"
       ],
       "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackagePatterns": ["^ghcr\\.io/siderolabs/"],
+      "enabled": false
+    },
     {
       "matchDatasources": ["docker"],
       "matchDepNames": ["traefik"],

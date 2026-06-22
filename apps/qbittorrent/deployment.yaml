@@ -68,7 +68,7 @@ spec:
       terminationGracePeriodSeconds: 1800
       initContainers:
         - name: migrate-linuxserver-config
-          image: busybox:1.37
+          image: busybox:1.38
           command:
             - /bin/sh
             - -c

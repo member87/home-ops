@@ -77,13 +77,17 @@ spec:
         app: jellyfin
     spec:
       securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
         supplementalGroups:
           - 44
       nodeSelector:
         kubernetes.io/hostname: talos-lox-1n1
       containers:
         - name: jellyfin
-          image: lscr.io/linuxserver/jellyfin:10.11.11
+          image: ghcr.io/jellyfin/jellyfin:10.11.8
           securityContext:
             privileged: true
           ports:
@@ -100,17 +104,8 @@ spec:
               name: dlna
               protocol: UDP
           env:
-            # ============================================
-            # LinuxServer.io Container Variables
-            # ============================================
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
             - name: TZ
               value: "Europe/London"
-            - name: UMASK
-              value: "022"
             
             # ============================================
             # Jellyfin Application Configuration

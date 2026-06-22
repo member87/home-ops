@@ -32,25 +32,21 @@ spec:
       # Use cluster DNS to resolve qBittorrent's dedicated Gluetun proxy
       # Prowlarr traffic is routed through HTTP_PROXY
       dnsPolicy: ClusterFirst
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:2.4.0
+          image: ghcr.io/home-operations/prowlarr:2.4.0
           ports:
             - containerPort: 9696
               name: http
               protocol: TCP
           env:
-            # ============================================
-            # LinuxServer.io Container Variables
-            # ============================================
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
             - name: TZ
               value: "Europe/London"
-            - name: UMASK
-              value: "022"
             
             # ============================================
             # Prowlarr Application Configuration

@@ -65,18 +65,21 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: sabnzbd
-          image: lscr.io/linuxserver/sabnzbd:5.0.4
+          image: ghcr.io/home-operations/sabnzbd:5.0.4
           env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
             - name: TZ
               value: "Europe/London"
-            - name: UMASK
-              value: "022"
+            - name: SABNZBD__ADDRESS
+              value: "0.0.0.0"
+            - name: SABNZBD__PORT
+              value: "8080"
           volumeMounts:
             - name: sabnzbd-config
               mountPath: /config
@@ -103,10 +106,6 @@ spec:
               memory: "2Gi"
               cpu: "2000m"
       volumes:
-        - name: tun
-          hostPath:
-            path: /dev/net/tun
-            type: CharDevice
         - name: sabnzbd-config
           persistentVolumeClaim:
             claimName: sabnzbd-config

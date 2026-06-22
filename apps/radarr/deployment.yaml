@@ -97,25 +97,21 @@ spec:
       labels:
         app: radarr
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:6.2.1
+          image: ghcr.io/home-operations/radarr:6.2.1
           ports:
             - containerPort: 7878
               name: http
               protocol: TCP
           env:
-            # ============================================
-            # LinuxServer.io Container Variables
-            # ============================================
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
             - name: TZ
               value: "Europe/London"
-            - name: UMASK
-              value: "022"
             
             # ============================================
             # Radarr Application Configuration

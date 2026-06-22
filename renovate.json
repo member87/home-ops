@@ -109,6 +109,16 @@
       "depNameTemplate": "etcd-io/etcd",
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image:\\s+(?<depName>ghcr\\.io/(?!siderolabs/)[\\w\\-\\./]+):(?<currentValue>[\\w\\-\\.]+)"
+      ],
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [

@@ -23,7 +23,26 @@ data:
 
     derp:
       server:
-        enabled: false
+        # Embedded DERP relay, served over HTTPS via server_url
+        # (https://headscale.jackhumes.com -> VPS:443 -> FRP -> headscale:8080).
+        # Lets the tailnet tunnel come up on networks that block WireGuard UDP and
+        # Tailscale's public DERP relays (root cause of "connect = no internet").
+        enabled: true
+        region_id: 999
+        region_code: "headscale"
+        region_name: "Headscale Embedded DERP"
+        # Only nodes registered with this Headscale may use the relay.
+        verify_clients: true
+        # Required when the DERP server is enabled. STUN (UDP 3478) aids NAT
+        # traversal on normal networks; it is not exposed outside the pod, so
+        # direct-path discovery still falls back to the public DERP map below.
+        stun_listen_addr: "0.0.0.0:3478"
+        private_key_path: /var/lib/headscale/derp_server_private.key
+        automatically_add_embedded_derp_region: true
+        # Publish the VPS public IP directly so clients reach the relay even when
+        # DNS is not yet working (exit-node bootstrap scenario).
+        ipv4: 140.238.67.83
+      # Keep Tailscale's public DERP as a fallback for NAT traversal where reachable.
       urls:
         - https://controlplane.tailscale.com/derpmap/default
       auto_update_enabled: true

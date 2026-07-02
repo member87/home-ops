@@ -102,9 +102,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: indexer-definitions
-              mountPath: /config/Definitions
-              readOnly: true
           livenessProbe:
             httpGet:
               path: /ping
@@ -124,6 +121,19 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "1000m"
+      initContainers:
+        - name: copy-indexer-definitions
+          image: ghcr.io/home-operations/prowlarr:2.5.0
+          command:
+            - /bin/sh
+            - -c
+            - cp /custom-defs/exttorrents.yml /config/Definitions/exttorrents.yml
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: indexer-definitions
+              mountPath: /custom-defs
+              readOnly: true
       volumes:
         - name: config
           persistentVolumeClaim:

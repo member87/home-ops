@@ -100,6 +100,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: indexer-definitions
+              mountPath: /config/Definitions
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /ping
@@ -123,35 +126,38 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: prowlarr-config
+        - name: indexer-definitions
+          projected:
+            sources:
+              - configMap:
+                  name: prowlarr-indexer-exttorrents
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flaresolverr
+  name: byparr
   namespace: prowlarr
   labels:
-    app: flaresolverr
+    app: byparr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: flaresolverr
+      app: byparr
   template:
     metadata:
       labels:
-        app: flaresolverr
+        app: byparr
     spec:
       containers:
-        - name: flaresolverr
-          image: flaresolverr/flaresolverr:v3.5.0
+        - name: byparr
+          image: ghcr.io/thephaseless/byparr:v2.1.0
           ports:
             - containerPort: 8191
               name: http
               protocol: TCP
           env:
-            - name: LOG_LEVEL
-              value: "info"
             - name: TZ
               value: "Europe/London"
           livenessProbe:

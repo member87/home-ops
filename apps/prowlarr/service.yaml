@@ -20,13 +20,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: flaresolverr
+  name: byparr
   namespace: prowlarr
   labels:
-    app: flaresolverr
+    app: byparr
 spec:
   selector:
-    app: flaresolverr
+    app: byparr
   ports:
     - name: http
       port: 8191

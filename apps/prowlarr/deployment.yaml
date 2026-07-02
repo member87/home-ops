@@ -121,24 +121,6 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "1000m"
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    (
-                      i=0
-                      while [ "$i" -lt 60 ] && ! wget -qO- -T2 http://localhost:9696/ping >/dev/null 2>&1; do i=$((i+1)); sleep 5; done
-                      sleep 10
-                      APIKEY=$(sed -n 's/.*<ApiKey>\([^<]*\)<\/ApiKey>.*/\1/p' /config/config.xml)
-                      [ -z "$APIKEY" ] && exit 0
-                      wget -qO /tmp/cfg.json "http://localhost:9696/api/v1/config/host?apikey=$APIKEY" || exit 0
-                      sed -i -e 's/"proxyEnabled":[^,}]*/"proxyEnabled":true/' -e 's/"proxyType":"[^"]*"/"proxyType":"http"/' -e 's/"proxyHostname":"[^"]*"/"proxyHostname":"qbittorrent-gluetun.qbittorrent.svc.cluster.local"/' -e 's/"proxyPort":[0-9]*/"proxyPort":8888/' /tmp/cfg.json
-                      curl -s -o /dev/null -X PUT -H "Content-Type: application/json" -H "X-Api-Key: $APIKEY" --data @/tmp/cfg.json http://localhost:9696/api/v1/config/host
-                    ) >/tmp/configure-proxy.log 2>&1 &
-                    exit 0
       initContainers:
         - name: copy-indexer-definitions
           image: ghcr.io/home-operations/prowlarr:2.5.0

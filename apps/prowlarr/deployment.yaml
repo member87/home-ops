@@ -31,8 +31,8 @@ spec:
       labels:
         app: prowlarr
     spec:
-      # Use cluster DNS to resolve qBittorrent's dedicated Gluetun proxy
-      # Prowlarr traffic is routed through HTTP_PROXY
+      # Prowlarr egresses directly. Only the Byparr sidecar (below) routes
+      # its outbound indexer traffic through the shared Gluetun proxy.
       dnsPolicy: ClusterFirst
       securityContext:
         runAsUser: 1000
@@ -172,6 +172,8 @@ spec:
           env:
             - name: TZ
               value: "Europe/London"
+            - name: PROXY_SERVER
+              value: "http://gluetun.gluetun.svc.cluster.local:8888"
           livenessProbe:
             tcpSocket:
               port: http

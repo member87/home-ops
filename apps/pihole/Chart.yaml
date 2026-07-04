@@ -5,5 +5,5 @@ version: 0.1.0
 description: Pi-hole with local home-ops manifests.
 dependencies:
   - name: pihole
-    version: 2.36.0
+    version: 2.37.0
     repository: https://mojo2600.github.io/pihole-kubernetes/

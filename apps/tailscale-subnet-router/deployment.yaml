@@ -19,7 +19,7 @@ spec:
       serviceAccountName: tailscale
       containers:
         - name: tailscale
-          image: tailscale/tailscale:v1.98.4
+          image: tailscale/tailscale:v1.98.8
           command:
             - /bin/sh
             - -c

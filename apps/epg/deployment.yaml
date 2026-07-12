@@ -1,0 +1,62 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epg
+  namespace: epg
+  labels:
+    app: epg
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: epg
+  template:
+    metadata:
+      labels:
+        app: epg
+    spec:
+      containers:
+        - name: epg
+          image: ghcr.io/iptv-org/epg:master@sha256:9e80e769cde159d6a7f64069f71dbaf4600804056bdb903ea088668d439d6e57
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            # Grab UK EPG from the Sky source (comprehensive UK channel coverage)
+            - name: SITES
+              value: "sky.com"
+            # Re-grab every hour
+            - name: CRON_SCHEDULE
+              value: "0 * * * *"
+            # Generate guide.xml immediately on startup
+            - name: RUN_AT_STARTUP
+              value: "true"
+          volumeMounts:
+            - name: guide
+              mountPath: /epg/public
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1500m"
+      volumes:
+        - name: guide
+          emptyDir: {}

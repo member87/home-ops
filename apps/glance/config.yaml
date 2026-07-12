@@ -128,6 +128,9 @@ pages:
               - title: Qui (qBittorrent UI)
                 url: https://qui.lab.jackhumes.com
                 icon: sh:qui
+              - title: EPG (IPTV Guide)
+                url: https://epg.lab.jackhumes.com/guide.xml
+                icon: sh:satellite
 
           - type: hacker-news
             limit: 15

@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: epg
+  namespace: epg
+  labels:
+    app: epg
+spec:
+  type: ClusterIP
+  selector:
+    app: epg
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

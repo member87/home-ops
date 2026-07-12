@@ -32,7 +32,7 @@ metadata:
   name: audiobookshelf
   namespace: flux-system
 spec:
-  suspend: false
+  suspend: true
   interval: 10m0s
   releaseName: audiobookshelf
   targetNamespace: audiobookshelf
@@ -1260,7 +1260,7 @@ metadata:
   name: shelfmark
   namespace: flux-system
 spec:
-  suspend: false
+  suspend: true
   interval: 10m0s
   releaseName: shelfmark
   targetNamespace: shelfmark

@@ -101,26 +101,6 @@ spec:
               mountPath: /var/app/storage
             - name: watched
               mountPath: /var/app/tmp/imports/watched
-          startupProbe:
-            httpGet:
-              path: /api/v1/health
-              port: 3000
-            periodSeconds: 10
-            failureThreshold: 36
-          livenessProbe:
-            httpGet:
-              path: /api/v1/health
-              port: 3000
-              scheme: HTTP
-            periodSeconds: 15
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /api/v1/health
-              port: 3000
-              scheme: HTTP
-            periodSeconds: 5
-            failureThreshold: 3
           resources:
             requests:
               memory: "512Mi"

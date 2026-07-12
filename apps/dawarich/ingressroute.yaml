@@ -24,7 +24,6 @@ spec:
       services:
         - name: dawarich
           port: 80
-          scheme: http
       middlewares:
         - name: crowdsec-bouncer
           namespace: dawarich
@@ -33,7 +32,6 @@ spec:
       services:
         - name: dawarich
           port: 80
-          scheme: http
       middlewares:
         - name: crowdsec-bouncer
           namespace: dawarich

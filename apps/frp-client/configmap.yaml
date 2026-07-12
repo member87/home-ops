@@ -30,3 +30,11 @@ data:
     localIP = "headscale.headscale.svc.cluster.local"
     localPort = 8080
     remotePort = 8082
+
+    # Dawarich tunnel - routes through Traefik for CrowdSec protection
+    [[proxies]]
+    name = "dawarich"
+    type = "tcp"
+    localIP = "traefik.traefik.svc.cluster.local"
+    localPort = 80
+    remotePort = 8083

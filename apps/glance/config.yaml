@@ -78,6 +78,11 @@ pages:
               - title: Longhorn
                 url: https://longhorn.lab.jackhumes.com
                 icon: sh:rancher-longhorn
+              - title: Dawarich
+                url: https://dawarich.jackhumes.com
+                icon: sh:dawarich
+                alt-status-codes:
+                  - 401
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection

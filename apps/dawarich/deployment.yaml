@@ -1,0 +1,231 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dawarich
+  namespace: dawarich
+  labels:
+    app: dawarich
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dawarich
+  template:
+    metadata:
+      labels:
+        app: dawarich
+    spec:
+      containers:
+        - name: dawarich-web
+          image: freikin/dawarich:1.9.2
+          command: ["web-entrypoint.sh"]
+          args: ["bin/rails", "server", "-p", "3000", "-b", "::"]
+          stdin: true
+          tty: true
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            - name: RAILS_ENV
+              value: "production"
+            - name: SELF_HOSTED
+              value: "true"
+            - name: APPLICATION_HOSTS
+              value: "dawarich.jackhumes.com,dawarich.lab.jackhumes.com"
+            - name: APPLICATION_PROTOCOL
+              value: "https"
+            - name: DOMAIN
+              value: "dawarich.jackhumes.com"
+            - name: TIME_ZONE
+              value: "Europe/London"
+            - name: DISTANCE_UNIT
+              value: "km"
+            - name: DATABASE_HOST
+              value: "dawarich-postgis"
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_USERNAME
+              value: "dawarich"
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: DATABASE_PASSWORD
+            - name: DATABASE_NAME
+              value: "dawarich_production"
+            - name: REDIS_URL
+              value: "redis://dawarich-redis.dawarich.svc.cluster.local:6379"
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: SECRET_KEY_BASE
+            - name: STORE_GEODATA
+              value: "true"
+            - name: RAILS_LOG_TO_STDOUT
+              value: "true"
+            - name: BACKGROUND_PROCESSING_CONCURRENCY
+              value: "5"
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: OIDC_CLIENT_ID
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: OIDC_CLIENT_SECRET
+            - name: OIDC_ISSUER
+              value: "https://auth.jackhumes.com"
+            - name: OIDC_REDIRECT_URI
+              value: "https://dawarich.jackhumes.com/users/auth/openid_connect/callback"
+            - name: OIDC_PROVIDER_NAME
+              value: "Pocket ID"
+            - name: OIDC_AUTO_REGISTER
+              value: "true"
+            - name: OIDC_PKCE_ENABLED
+              value: "true"
+            - name: ALLOW_EMAIL_PASSWORD_REGISTRATION
+              value: "false"
+            - name: ALLOW_EMAIL_PASSWORD_LOGIN
+              value: "false"
+          volumeMounts:
+            - name: public
+              mountPath: /var/app/public
+            - name: storage
+              mountPath: /var/app/storage
+            - name: watched
+              mountPath: /var/app/tmp/imports/watched
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3000
+            periodSeconds: 10
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3000
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3000
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+        - name: dawarich-sidekiq
+          image: freikin/dawarich:1.9.2
+          command: ["sidekiq-entrypoint.sh"]
+          args: ["sidekiq"]
+          stdin: true
+          tty: true
+          env:
+            - name: RAILS_ENV
+              value: "production"
+            - name: SELF_HOSTED
+              value: "true"
+            - name: APPLICATION_HOSTS
+              value: "dawarich.jackhumes.com,dawarich.lab.jackhumes.com"
+            - name: APPLICATION_PROTOCOL
+              value: "https"
+            - name: DOMAIN
+              value: "dawarich.jackhumes.com"
+            - name: TIME_ZONE
+              value: "Europe/London"
+            - name: DISTANCE_UNIT
+              value: "km"
+            - name: DATABASE_HOST
+              value: "dawarich-postgis"
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_USERNAME
+              value: "dawarich"
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: DATABASE_PASSWORD
+            - name: DATABASE_NAME
+              value: "dawarich_production"
+            - name: REDIS_URL
+              value: "redis://dawarich-redis.dawarich.svc.cluster.local:6379"
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: SECRET_KEY_BASE
+            - name: STORE_GEODATA
+              value: "true"
+            - name: RAILS_LOG_TO_STDOUT
+              value: "true"
+            - name: BACKGROUND_PROCESSING_CONCURRENCY
+              value: "5"
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: OIDC_CLIENT_ID
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dawarich-secrets
+                  key: OIDC_CLIENT_SECRET
+            - name: OIDC_ISSUER
+              value: "https://auth.jackhumes.com"
+            - name: OIDC_REDIRECT_URI
+              value: "https://dawarich.jackhumes.com/users/auth/openid_connect/callback"
+            - name: OIDC_PROVIDER_NAME
+              value: "Pocket ID"
+            - name: OIDC_AUTO_REGISTER
+              value: "true"
+            - name: OIDC_PKCE_ENABLED
+              value: "true"
+            - name: ALLOW_EMAIL_PASSWORD_REGISTRATION
+              value: "false"
+            - name: ALLOW_EMAIL_PASSWORD_LOGIN
+              value: "false"
+          volumeMounts:
+            - name: public
+              mountPath: /var/app/public
+            - name: storage
+              mountPath: /var/app/storage
+            - name: watched
+              mountPath: /var/app/tmp/imports/watched
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - sidekiq
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      volumes:
+        - name: public
+          persistentVolumeClaim:
+            claimName: dawarich-public
+        - name: storage
+          persistentVolumeClaim:
+            claimName: dawarich-storage
+        - name: watched
+          persistentVolumeClaim:
+            claimName: dawarich-watched

@@ -1,0 +1,37 @@
+---
+# CrowdSec Bouncer Middleware - protects services from malicious IPs
+# Uses stream mode for best performance - decisions are cached locally
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: crowdsec-bouncer
+  namespace: dawarich
+spec:
+  plugin:
+    bouncer:
+      enabled: true
+      logLevel: INFO
+
+      # Stream mode - fetches all decisions every 10s
+      crowdsecMode: stream
+      updateIntervalSeconds: 10
+      defaultDecisionSeconds: 10
+
+      # LAPI connection
+      crowdsecLapiScheme: http
+      crowdsecLapiHost: crowdsec-lapi.crowdsec.svc.cluster.local:8080
+      crowdsecLapiKey: "4bJNXg77hib46tHSShUaYJtmAzyAyY+2JHDYAn0twDE="
+
+      # HTTP timeout for LAPI queries
+      httpTimeoutSeconds: 10
+
+      # Trust forwarded headers from internal proxies
+      forwardedHeadersTrustedIPs:
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+        - "100.64.0.0/10"
+      forwardedHeadersCustomName: "X-Forwarded-For"
+
+      # Ban response
+      remediationStatusCode: 403

@@ -1,0 +1,76 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: dawarich
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+# HTTPS routes - internal and public
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dawarich
+  namespace: dawarich
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`dawarich.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: dawarich
+          port: 80
+      middlewares:
+        - name: crowdsec-bouncer
+          namespace: dawarich
+    - match: Host(`dawarich.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: dawarich
+          port: 80
+      middlewares:
+        - name: crowdsec-bouncer
+          namespace: dawarich
+  tls:
+    secretName: dawarich-tls
+---
+# HTTP redirect to HTTPS for internal traffic
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dawarich-http
+  namespace: dawarich
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`dawarich.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: dawarich
+          port: 80
+---
+# External route for dawarich.jackhumes.com (via FRP tunnel)
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dawarich-external
+  namespace: dawarich
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`dawarich.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: dawarich
+          port: 80
+      middlewares:
+        - name: crowdsec-bouncer
+          namespace: dawarich

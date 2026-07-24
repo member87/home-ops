@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: dawarich-web
-          image: freikin/dawarich:1.10.0
+          image: freikin/dawarich:1.10.1
           command: ["web-entrypoint.sh"]
           args: ["bin/rails", "server", "-p", "3000", "-b", "::"]
           stdin: true
@@ -109,7 +109,7 @@ spec:
               memory: "2Gi"
               cpu: "1000m"
         - name: dawarich-sidekiq
-          image: freikin/dawarich:1.10.0
+          image: freikin/dawarich:1.10.1
           command: ["sidekiq-entrypoint.sh"]
           args: ["sidekiq"]
           stdin: true

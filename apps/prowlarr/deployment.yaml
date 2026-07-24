@@ -41,7 +41,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: prowlarr
-          image: ghcr.io/home-operations/prowlarr:2.5.1
+          image: ghcr.io/home-operations/prowlarr:2.5.2
           ports:
             - containerPort: 9696
               name: http
@@ -123,7 +123,7 @@ spec:
               cpu: "1000m"
       initContainers:
         - name: copy-indexer-definitions
-          image: ghcr.io/home-operations/prowlarr:2.5.1
+          image: ghcr.io/home-operations/prowlarr:2.5.2
           command:
             - /bin/sh
             - -c

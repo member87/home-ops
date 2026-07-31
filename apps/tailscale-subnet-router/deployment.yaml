@@ -36,7 +36,15 @@ spec:
                 iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -d "$route" -j MASQUERADE
               done
 
-              echo "SNAT masquerade configured for Tailscale-to-LAN traffic"
+              # Catch-all MASQUERADE so traffic from clients using this node as an
+              # exit node (destinations outside the two LAN subnets above) is NATed
+              # out to the internet instead of being silently dropped.
+              iptables -t nat -C POSTROUTING -s 100.64.0.0/10 -j MASQUERADE 2>/dev/null || \
+              iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -j MASQUERADE
+              ip6tables -t nat -C POSTROUTING -s fd7a:115c:a1e0::/48 -j MASQUERADE 2>/dev/null || \
+              ip6tables -t nat -A POSTROUTING -s fd7a:115c:a1e0::/48 -j MASQUERADE
+
+              echo "SNAT masquerade configured for Tailscale-to-LAN and exit-node traffic"
               exec /usr/local/bin/containerboot
           env:
             - name: TS_AUTHKEY
@@ -50,6 +58,8 @@ spec:
               value: "10.0.0.0/24,192.168.1.0/24"
             - name: TS_STATE_DIR
               value: "/var/lib/tailscale"
+            - name: TS_KUBE_SECRET
+              value: "tailscale-subnet-router-state"
             - name: TS_USERSPACE
               value: "false"
             - name: TS_ACCEPT_DNS

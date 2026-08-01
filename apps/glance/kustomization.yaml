@@ -14,4 +14,4 @@ resources:
 configMapGenerator:
   - name: glance-config
     files:
-      - glance.yml=config.yaml
+      - dynacat.yml=config.yaml

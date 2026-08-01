@@ -4,5 +4,5 @@ metadata:
   name: glance-config
   namespace: glance
 data:
-  glance.yml: |
+  dynacat.yml: |
 {{ .Files.Get "config.yaml" | nindent 4 }}

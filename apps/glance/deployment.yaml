@@ -25,7 +25,7 @@ spec:
               app: glance
       containers:
         - name: glance
-          image: glanceapp/glance:v0.8.5
+          image: ghcr.io/panonim/dynacat:2.4.0
           envFrom:
             - secretRef:
                 name: glance-secrets
@@ -35,8 +35,8 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: config
-              mountPath: /app/config/glance.yml
-              subPath: glance.yml
+              mountPath: /app/config/dynacat.yml
+              subPath: dynacat.yml
           resources:
             requests:
               cpu: 50m

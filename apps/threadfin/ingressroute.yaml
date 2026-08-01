@@ -1,0 +1,57 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: threadfin-cert
+  namespace: threadfin
+spec:
+  secretName: threadfin-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - threadfin.lab.jackhumes.com
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: threadfin
+  namespace: threadfin
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`threadfin.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: threadfin
+          port: 34400
+  tls:
+    secretName: threadfin-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: threadfin-http
+  namespace: threadfin
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`threadfin.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: threadfin
+          port: 34400
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: threadfin
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

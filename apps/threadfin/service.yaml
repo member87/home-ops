@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: threadfin
+  namespace: threadfin
+  labels:
+    app: threadfin
+spec:
+  type: ClusterIP
+  selector:
+    app: threadfin
+  ports:
+    - name: http
+      port: 34400
+      targetPort: 34400
+      protocol: TCP

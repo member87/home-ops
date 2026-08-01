@@ -22,10 +22,13 @@ data:
     root_url = https://grafana.lab.jackhumes.com
     
     [auth]
-    disable_login_form = false
+    disable_login_form = true
     disable_signout_menu = false
-    oauth_auto_login = false
-    
+    oauth_auto_login = true
+
+    [auth.basic]
+    enabled = false
+
     [auth.generic_oauth]
     enabled = true
     name = Pocket ID

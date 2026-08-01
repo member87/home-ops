@@ -31,6 +31,10 @@ spec:
       labels:
         app: threadfin
     spec:
+      # Threadfin reads THREADFIN_PORT for its bind port, which collides with
+      # the Kubernetes-injected Service env var of the same name (service is
+      # also named "threadfin"). Disable auto-injection to avoid the clash.
+      enableServiceLinks: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000

@@ -66,9 +66,13 @@ data:
       override_local_dns: true
       nameservers:
         global:
+          # Primary: Pi-hole via its dedicated tailnet node (pihole-dns -> DNAT
+          # to 10.0.0.201). Fallback: the Pi-hole MetalLB VIP directly.
+          - 100.64.0.2
           - 10.0.0.201
         split:
           lab.jackhumes.com:
+            - 100.64.0.2
             - 10.0.0.201
       extra_records: []
 

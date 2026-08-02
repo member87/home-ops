@@ -1,0 +1,76 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailscale-dns
+  namespace: tailscale-dns
+spec:
+  replicas: 1
+  # Recreate (not RollingUpdate) so the single RWO Longhorn state volume is
+  # released by the old pod before the new one starts. Keeping the same state
+  # dir preserves the node key -> Headscale returns the SAME tailnet IP forever.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tailscale-dns
+  template:
+    metadata:
+      labels:
+        app: tailscale-dns
+    spec:
+      serviceAccountName: tailscale
+      containers:
+        - name: tailscale
+          image: tailscale/tailscale:v1.98.8
+          command:
+            - /bin/sh
+            - -c
+            - |
+              ln -sf xtables-nft-multi /usr/sbin/iptables
+              ln -sf xtables-nft-multi /usr/sbin/iptables-save
+              ln -sf xtables-nft-multi /usr/sbin/iptables-restore
+              ln -sf xtables-nft-multi /usr/sbin/ip6tables
+              ln -sf xtables-nft-multi /usr/sbin/ip6tables-save
+              ln -sf xtables-nft-multi /usr/sbin/ip6tables-restore
+
+              exec /usr/local/bin/containerboot
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth
+                  key: TS_AUTHKEY
+            - name: TS_HOSTNAME
+              value: "pihole-dns"
+            # DNAT all inbound tailnet traffic to the Pi-hole MetalLB DNS VIP.
+            # This node's tailnet IP becomes a direct DNS front-end for Pi-hole,
+            # bypassing the subnet-router SNAT + LAN-route path.
+            - name: TS_DEST_IP
+              value: "10.0.0.201"
+            - name: TS_STATE_DIR
+              value: "/var/lib/tailscale"
+            - name: TS_USERSPACE
+              value: "false"
+            # Do not consume MagicDNS ourselves (avoids a resolver loop).
+            - name: TS_ACCEPT_DNS
+              value: "false"
+            - name: TS_EXTRA_ARGS
+              value: "--login-server=https://headscale.lab.jackhumes.com"
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          volumeMounts:
+            - name: tailscale-state
+              mountPath: /var/lib/tailscale
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+      volumes:
+        - name: tailscale-state
+          persistentVolumeClaim:
+            claimName: tailscale-dns-state
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice

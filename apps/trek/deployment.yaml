@@ -53,7 +53,7 @@ spec:
             - name: OIDC_DISPLAY_NAME
               value: "Pocket ID"
             - name: OIDC_ONLY
-              value: "false"
+              value: "true"
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

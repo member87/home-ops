@@ -88,6 +88,9 @@ pages:
                 icon: sh:changedetection
                 alt-status-codes:
                   - 401
+              - title: Trek
+                url: https://trek.lab.jackhumes.com
+                icon: sh:trek
           - type: monitor
             cache: 1m
             title: Media Stack

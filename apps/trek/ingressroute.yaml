@@ -1,0 +1,44 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: trek
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: trek
+  namespace: trek
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`trek.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: trek
+          port: 3000
+  tls:
+    secretName: trek-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: trek-http
+  namespace: trek
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`trek.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: trek
+          port: 3000

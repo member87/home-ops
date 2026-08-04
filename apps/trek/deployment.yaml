@@ -41,6 +41,17 @@ spec:
                 secretKeyRef:
                   name: trek-secrets
                   key: ENCRYPTION_KEY
+            - name: OIDC_ISSUER
+              value: "https://auth.jackhumes.com"
+            - name: OIDC_CLIENT_ID
+              value: "9a3eaef3-8efa-47ca-878f-8f3955554060"
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: trek-secrets
+                  key: OIDC_CLIENT_SECRET
+            - name: OIDC_DISPLAY_NAME
+              value: "Pocket ID"
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

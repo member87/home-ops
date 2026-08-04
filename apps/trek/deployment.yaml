@@ -52,6 +52,8 @@ spec:
                   key: OIDC_CLIENT_SECRET
             - name: OIDC_DISPLAY_NAME
               value: "Pocket ID"
+            - name: OIDC_ONLY
+              value: "true"
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

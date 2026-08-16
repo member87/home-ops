@@ -1,4 +1,17 @@
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cdn-cert
+  namespace: cdn
+spec:
+  secretName: cdn-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - cdn.lab.jackhumes.com
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -14,4 +27,31 @@ spec:
         - name: cdn
           port: 80
   tls:
-    certResolver: letsencrypt-production
+    secretName: cdn-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cdn-http
+  namespace: cdn
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`cdn.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: cdn
+          port: 80
+      middlewares:
+        - name: redirect-https
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: cdn
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

@@ -42,10 +42,14 @@ data:
         # Publish the VPS public IP directly so clients reach the relay even when
         # DNS is not yet working (exit-node bootstrap scenario).
         ipv4: 140.238.67.83
-      # Keep Tailscale's public DERP as a fallback for NAT traversal where reachable.
-      urls:
-        - https://controlplane.tailscale.com/derpmap/default
-      auto_update_enabled: true
+      # Public Tailscale DERP relays (e.g. "lhr") get blocked on hostile networks
+      # (hotel/airport wifi) even though our embedded region works fine — it rides
+      # the same FRP/Traefik HTTPS path already proven reachable for control-plane
+      # traffic. Do NOT import the public derp map: clients (including exit nodes)
+      # must only ever pick this embedded region, so exit-node relaying stays
+      # consistent with the path that's actually known to work.
+      urls: []
+      auto_update_enabled: false
       update_frequency: 24h
 
     disable_check_updates: false

@@ -23,7 +23,7 @@ spec:
         - name: tailscale-exit-node-manager-ghcr-pull
       containers:
         - name: api
-          image: ghcr.io/member87/tailscale-exit-node-manager-api:9eb4ce5310f0811ac5ccfb05cd3c1339480f0c80
+          image: ghcr.io/member87/tailscale-exit-node-manager-api:4e998027348910115c2279b26cad4e6f8a07adae
           ports:
             - containerPort: 8080
               name: http
@@ -51,6 +51,11 @@ spec:
                 configMapKeyRef:
                   name: tailscale-exit-node-manager-config
                   key: VPN_KEY_POOL_SIZE
+            - name: HEADSCALE_LB_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: tailscale-exit-node-manager-config
+                  key: HEADSCALE_LB_IP
             - name: DB_PATH
               value: "/data/exit-node-manager.db"
             - name: COUNTRIES_CONFIG_PATH

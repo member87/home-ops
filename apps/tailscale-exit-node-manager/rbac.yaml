@@ -17,6 +17,15 @@ rules:
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["get", "create", "patch"]
+  # Exit-node container log viewer in the dashboard (GET /api/nodes/{code}/logs).
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # Client attribution: Headscale cannot say which peer picked which exit node,
+  # so the API execs `tailscale status --json` inside the exit-node pod.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

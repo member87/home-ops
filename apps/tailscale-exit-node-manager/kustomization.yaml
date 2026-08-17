@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - rbac.yaml
+  - hostnetwork-guard.yaml
   - pvc.yaml
   - configmap.yaml
   - sealedsecret.yaml

@@ -8,14 +8,16 @@ data:
   HEADSCALE_USER_ID: "9" # `exit-nodes` Headscale user, created via `headscale users create exit-nodes`
   VPN_KEY_POOL_SIZE: "3"
   HEADSCALE_LB_IP: "10.0.0.200" # Traefik LoadBalancer IP; gluetun's DNS_UPSTREAM_PLAIN_ADDRESSES is buggy (falls back to public DoT), so exit-node pods use a hostAliases /etc/hosts entry instead
+  # LAN / pod / service CIDRs that gluetun's in-pod kill switch must keep
+  # allowing, otherwise the exit-node pod cannot reach Headscale (10.0.0.200) or
+  # cluster DNS once the tunnel is up. Previously hardcoded in the Go pod builder.
+  FIREWALL_OUTBOUND_SUBNETS: "10.0.0.0/24,10.244.0.0/16,10.96.0.0/12"
+  # After this long in `starting` a node is marked errored; its pod is deliberately
+  # kept so the failure can still be read back through the dashboard log viewer.
+  START_TIMEOUT_SECONDS: "300"
+  # Pinned favourites only, as ISO-3166 alpha-2 codes. The backend embeds the full
+  # set of ProtonVPN WireGuard countries, so this no longer defines which countries
+  # exist: favourites are surfaced first in the dashboard and every other supported
+  # country stays startable from the UI search.
   countries.json: |
-    [
-      {"code":"NL","name":"Netherlands","gluetun_country":"Netherlands"},
-      {"code":"US","name":"United States","gluetun_country":"United States"},
-      {"code":"GB","name":"United Kingdom","gluetun_country":"United Kingdom"},
-      {"code":"DE","name":"Germany","gluetun_country":"Germany"},
-      {"code":"JP","name":"Japan","gluetun_country":"Japan"},
-      {"code":"CH","name":"Switzerland","gluetun_country":"Switzerland"},
-      {"code":"SE","name":"Sweden","gluetun_country":"Sweden"},
-      {"code":"CA","name":"Canada","gluetun_country":"Canada"}
-    ]
+    ["NL","US","GB","DE","JP","CH","SE","CA"]

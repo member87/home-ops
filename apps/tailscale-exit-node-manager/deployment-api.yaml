@@ -23,7 +23,7 @@ spec:
         - name: tailscale-exit-node-manager-ghcr-pull
       containers:
         - name: api
-          image: ghcr.io/member87/tailscale-exit-node-manager-api:5fa17038ae905335c81e629bd90f3726b2dd6ff4
+          image: ghcr.io/member87/tailscale-exit-node-manager-api:36192a37b7c58a745ca3fa65f69292996e4ee8a2
           ports:
             - containerPort: 8080
               name: http
@@ -56,6 +56,16 @@ spec:
                 configMapKeyRef:
                   name: tailscale-exit-node-manager-config
                   key: HEADSCALE_LB_IP
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              valueFrom:
+                configMapKeyRef:
+                  name: tailscale-exit-node-manager-config
+                  key: FIREWALL_OUTBOUND_SUBNETS
+            - name: START_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: tailscale-exit-node-manager-config
+                  key: START_TIMEOUT_SECONDS
             - name: DB_PATH
               value: "/data/exit-node-manager.db"
             - name: COUNTRIES_CONFIG_PATH

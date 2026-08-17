@@ -1,0 +1,40 @@
+---
+# The API pod creates exit-node pods (tailscale + gluetun) at runtime in this
+# namespace. gluetun with FIREWALL=on installs a VPN kill switch by setting the
+# iptables filter INPUT/OUTPUT/FORWARD policies to DROP. Inside its own network
+# namespace that is correct; with hostNetwork: true it writes those policies
+# into the node's host netns, where they survive pod deletion and blackhole all
+# node egress that is not LAN/pod/service CIDR or the WireGuard endpoint. That
+# happened on 2026-08-17 and killed image pulls, NTP, pod egress and Home
+# Assistant's connection to the OTBR on every node. Deny hostNetwork here so it
+# cannot recur, regardless of what pod spec the API image ships.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: exit-node-manager-deny-hostnetwork
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: "!has(object.spec.hostNetwork) || object.spec.hostNetwork == false"
+      reason: Forbidden
+      message: >-
+        hostNetwork is forbidden in the tailscale-exit-node-manager namespace:
+        a gluetun kill switch in the host netns permanently blackholes node egress
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: exit-node-manager-deny-hostnetwork
+spec:
+  policyName: exit-node-manager-deny-hostnetwork
+  validationActions: ["Deny"]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: tailscale-exit-node-manager

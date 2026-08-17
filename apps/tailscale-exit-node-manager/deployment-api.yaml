@@ -23,7 +23,7 @@ spec:
         - name: tailscale-exit-node-manager-ghcr-pull
       containers:
         - name: api
-          image: ghcr.io/member87/tailscale-exit-node-manager-api:40bd18dfc0fff09cf35d2f02698163b323a2e014
+          image: ghcr.io/member87/tailscale-exit-node-manager-api:5fa17038ae905335c81e629bd90f3726b2dd6ff4
           ports:
             - containerPort: 8080
               name: http

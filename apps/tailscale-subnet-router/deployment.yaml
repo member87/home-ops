@@ -14,8 +14,6 @@ spec:
       labels:
         app: tailscale-subnet-router
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: tailscale
       containers:
         - name: tailscale

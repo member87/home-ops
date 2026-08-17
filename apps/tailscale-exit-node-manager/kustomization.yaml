@@ -1,0 +1,15 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - pvc.yaml
+  - configmap.yaml
+  - sealedsecret.yaml
+  - sealedsecret-ghcr-pull.yaml
+  - deployment-api.yaml
+  - deployment-web.yaml
+  - service.yaml
+  - middleware.yaml
+  - ingressroute.yaml

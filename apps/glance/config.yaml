@@ -57,6 +57,11 @@ pages:
               - title: Headplane
                 url: https://headplane.lab.jackhumes.com
                 icon: sh:headscale
+              - title: Exit Nodes
+                url: https://exit-nodes.lab.jackhumes.com
+                icon: sh:tailscale
+                alt-status-codes:
+                  - 401
               - title: NAS
                 url: https://nas.lab.jackhumes.com
                 icon: sh:ugreen-nas

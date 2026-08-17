@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tailscale-exit-node-manager-config
+  namespace: tailscale-exit-node-manager
+data:
+  HEADSCALE_USER_ID: "9" # `exit-nodes` Headscale user, created via `headscale users create exit-nodes`
+  MAX_CONCURRENT_EXIT_NODES: "5"
+  countries.json: |
+    [
+      {"code":"NL","name":"Netherlands","gluetun_country":"Netherlands"},
+      {"code":"US","name":"United States","gluetun_country":"United States"},
+      {"code":"GB","name":"United Kingdom","gluetun_country":"United Kingdom"},
+      {"code":"DE","name":"Germany","gluetun_country":"Germany"},
+      {"code":"JP","name":"Japan","gluetun_country":"Japan"},
+      {"code":"CH","name":"Switzerland","gluetun_country":"Switzerland"},
+      {"code":"SE","name":"Sweden","gluetun_country":"Sweden"},
+      {"code":"CA","name":"Canada","gluetun_country":"Canada"}
+    ]

@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailscale-exit-node-manager-api
+  namespace: tailscale-exit-node-manager
+  labels:
+    app: tailscale-exit-node-manager-api
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tailscale-exit-node-manager-api
+  template:
+    metadata:
+      labels:
+        app: tailscale-exit-node-manager-api
+    spec:
+      serviceAccountName: exit-node-manager-api
+      imagePullSecrets:
+        - name: tailscale-exit-node-manager-ghcr-pull
+      containers:
+        - name: api
+          image: ghcr.io/member87/tailscale-exit-node-manager-api:d42f522edc4e2218f6d5a54b363d995f334be2bf
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: HEADSCALE_API_URL
+              value: "https://headscale.lab.jackhumes.com"
+            - name: HEADSCALE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-exit-node-manager-secrets
+                  key: HEADSCALE_API_KEY
+            - name: GLUETUN_CONTROL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-exit-node-manager-secrets
+                  key: GLUETUN_CONTROL_API_KEY
+            - name: HEADSCALE_USER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: tailscale-exit-node-manager-config
+                  key: HEADSCALE_USER_ID
+            - name: MAX_CONCURRENT_EXIT_NODES
+              valueFrom:
+                configMapKeyRef:
+                  name: tailscale-exit-node-manager-config
+                  key: MAX_CONCURRENT_EXIT_NODES
+            - name: DB_PATH
+              value: "/data/exit-node-manager.db"
+            - name: COUNTRIES_CONFIG_PATH
+              value: "/etc/exit-node-manager/countries.json"
+            - name: PORT
+              value: "8080"
+            - name: NAMESPACE
+              value: "tailscale-exit-node-manager"
+            - name: SECRET_NAME
+              value: "tailscale-exit-node-manager-secrets"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: countries-config
+              mountPath: /etc/exit-node-manager/countries.json
+              subPath: countries.json
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: tailscale-exit-node-manager-data
+        - name: countries-config
+          configMap:
+            name: tailscale-exit-node-manager-config
+            items:
+              - key: countries.json
+                path: countries.json

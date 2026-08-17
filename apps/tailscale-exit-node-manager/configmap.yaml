@@ -6,7 +6,7 @@ metadata:
   namespace: tailscale-exit-node-manager
 data:
   HEADSCALE_USER_ID: "9" # `exit-nodes` Headscale user, created via `headscale users create exit-nodes`
-  VPN_KEY_POOL_SIZE: "5"
+  VPN_KEY_POOL_SIZE: "3"
   countries.json: |
     [
       {"code":"NL","name":"Netherlands","gluetun_country":"Netherlands"},

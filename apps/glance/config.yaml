@@ -181,6 +181,32 @@ pages:
             commits-limit: 3
 
           - type: custom-api
+            title: Exit Nodes
+            cache: 30s
+            url: http://tailscale-exit-node-manager-api.tailscale-exit-node-manager.svc.cluster.local:8080/api/stats
+            template: |
+              <div class="flex flex-column gap-10">
+                <div class="flex justify-between items-center">
+                  <span>Running</span>
+                  <span class="size-h3 {{ if gt (.JSON.Int "running_count") 0 }}color-positive{{ end }}">{{ .JSON.Int "running_count" }} / {{ .JSON.Int "total_countries" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>VPN slots</span>
+                  <span class="size-h4">{{ .JSON.Int "slots_used" }} / {{ .JSON.Int "slots_total" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>Tailnet devices online</span>
+                  <span class="size-h4">{{ .JSON.Int "tailnet_devices_online" }} / {{ .JSON.Int "tailnet_devices_total" }}</span>
+                </div>
+                {{ if gt (.JSON.Int "error_count") 0 }}
+                <div class="flex justify-between items-center">
+                  <span>Errors</span>
+                  <span class="size-h4 color-negative">{{ .JSON.Int "error_count" }}</span>
+                </div>
+                {{ end }}
+              </div>
+
+          - type: custom-api
             title: London Transport Status
             cache: 15m
             template: |

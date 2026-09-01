@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: epg
-          image: ghcr.io/iptv-org/epg:master@sha256:13704b2a4cd658930fbabe80a78273bc79618a3802fb5d60a90490a56044072e
+          image: ghcr.io/iptv-org/epg:master@sha256:0db04cf94eafb354d478d39f21554f4ac18bc2c7501649f640efc7a1353f86b2
           ports:
             - containerPort: 3000
               name: http

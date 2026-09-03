@@ -37,9 +37,8 @@ data:
     # and streamed media (e.g. Jellyfin to remote/TV clients) stutters.
     [[proxies]]
     name = "headscale-stun"
-    type = "udp"
+    localPort = 3479
     localIP = "headscale.headscale.svc.cluster.local"
-    localPort = 3478
     remotePort = 3478
 
     # Dawarich tunnel - routes through Traefik for CrowdSec protection

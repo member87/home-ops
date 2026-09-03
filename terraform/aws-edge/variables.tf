@@ -41,7 +41,7 @@ variable "admin_cidrs" {
 }
 
 variable "frps_auth_token" {
-  description = "frps auth token. REUSE the token from the Oracle box so the in-cluster frpc keeps authenticating unchanged: ssh ubuntu@140.238.67.83 'grep -A1 auth.token ~/frp-tunnel/frps.toml'. Passing via TF_VAR_frps_auth_token keeps it out of git."
+  description = "frps auth token. REUSE the token from the old box so the in-cluster frpc keeps authenticating unchanged. Passing via TF_VAR_frps_auth_token keeps it out of git."
   type        = string
   sensitive   = true
 }
@@ -53,22 +53,23 @@ variable "frps_dashboard_password" {
 }
 
 variable "tailscale_authkey" {
-  description = "Headscale preauth key so the edge joins the tailnet as a remote probe node (headscale preauthkeys create --user 1 --reusable --expiration 720h). Enables E2E direct-path verification: tailscale ping from this public vantage to k8s-subnet-router must go direct, not via DERP. Empty string skips the join."
+  description = "Headscale preauth key so the edge joins the tailnet as a remote probe node. Enables E2E direct-path verification: tailscale ping from this public vantage to k8s-subnet-router must go direct, not via DERP. Generate a FRESH key per instance recreation. Empty string skips the join."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "cloudflare_api_token" {
-  description = "API token with Zone.DNS Edit on the zone. TF_VAR_cloudflare_api_token; never committed."
+  description = "API token with Zone.DNS Edit on the zone. TF_VAR_cloudflare_api_token; never committed. Leave empty to manage DNS manually in the console."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "cloudflare_zone_id" {
-  description = "Cloudflare zone id for the public domain (dashboard -> domain overview -> Zone ID)."
+  description = "Cloudflare zone id for the public domain (dashboard -> domain overview -> Zone ID). Only used when an API token is set."
   type        = string
+  default     = ""
 }
 
 variable "public_domain" {

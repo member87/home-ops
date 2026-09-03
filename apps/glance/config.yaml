@@ -46,6 +46,9 @@ pages:
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
                 icon: sh:kubernetes
+              - title: Docs
+                url: https://docs.lab.jackhumes.com
+                icon: sh:book-open
               - title: K9s
                 url: https://k9s.lab.jackhumes.com
                 icon: sh:kubernetes

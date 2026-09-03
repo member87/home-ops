@@ -1,0 +1,16 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: docs
+  namespace: docs
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`docs.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: docs
+          port: 80
+  tls:
+    secretName: docs-tls

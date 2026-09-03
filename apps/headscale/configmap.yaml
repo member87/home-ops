@@ -33,11 +33,10 @@ data:
         region_name: "Headscale Embedded DERP"
         # Only nodes registered with this Headscale may use the relay.
         verify_clients: true
-        # Required when the DERP server is enabled. STUN (UDP 3478) gives
-        # clients public-endpoint discovery so direct WireGuard paths form
-        # instead of DERP relaying. Exposed via the frp-client UDP proxy
-        # (VPS :3478/udp); the region advertises it at 140.238.67.83:3478.
-        stun_listen_addr: "0.0.0.0:3478"
+        # STUN is served by the coturn sidecar (see templates/deployment.yaml):
+        # headscale v0.29's embedded derper binds this port but never answers
+        # binding requests, which blocks coturn from binding. Empty = disabled.
+        stun_listen_addr: ""
         private_key_path: /var/lib/headscale/derp_server_private.key
         automatically_add_embedded_derp_region: true
         # Publish the VPS public IP directly so clients reach the relay even when

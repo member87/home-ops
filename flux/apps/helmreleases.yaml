@@ -420,12 +420,13 @@ spec:
   releaseName: headscale
   targetNamespace: headscale
   install:
-    createNamespace: true
     remediation:
       retries: 3
+    timeout: 15m
   upgrade:
     remediation:
       retries: 3
+    timeout: 15m
   chart:
     spec:
       chart: apps/headscale
@@ -531,9 +532,11 @@ spec:
     createNamespace: true
     remediation:
       retries: 3
+    timeout: 15m
   upgrade:
     remediation:
       retries: 3
+    timeout: 15m
   chart:
     spec:
       chart: apps/jellyfin

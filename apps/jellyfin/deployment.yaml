@@ -76,18 +76,11 @@ spec:
       labels:
         app: jellyfin
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups:
-          - 44
       nodeSelector:
         kubernetes.io/hostname: talos-lox-1n1
       containers:
         - name: jellyfin
-          image: ghcr.io/jellyfin/jellyfin:10.11.11
+          image: lscr.io/linuxserver/jellyfin:10.11.11
           securityContext:
             privileged: true
           ports:

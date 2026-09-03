@@ -1,6 +1,6 @@
 #!/bin/bash
-# Lightsail launch script: replicates the Oracle VPS ~/frp-tunnel stack
-# (frps + Caddy, both host-network Docker) that fronts the home cluster.
+# Lightsail executes launch scripts with sh/dash; re-exec under bash.
+if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -euo pipefail
 
 timedatectl set-timezone Europe/London
@@ -31,6 +31,13 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+
+  coturn:
+    image: coturn/coturn:4.6.3
+    container_name: coturn
+    restart: unless-stopped
+    network_mode: host
+    command: -n --stun-only --no-cli --no-tls --no-dtls --listening-port=3478
 
 volumes:
   caddy_data:

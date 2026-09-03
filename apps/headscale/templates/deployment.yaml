@@ -65,32 +65,6 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
-
-        # headscale v0.29's embedded derper STUN logs "stun server started"
-        # but never answers binding requests (verified pod-IP direct), and it
-        # cannot be disabled (empty stun_listen_addr falls back to :3478).
-        # derper keeps dead-binding 3478; coturn answers on 3479 and the
-        # Service/frp proxy remap public 3478 -> 3479.
-        - name: stun
-          image: coturn/coturn:4.6.3
-          args:
-            - -n
-            - --stun-only
-            - --no-cli
-            - --no-tls
-            - --no-dtls
-            - --listening-port=3479
-          ports:
-            - containerPort: 3479
-              name: stun
-              protocol: UDP
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              cpu: 100m
-              memory: 64Mi
       volumes:
         - name: config
           configMap:

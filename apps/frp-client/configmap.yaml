@@ -31,15 +31,9 @@ data:
     localPort = 8080
     remotePort = 8082
 
-    # STUN for the embedded DERP region. Public 3478/udp on both edges
-    # forwards to the headscale Service (port 3478), whose targetPort maps
-    # to the coturn sidecar on pod port 3479 (derper's 3478 socket is dead).
-    [[proxies]]
-    name = "headscale-stun"
-    type = "udp"
-    localIP = "headscale.headscale.svc.cluster.local"
-    localPort = 3478
-    remotePort = 3478
+    # STUN no longer transits frp: coturn runs directly on the edge box
+    # (18.171.34.111:3478/udp) where it sees clients' real source IPs. A
+    # proxied STUN reports the frpc pod IP, useless for direct paths.
 
     # Dawarich tunnel - routes through Traefik for CrowdSec protection
     [[proxies]]

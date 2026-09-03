@@ -107,7 +107,7 @@ resource "aws_lightsail_instance_public_ports" "edge" {
 # here once a Cloudflare API token is provided; otherwise records stay
 # console-managed.
 resource "cloudflare_dns_record" "public" {
-  for_each = var.cloudflare_api_token != "" ? toset(var.public_hostnames) : toset([])
+  for_each = var.manage_dns ? toset(var.public_hostnames) : toset([])
   zone_id  = var.cloudflare_zone_id
   name     = "${each.key}.${var.public_domain}"
   type     = "A"

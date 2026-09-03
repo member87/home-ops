@@ -59,6 +59,12 @@ variable "tailscale_authkey" {
   default     = ""
 }
 
+
+variable "manage_dns" {
+  description = "Set true to let Terraform manage the public A records (requires cloudflare_api_token + cloudflare_zone_id). Sensitive values cannot drive for_each, hence this separate flag."
+  type        = bool
+  default     = false
+}
 variable "cloudflare_api_token" {
   description = "API token with Zone.DNS Edit on the zone. TF_VAR_cloudflare_api_token; never committed. Leave empty to manage DNS manually in the console."
   type        = string

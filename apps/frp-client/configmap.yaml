@@ -31,6 +31,17 @@ data:
     localPort = 8080
     remotePort = 8082
 
+    # Headscale embedded STUN (UDP) — the embedded DERP region advertises STUN
+    # at 140.238.67.83:3478. Without it clients cannot discover their public
+    # endpoint, every connection falls back to DERP relaying through this VPS,
+    # and streamed media (e.g. Jellyfin to remote/TV clients) stutters.
+    [[proxies]]
+    name = "headscale-stun"
+    type = "udp"
+    localIP = "headscale.headscale.svc.cluster.local"
+    localPort = 3478
+    remotePort = 3478
+
     # Dawarich tunnel - routes through Traefik for CrowdSec protection
     [[proxies]]
     name = "dawarich"

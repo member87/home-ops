@@ -27,6 +27,9 @@ spec:
               name: metrics
             - containerPort: 50443
               name: grpc
+            - containerPort: 3478
+              name: stun
+              protocol: UDP
           env:
             - name: TZ
               value: UTC

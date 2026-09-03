@@ -33,9 +33,10 @@ data:
         region_name: "Headscale Embedded DERP"
         # Only nodes registered with this Headscale may use the relay.
         verify_clients: true
-        # Required when the DERP server is enabled. STUN (UDP 3478) aids NAT
-        # traversal on normal networks; it is not exposed outside the pod, so
-        # direct-path discovery still falls back to the public DERP map below.
+        # Required when the DERP server is enabled. STUN (UDP 3478) gives
+        # clients public-endpoint discovery so direct WireGuard paths form
+        # instead of DERP relaying. Exposed via the frp-client UDP proxy
+        # (VPS :3478/udp); the region advertises it at 140.238.67.83:3478.
         stun_listen_addr: "0.0.0.0:3478"
         private_key_path: /var/lib/headscale/derp_server_private.key
         automatically_add_embedded_derp_region: true

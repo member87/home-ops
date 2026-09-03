@@ -27,9 +27,6 @@ spec:
               name: metrics
             - containerPort: 50443
               name: grpc
-            - containerPort: 3478
-              name: stun
-              protocol: UDP
           env:
             - name: TZ
               value: UTC
@@ -61,6 +58,31 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
+
+        # headscale v0.29's embedded derper STUN logs "stun server started"
+        # but never answers binding requests (verified in-cluster, pod-IP
+        # direct). coturn serves STUN on the same port; the Service's
+        # `stun` targetPort and the frp udp proxy keep working unchanged.
+        - name: stun
+          image: coturn/coturn:4.6.3
+          args:
+            - -n
+            - --stun-only
+            - --no-cli
+            - --no-tls
+            - --no-dtls
+            - --listening-port=3478
+          ports:
+            - containerPort: 3478
+              name: stun
+              protocol: UDP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
       volumes:
         - name: config
           configMap:

@@ -9,8 +9,6 @@ provider "cloudflare" {
 #   -replace=aws_lightsail_static_ip_attachment.edge
 # (name-based references do not re-converge on their own).
 
-resource "aws_lightsail_key_pair" "edge" {
-}
 
 # Registers the workstation's existing key with Lightsail so `ssh ubuntu@<ip>`
 # works exactly like it did against the Oracle VPS.

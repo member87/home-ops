@@ -23,6 +23,7 @@ resource "aws_lightsail_instance" "edge" {
   user_data = templatefile("${path.module}/launch.sh.tpl", {
     frps_auth_token         = var.frps_auth_token
     frps_dashboard_password = var.frps_dashboard_password
+    tailscale_authkey       = var.tailscale_authkey
   })
 
   tags = {

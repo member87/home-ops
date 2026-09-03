@@ -81,4 +81,16 @@ EOF
 
 cd /opt/frp-tunnel
 systemctl enable --now docker
+
+# Join the tailnet as a permanent remote vantage point (public IP, outside the
+# home NAT). Verifies E2E direct paths: `tailscale ping k8s-subnet-router`
+# from here must return a direct pong, never DERP, once STUN is live.
+if [ -n "${tailscale_authkey}" ]; then
+  curl -fsSL https://tailscale.com/install.sh | sh
+  tailscale up \
+    --login-server=https://headscale.jackhumes.com \
+    --authkey="${tailscale_authkey}" \
+    --hostname=aws-edge \
+    --accept-dns=false
+fi
 docker compose up -d

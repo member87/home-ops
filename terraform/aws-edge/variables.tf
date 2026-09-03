@@ -51,3 +51,10 @@ variable "frps_dashboard_password" {
   type        = string
   sensitive   = true
 }
+
+variable "tailscale_authkey" {
+  description = "Headscale preauth key so the edge joins the tailnet as a remote probe node (headscale preauthkeys create --user 1 --reusable --expiration 720h). Enables E2E direct-path verification: tailscale ping from this public vantage to k8s-subnet-router must go direct, not via DERP. Empty string skips the join."
+  type        = string
+  sensitive   = true
+  default     = ""
+}

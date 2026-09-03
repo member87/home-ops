@@ -105,6 +105,22 @@ fi
 # here, so this bounds worst-case data-transfer burn from any broken client
 # (~3.6 GB/h of allowance) without affecting direct streams (they never
 # traverse this box) or the tiny web-app traffic. Raise if web usage grows.
-tc qdisc replace dev ens5 root tbf rate 4mbit burst 256kbit latency 50ms
+# systemd unit so the cap survives reboots (tc state is not persistent).
+cat > /etc/systemd/system/egress-cap.service <<'EOF'
+[Unit]
+Description=Egress bandwidth cap (Lightsail data-transfer budget guard)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/tc qdisc replace dev ens5 root tbf rate 4mbit burst 256kbit latency 50ms
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable --now egress-cap.service
 
 docker compose up -d

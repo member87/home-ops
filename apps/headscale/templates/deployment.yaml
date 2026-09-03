@@ -9,6 +9,9 @@ spec:
  # the volume first (same pattern as tailscale-dns).
   strategy:
     type: Recreate
+    # Explicit null: helm's 3-way patch otherwise keeps the live
+    # rollingUpdate stanza, which the API forbids under type: Recreate.
+    rollingUpdate: null
   selector:
     matchLabels:
       app: headscale

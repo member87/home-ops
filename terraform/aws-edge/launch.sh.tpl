@@ -37,7 +37,7 @@ services:
     container_name: coturn
     restart: unless-stopped
     network_mode: host
-    command: -n --stun-only --no-cli --no-tls --no-dtls --listening-port=3478
+    command: -n --stun-only --no-cli --no-tls --no-dtls --listening-ip=0.0.0.0 --listening-port=3478
 
 volumes:
   caddy_data:

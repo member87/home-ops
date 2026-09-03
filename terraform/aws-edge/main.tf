@@ -1,5 +1,15 @@
-provider "aws" {
-  region = var.region
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
+# NOTE on instance replacement: `tofu apply -replace=aws_lightsail_instance.edge`
+# resets the Lightsail firewall to defaults and detaches the static IP. Always
+# follow it with:
+#   -replace=aws_lightsail_instance_public_ports.edge
+#   -replace=aws_lightsail_static_ip_attachment.edge
+# (name-based references do not re-converge on their own).
+
+resource "aws_lightsail_key_pair" "edge" {
 }
 
 # Registers the workstation's existing key with Lightsail so `ssh ubuntu@<ip>`
@@ -93,6 +103,17 @@ resource "aws_lightsail_instance_public_ports" "edge" {
     cidrs      = ["0.0.0.0/0"]
     ipv6_cidrs = ["::/0"]
   }
+}
+
+# Public DNS: the edge-served hostnames track the static IP.
+resource "cloudflare_dns_record" "public" {
+  for_each = toset(var.public_hostnames)
+  zone_id  = var.cloudflare_zone_id
+  name     = "${each.key}.${var.public_domain}"
+  type     = "A"
+  content  = aws_lightsail_static_ip.edge.ip_address
+  ttl      = 300
+  proxied  = var.dns_proxied
 }
 
 output "static_ip" {

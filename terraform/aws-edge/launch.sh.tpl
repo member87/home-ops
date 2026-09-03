@@ -1,6 +1,6 @@
 #!/bin/bash
 # Lightsail executes launch scripts with sh/dash; re-exec under bash.
-if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
+if [ -z "$${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -euo pipefail
 
 timedatectl set-timezone Europe/London

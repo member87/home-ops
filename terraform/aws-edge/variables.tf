@@ -58,3 +58,33 @@ variable "tailscale_authkey" {
   sensitive   = true
   default     = ""
 }
+
+variable "cloudflare_api_token" {
+  description = "API token with Zone.DNS Edit on the zone. TF_VAR_cloudflare_api_token; never committed."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone id for the public domain (dashboard -> domain overview -> Zone ID)."
+  type        = string
+}
+
+variable "public_domain" {
+  description = "Public domain the edge serves."
+  type        = string
+  default     = "jackhumes.com"
+}
+
+variable "public_hostnames" {
+  description = "Hostnames that must point at the edge static IP."
+  type        = list(string)
+  default     = ["headscale", "auth", "dawarich"]
+}
+
+variable "dns_proxied" {
+  description = "Cloudflare proxy (orange cloud) for the public records. Keep false: ACME HTTP-01 and DERP need the real IP."
+  type        = bool
+  default     = false
+}

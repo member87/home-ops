@@ -27,7 +27,7 @@ resource "aws_lightsail_instance" "edge" {
   })
 
   tags = {
-    Purpose = "home-ops public edge (frps + Caddy)"
+    Purpose = "home-ops public edge: frps + Caddy"
   }
 }
 
@@ -40,6 +40,7 @@ resource "aws_lightsail_static_ip_attachment" "edge" {
   static_ip_name = aws_lightsail_static_ip.edge.name
   instance_name  = aws_lightsail_instance.edge.name
 }
+
 
 # Platform firewall replaces the Oracle box's host iptables entirely
 # (Lightsail Ubuntu images ship with no restrictive host rules).
@@ -54,40 +55,43 @@ resource "aws_lightsail_instance_public_ports" "edge" {
     cidrs     = var.admin_cidrs
   }
 
-  # Caddy HTTP->HTTPS redirects + ACME HTTP-01 fallback.
   port_info {
-    protocol  = "tcp"
-    from_port = 80
-    to_port   = 80
-    cidrs     = ["0.0.0.0/0", "::/0"]
+    protocol   = "tcp"
+    from_port  = 80
+    to_port    = 80
+    cidrs      = ["0.0.0.0/0"]
+    ipv6_cidrs = ["::/0"]
   }
 
   # Caddy TLS: auth/headscale/dawarich public entrypoints.
   port_info {
-    protocol  = "tcp"
-    from_port = 443
-    to_port   = 443
-    cidrs     = ["0.0.0.0/0", "::/0"]
+    protocol   = "tcp"
+    from_port  = 443
+    to_port    = 443
+    cidrs      = ["0.0.0.0/0"]
+    ipv6_cidrs = ["::/0"]
   }
 
   # frps control/data channel for the in-cluster frpc. Token-authenticated,
   # same exposure as the Oracle box. Tighten to the home IP if you accept
   # re-applying whenever the broadband IP changes.
   port_info {
-    protocol  = "tcp"
-    from_port = 7000
-    to_port   = 7000
-    cidrs     = ["0.0.0.0/0", "::/0"]
+    protocol   = "tcp"
+    from_port  = 7000
+    to_port    = 7000
+    cidrs      = ["0.0.0.0/0"]
+    ipv6_cidrs = ["::/0"]
   }
 
   # STUN for the headscale embedded DERP region. MUST stay public - this is
   # what lets tailnet peers discover public endpoints and form direct
   # WireGuard paths instead of relaying through this box.
   port_info {
-    protocol  = "udp"
-    from_port = 3478
-    to_port   = 3478
-    cidrs     = ["0.0.0.0/0", "::/0"]
+    protocol   = "udp"
+    from_port  = 3478
+    to_port    = 3478
+    cidrs      = ["0.0.0.0/0"]
+    ipv6_cidrs = ["::/0"]
   }
 }
 

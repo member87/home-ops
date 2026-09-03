@@ -100,4 +100,11 @@ if [ -n "${tailscale_authkey}" ]; then
     --hostname=aws-edge \
     --accept-dns=false
 fi
+
+# Cap egress at 4mbit: DERP-relayed streams are the only high-volume egress
+# here, so this bounds worst-case data-transfer burn from any broken client
+# (~3.6 GB/h of allowance) without affecting direct streams (they never
+# traverse this box) or the tiny web-app traffic. Raise if web usage grows.
+tc qdisc replace dev ens5 root tbf rate 4mbit burst 256kbit latency 50ms
+
 docker compose up -d

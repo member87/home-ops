@@ -9,6 +9,10 @@ apt-get update
 apt-get install -y ca-certificates curl
 curl -fsSL https://get.docker.com | sh
 
+# 512MB RAM is tight for docker+4 daemons; spikes (cert ops, pulls, netcheck
+# bursts) otherwise trigger reclaim storms that blackhole networking.
+fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+grep -q /swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 mkdir -p /opt/frp-tunnel /var/log/caddy
 
 cat > /opt/frp-tunnel/docker-compose.yml <<'EOF'

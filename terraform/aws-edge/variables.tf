@@ -69,7 +69,7 @@ variable "cloudflare_api_token" {
   description = "API token with Zone.DNS Edit on the zone. TF_VAR_cloudflare_api_token; never committed. Leave empty to manage DNS manually in the console."
   type        = string
   sensitive   = true
-  default     = ""
+  default     = "disabled-dns-management"
 }
 
 variable "cloudflare_zone_id" {

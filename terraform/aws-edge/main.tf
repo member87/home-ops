@@ -1,7 +1,3 @@
-provider "cloudflare" {
-  api_token = var.cloudflare_api_token
-}
-
 # NOTE on instance replacement: `tofu apply -replace=aws_lightsail_instance.edge`
 # resets the Lightsail firewall to defaults and detaches the static IP. Always
 # follow it with:
@@ -101,19 +97,6 @@ resource "aws_lightsail_instance_public_ports" "edge" {
     cidrs      = ["0.0.0.0/0"]
     ipv6_cidrs = ["::/0"]
   }
-}
-
-# Public DNS: the edge-served hostnames track the static IP. Only managed
-# here once a Cloudflare API token is provided; otherwise records stay
-# console-managed.
-resource "cloudflare_dns_record" "public" {
-  for_each = var.manage_dns ? toset(var.public_hostnames) : toset([])
-  zone_id  = var.cloudflare_zone_id
-  name     = "${each.key}.${var.public_domain}"
-  type     = "A"
-  content  = aws_lightsail_static_ip.edge.ip_address
-  ttl      = 300
-  proxied  = var.dns_proxied
 }
 
 output "static_ip" {

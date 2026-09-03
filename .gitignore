@@ -3,3 +3,10 @@ backups/
 # Age private keys - NEVER commit
 *.age-key
 keys.txt
+
+# Terraform (edge stack) - state and real tfvars hold secrets/values
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform/**/*.tfvars
+!terraform/**/*.tfvars.example

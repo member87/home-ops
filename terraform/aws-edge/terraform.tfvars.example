@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (gitignored) or export TF_VAR_* instead.
+# Secrets must stay out of git - repo rule: never commit plaintext secrets.
+
+# Reuse the existing token so the in-cluster frpc authenticates unchanged:
+#   ssh ubuntu@140.238.67.83 'grep -A2 "auth.token" ~/frp-tunnel/frps.toml'
+# frps_auth_token          = "..."
+# frps_dashboard_password  = "..."
+
+# Optional overrides:
+# region             = "eu-west-2"
+# bundle_id          = "micro_3_0"   # 1GB RAM
+# admin_cidrs        = ["<your-ip>/32"]

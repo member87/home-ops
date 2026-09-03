@@ -33,10 +33,11 @@ data:
         region_name: "Headscale Embedded DERP"
         # Only nodes registered with this Headscale may use the relay.
         verify_clients: true
-        # STUN is served by the coturn sidecar (see templates/deployment.yaml):
-        # headscale v0.29's embedded derper binds this port but never answers
-        # binding requests, which blocks coturn from binding. Empty = disabled.
-        stun_listen_addr: ""
+        # Embedded STUN binds 3478 but never answers (empty value is ignored,
+        # headscale defaults back). It keeps the port + advertises STUNPort
+        # 3478 in the derpmap; coturn answers on 3479 and frp/service remap
+        # public 3478 -> pod 3479. See templates/deployment.yaml.
+        stun_listen_addr: "0.0.0.0:3478"
         private_key_path: /var/lib/headscale/derp_server_private.key
         automatically_add_embedded_derp_region: true
         # Publish the VPS public IP directly so clients reach the relay even when

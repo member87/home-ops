@@ -4,7 +4,11 @@ metadata:
   name: headscale
   namespace: headscale
 spec:
-  replicas: 1
+  # Single replica on an RWO Longhorn PVC: RollingUpdate deadlocks on
+ # Multi-Attach when the new pod lands on another node. Recreate releases
+ # the volume first (same pattern as tailscale-dns).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: headscale

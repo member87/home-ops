@@ -37,7 +37,7 @@ data:
     # and streamed media (e.g. Jellyfin to remote/TV clients) stutters.
     [[proxies]]
     name = "headscale-stun"
-    localPort = 3479
+    localPort = 3478
     localIP = "headscale.headscale.svc.cluster.local"
     remotePort = 3478
 

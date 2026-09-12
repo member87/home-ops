@@ -1,0 +1,142 @@
+# Charts with a real upstream dependency. reconcileStrategy: ChartVersion keeps an
+# unrelated commit from re-rendering or re-upgrading them; only a Chart.yaml version
+# bump or a values change here does. One Kustomization per release keeps the
+# dependency edges as narrow as they were before the migration.
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  suspend: true
+  interval: 10m0s
+  releaseName: immich
+  targetNamespace: immich
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: apps/immich
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+  values:
+    enabled: false
+
+    immich:
+      controllers:
+        main:
+          containers:
+            main:
+              image:
+                tag: v2.6.1
+              env:
+                DB_URL:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-secrets
+                      key: DB_URL
+                DB_VECTOR_EXTENSION: pgvector
+                TZ: Europe/London
+
+      immich:
+        persistence:
+          library:
+            existingClaim: immich-library
+
+      server:
+        controllers:
+          main:
+            replicas: 1
+            strategy: RollingUpdate
+            rollingUpdate:
+              unavailable: 1
+              surge: 0
+            pod:
+              affinity:
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/controller: main
+                          app.kubernetes.io/instance: immich
+                          app.kubernetes.io/name: server
+                      topologyKey: kubernetes.io/hostname
+              topologySpreadConstraints:
+                - maxSkew: 1
+                  topologyKey: kubernetes.io/hostname
+                  whenUnsatisfiable: DoNotSchedule
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/controller: main
+                      app.kubernetes.io/instance: immich
+                      app.kubernetes.io/name: server
+            containers:
+              main:
+                env:
+                  IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
+                resources:
+                  limits:
+                    memory: 1536Mi
+        persistence:
+          immich-config:
+            enabled: true
+            type: secret
+            name: immich-oidc-config
+            globalMounts:
+              - path: /immich-config
+                readOnly: true
+
+      valkey:
+        enabled: true
+        persistence:
+          data:
+            type: persistentVolumeClaim
+            storageClass: longhorn
+            size: 2Gi
+            accessMode: ReadWriteOnce
+
+      machine-learning:
+        controllers:
+          main:
+            replicas: 1
+            strategy: RollingUpdate
+            rollingUpdate:
+              unavailable: 1
+              surge: 0
+            pod:
+              affinity:
+                podAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/controller: main
+                          app.kubernetes.io/instance: immich
+                          app.kubernetes.io/name: machine-learning
+                      topologyKey: kubernetes.io/hostname
+            containers:
+              main:
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 1Gi
+                  limits:
+                    cpu: 600m
+                    memory: 2Gi
+        persistence:
+          cache:
+            type: persistentVolumeClaim
+            storageClass: longhorn
+            size: 20Gi
+            accessMode: ReadWriteOnce

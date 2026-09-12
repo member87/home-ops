@@ -2,6 +2,8 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
+  annotations:
+    helm.sh/resource-policy: keep   # never let Helm delete this object
   name: immich-cert
   namespace: immich
 spec:

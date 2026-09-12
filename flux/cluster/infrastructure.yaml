@@ -8,14 +8,14 @@ metadata:
   name: cert-manager-issuers
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./infrastructure/cert-manager
   prune: true
   wait: true
   dependsOn:
-    - name: helm-controllers
+    - name: helm-cert-manager
   sourceRef:
     kind: GitRepository
     name: home-ops
@@ -27,7 +27,7 @@ metadata:
   name: metallb
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./infrastructure/metallb
@@ -44,7 +44,7 @@ metadata:
   name: metallb-config
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./infrastructure/metallb/config
@@ -63,7 +63,7 @@ metadata:
   name: sealed-secrets
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./infrastructure/sealed-secrets
@@ -80,12 +80,32 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./infrastructure/traefik
   prune: true
   wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+# The entrypoint manages itself: without this, a change to flux/system (such as the
+# path change in this migration) is never delivered and has to be applied by hand.
+# wait: false because it reconciles its own parent Kustomization.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./flux/system
+  prune: false
+  wait: false
   sourceRef:
     kind: GitRepository
     name: home-ops

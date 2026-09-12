@@ -8,7 +8,7 @@ metadata:
   name: alloy
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/alloy
@@ -26,7 +26,7 @@ metadata:
   namespace: flux-system
 spec:
   suspend: true
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/audiobookshelf
@@ -43,7 +43,7 @@ metadata:
   name: bazarr
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/bazarr
@@ -60,7 +60,7 @@ metadata:
   name: cdn
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/cdn
@@ -77,7 +77,7 @@ metadata:
   name: changedetection
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/changedetection
@@ -94,7 +94,7 @@ metadata:
   name: crowdsec
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/crowdsec
@@ -111,7 +111,7 @@ metadata:
   name: dawarich
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 15m0s
   path: ./apps/dawarich
@@ -128,7 +128,7 @@ metadata:
   name: docs
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 15m0s
   path: ./apps/docs
@@ -145,7 +145,7 @@ metadata:
   name: epg
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/epg
@@ -162,7 +162,7 @@ metadata:
   name: frp-client
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/frp-client
@@ -179,7 +179,7 @@ metadata:
   name: glance
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/glance
@@ -196,7 +196,7 @@ metadata:
   name: gluetun
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/gluetun
@@ -213,7 +213,7 @@ metadata:
   name: grafana
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/grafana
@@ -230,7 +230,7 @@ metadata:
   name: headplane
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/headplane
@@ -247,7 +247,7 @@ metadata:
   name: headscale
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 15m0s
   path: ./apps/headscale
@@ -264,7 +264,7 @@ metadata:
   name: home-assistant
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/home-assistant
@@ -281,7 +281,7 @@ metadata:
   name: ip-checker
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/ip-checker
@@ -298,7 +298,7 @@ metadata:
   name: jellyfin
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 15m0s
   path: ./apps/jellyfin
@@ -315,7 +315,7 @@ metadata:
   name: jellyseerr
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/jellyseerr
@@ -332,7 +332,7 @@ metadata:
   name: kube-state-metrics
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/kube-state-metrics
@@ -349,7 +349,7 @@ metadata:
   name: lldap
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/lldap
@@ -366,7 +366,7 @@ metadata:
   name: loki
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/loki
@@ -383,7 +383,7 @@ metadata:
   name: mqtt
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/mqtt
@@ -400,7 +400,7 @@ metadata:
   name: nas
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/nas
@@ -417,7 +417,7 @@ metadata:
   name: node-exporter
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/node-exporter
@@ -434,7 +434,7 @@ metadata:
   name: pocket-id
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/pocket-id
@@ -451,7 +451,7 @@ metadata:
   name: postgresql
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/postgresql
@@ -468,7 +468,7 @@ metadata:
   name: profilarr
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/profilarr
@@ -485,7 +485,7 @@ metadata:
   name: prometheus
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/prometheus
@@ -502,7 +502,7 @@ metadata:
   name: prowlarr
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/prowlarr
@@ -521,7 +521,7 @@ metadata:
   name: qbittorrent
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/qbittorrent
@@ -538,7 +538,7 @@ metadata:
   name: qui
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/qui
@@ -555,7 +555,7 @@ metadata:
   name: radar-routing
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/radar
@@ -572,7 +572,7 @@ metadata:
   name: radarr
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/radarr
@@ -589,7 +589,7 @@ metadata:
   name: sabnzbd
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/sabnzbd
@@ -607,7 +607,7 @@ metadata:
   namespace: flux-system
 spec:
   suspend: true
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/shelfmark
@@ -624,7 +624,7 @@ metadata:
   name: sonarr
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/sonarr
@@ -641,7 +641,7 @@ metadata:
   name: tailscale-dns
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/tailscale-dns
@@ -658,7 +658,7 @@ metadata:
   name: tailscale-exit-node-manager
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/tailscale-exit-node-manager
@@ -675,7 +675,7 @@ metadata:
   name: tailscale-subnet-router
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/tailscale-subnet-router
@@ -692,7 +692,7 @@ metadata:
   name: threadfin
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/threadfin
@@ -709,7 +709,7 @@ metadata:
   name: tinyauth
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/tinyauth
@@ -726,7 +726,7 @@ metadata:
   name: trek
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/trek
@@ -743,7 +743,7 @@ metadata:
   name: ttyd
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./apps/ttyd

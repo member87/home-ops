@@ -1,8 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "prHourlyLimit": 0,
-  "prConcurrentLimit": 0,
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
   },
@@ -132,7 +132,7 @@
   "packageRules": [
     {
       "matchDatasources": ["docker"],
-      "matchPackagePatterns": ["^ghcr\\.io/siderolabs/"],
+      "matchPackageNames": ["/^ghcr\\.io\\/siderolabs\\//"],
       "enabled": false
     },
     {
@@ -182,6 +182,12 @@
       "description": "Cluster-wide blast radius (storage, networking, TLS, Flux, Talos) is never automerged",
       "matchFileNames": ["infrastructure/**", "charts/**", "flux/**", "talos/**"],
       "automerge": false
+    },
+    {
+      "description": "Terraform providers keep the automerge they had under the old catch-all group",
+      "matchFileNames": ["terraform/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
     },
     {
       "description": "Chart version changes re-render a whole Helm release: always reviewed by hand",

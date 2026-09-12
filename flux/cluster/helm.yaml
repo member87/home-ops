@@ -1,16 +1,16 @@
-# HelmReleases are applied through these two Kustomizations so that ordering
-# (Kustomization dependsOn Kustomization) still works across Helm and plain manifests.
+# One Kustomization per Helm release: a failure in one chart no longer blocks the others,
+# and the dependency edges match what each HelmRelease declared before the migration.
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: helm-controllers
+  name: helm-cert-manager
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 15m0s
-  path: ./flux/helm/controllers
+  path: ./flux/helm/cert-manager
   prune: true
   wait: true
   sourceRef:
@@ -21,17 +21,86 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: helm-apps
+  name: helm-immich
   namespace: flux-system
 spec:
-  interval: 1h0m0s
+  interval: 15m0s
   retryInterval: 2m0s
   timeout: 15m0s
-  path: ./flux/helm/apps
+  path: ./flux/helm/immich
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-longhorn
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./flux/helm/longhorn
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-pihole
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./flux/helm/pihole
   prune: true
   wait: true
   dependsOn:
     - name: metallb-config
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-podinfo
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./flux/helm/podinfo
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-radar
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./flux/helm/radar
+  prune: true
+  wait: true
+  dependsOn:
     - name: radar-routing
   sourceRef:
     kind: GitRepository

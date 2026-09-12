@@ -4,12 +4,15 @@ Keep this file short. Prefer discovering current details from the repo over stor
 
 ## Repository
 
-- `apps/`: Kubernetes manifests and local Helm chart wrappers per application.
-- `flux/system/`: Flux `GitRepository` and root `Kustomization`.
-- `flux/apps/helmreleases.yaml`: Flux `HelmRelease` inventory for apps.
-- `infrastructure/`: cluster infrastructure charts/manifests such as MetalLB, Traefik, cert-manager, Sealed Secrets, Longhorn, and CoreDNS custom hosts.
+- `apps/`: plain Kubernetes manifests per application, each with a `kustomization.yaml`.
+- `flux/system/`: Flux `GitRepository` and root `Kustomization` (entrypoint `./flux/cluster`).
+- `flux/cluster/`: one Flux `Kustomization` per app/infra component (`apps.yaml`, `infrastructure.yaml`, `helm.yaml`).
+- `flux/helm/`: `HelmRepository` plus `HelmRelease` objects for the few charts with real upstream dependencies.
+- `infrastructure/`: cluster infrastructure manifests such as MetalLB, Traefik, cert-manager, Sealed Secrets, Longhorn, and CoreDNS custom hosts.
 - `talos/`: SOPS-encrypted Talos configs.
-- `charts/`: shared Helm charts.
+- `charts/`: wrapper charts for upstream Helm dependencies.
+- `scripts/validate-flux-manifests.sh`: build every path the Flux entrypoint references.
+- `scripts/adopt-helmrelease.sh`: hand a release from Helm to its Kustomization without running `helm uninstall`.
 - `seal-secrets.sh`: helper for Sealed Secrets.
 
 ## Core Rules
@@ -34,7 +37,10 @@ Keep this file short. Prefer discovering current details from the repo over stor
 - Internal app URLs use `<app>.lab.jackhumes.com`.
 - Public app URLs use `<app>.jackhumes.com` when exposed externally.
 - Pocket ID is the OIDC provider. Tiny Auth is used as ForwardAuth for apps without native OIDC.
-- Most app and infrastructure directories are local Helm chart wrappers: `Chart.yaml` plus `templates/manifests.yaml` packages plain YAML for Flux.
+- Apps and infrastructure are plain manifests applied by a per-component Flux `Kustomization`; there are no per-app wrapper charts. Only charts with a real upstream dependency stay `HelmRelease`s: `apps/immich`, `apps/pihole`, `apps/podinfo`, `charts/cert-manager`, `infrastructure/longhorn` (Git-sourced) and `radar` (skyhook `HelmRepository`), one `Kustomization` each under `flux/helm/<name>`.
+- Git-sourced `HelmRelease`s use `reconcileStrategy: ChartVersion`: changing files in those chart dirs only deploys when `Chart.yaml` `version` is bumped. `scripts/validate-flux-manifests.sh` fails the build if you forget. Values live in the `HelmRelease` `spec.values`, where edits deploy immediately.
+- Each `HelmRelease` carries `kustomize.toolkit.fluxcd.io/prune: disabled`: pruning one would make helm-controller uninstall the release and delete its PVCs.
+- Kustomization-managed components have no automatic rollback (Helm remediation is gone for them): a bad manifest stays applied and is fixed forward. Leaf reconcile interval is 15m; a git push still reconciles immediately.
 
 ## Secrets
 
@@ -57,13 +63,52 @@ sops --input-type yaml --output-type yaml talos/talosconfig
 ## Adding Or Updating Apps
 
 - Put app resources under `apps/<app-name>/`.
-- Typical files: `namespace.yaml`, `deployment.yaml`, `service.yaml`, `configmap.yaml`, `sealedsecret.yaml`, `ingressroute.yaml`, `Chart.yaml`, `templates/manifests.yaml`, `kustomization.yaml`.
-- Keep `Chart.yaml` minimal and keep `templates/manifests.yaml` aligned with the existing glob wrapper pattern.
-- Add or update the app `HelmRelease` in `flux/apps/helmreleases.yaml`.
+- Typical files: `namespace.yaml`, `deployment.yaml`, `service.yaml`, `configmap.yaml`, `sealedsecret.yaml`, `ingressroute.yaml`, `kustomization.yaml`.
+- Every hand-written manifest carries an explicit `metadata.namespace`; the only namespace transformers are `apps/{glance,ip-checker,nas}`, and glance/headscale need theirs because generated ConfigMaps have no namespace of their own. `kustomization.yaml` must reference every file in the directory.
+- Add a Flux `Kustomization` for the app in `flux/cluster/apps.yaml`, then run `scripts/validate-flux-manifests.sh`.
+- Only reach for a `HelmRelease` in `flux/helm/` when the app needs an upstream chart.
 - Use health checks where supported. Use TCP probes when no HTTP health endpoint exists.
 - For OIDC apps, create a Pocket ID client and seal the client secret.
 - For non-OIDC apps, add Tiny Auth ForwardAuth middleware.
 - Only add Grafana dashboards or app alerts when the app exposes Prometheus metrics or has a real exporter.
+
+## Helm To Kustomize Cutover (one-off, in progress)
+
+The live root `Kustomization` was applied by `bootstrap.sh`, not reconciled from Git, so the
+entrypoint move to `./flux/cluster` must be applied by hand once. Until step 1 runs, Flux is
+still trying to build the deleted `./flux/apps`.
+
+```bash
+# 0. preconditions: all nodes Ready, and no HelmRelease left in a failed/rollback state.
+#    A failing release keeps retrying remediation, so it would fight the new Kustomization
+#    over the same objects (Helm converging backwards, SSA converging forwards) until it is
+#    adopted. Fix it or suspend it first. Healthy releases do not fight: drift detection is
+#    off by default, so helm-controller only re-applies on a chart/values change.
+flux get helmreleases -A | grep -v True       # must be empty before merging
+# Merging re-upgrades the five Git-sourced charts once (version bump + values move).
+# Rendered output is unchanged, but Longhorn runs chart hooks on any upgrade, so watch it:
+#   kubectl -n longhorn-system get pods -w -l longhorn.io/component=instance-manager
+# `flux suspend` does NOT hold here - kustomize-controller re-applies spec.suspend from
+# Git. To genuinely hold a release back, commit `suspend: true` in flux/helm/<name>.
+# 1. deliver the new entrypoint (one time; afterwards the flux-system Kustomization owns it)
+kubectl apply -k flux/system
+flux reconcile kustomization home-ops --with-source
+scripts/validate-flux-manifests.sh
+flux get kustomizations -A                    # expect 56 Ready
+# 2. adopt each component: dry run, then apply. Stateless first, PVC-backed apps last.
+scripts/adopt-helmrelease.sh ttyd
+scripts/adopt-helmrelease.sh ttyd --apply
+# 3. after every release is adopted
+scripts/adopt-helmrelease.sh <name> --apply --purge-history
+# generated-ConfigMap renames leave the old fixed-name objects owned by nothing
+kubectl -n glance delete configmap glance-config
+kubectl -n headscale delete configmap headscale-config
+```
+
+Final step, in a follow-up PR: flip the root `Kustomization` to `prune: true` (kept `false`
+for the cutover so nothing can be deleted), and move the raw manifests still inside the five
+Git-sourced chart dirs out to their own Kustomizations - their `helm.sh/resource-policy: keep`
+annotations are the prerequisite that makes that safe.
 
 ## Monitoring
 

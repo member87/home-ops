@@ -56,7 +56,7 @@ print_success "Flux controllers are installed"
 echo ""
 
 print_info "Applying Flux source and root kustomization..."
-kubectl apply -f flux/system/
+kubectl apply -k flux/system
 print_success "Applied manifests in flux/system/"
 echo ""
 

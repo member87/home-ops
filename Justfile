@@ -126,3 +126,24 @@ talos-reencrypt:
 # List all available commands
 help:
     @just --list
+
+# --- Flux ---
+
+# Build every path the Flux entrypoint references and run the layout checks.
+flux-validate:
+    ./scripts/validate-flux-manifests.sh
+
+# Same, plus a server-side diff of every component against the live cluster.
+flux-diff:
+    ./scripts/validate-flux-manifests.sh --diff
+
+# Hand a component from its HelmRelease to its Kustomization (dry run without `apply=yes`).
+# Usage: just flux-adopt sonarr        /  just flux-adopt sonarr yes
+flux-adopt name apply="no":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "{{apply}}" = "yes" ]; then
+        ./scripts/adopt-helmrelease.sh {{name}} --apply
+    else
+        ./scripts/adopt-helmrelease.sh {{name}}
+    fi

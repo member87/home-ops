@@ -3,6 +3,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: immich-library-pv
+  annotations:
+    helm.sh/resource-policy: keep   # never let Helm delete this object
 spec:
   capacity:
     storage: 2Ti
@@ -24,6 +26,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: immich-library
   namespace: immich
+  annotations:
+    helm.sh/resource-policy: keep   # never let Helm delete this object
 spec:
   accessModes:
     - ReadWriteMany

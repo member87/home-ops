@@ -14,7 +14,7 @@ data:
     host = postgresql.postgresql.svc.cluster.local:5432
     name = grafana
     user = grafana
-    password = grafana
+    # password comes from GF_DATABASE_PASSWORD (sealed in grafana-db-secret); never inline it here
     ssl_mode = disable
     
     [server]

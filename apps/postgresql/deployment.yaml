@@ -33,6 +33,13 @@ spec:
                 secretKeyRef:
                   name: postgresql-secrets
                   key: POSTGRES_PASSWORD
+            # Consumed by the init script on first initialisation only; the role already
+            # exists on this volume, so rotating it is an ALTER USER, not a redeploy.
+            - name: POCKETID_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-app-passwords
+                  key: POCKETID_PASSWORD
             - name: PGDATA
               value: "/var/lib/postgresql/data/pgdata"
           volumeMounts:

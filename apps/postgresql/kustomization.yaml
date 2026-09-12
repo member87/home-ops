@@ -8,3 +8,4 @@ resources:
   - service.yaml
   - configmap.yaml
   - sealedsecret.yaml
+  - app-passwords-secret.yaml

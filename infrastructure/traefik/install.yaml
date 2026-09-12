@@ -153,6 +153,14 @@ spec:
           volumeMounts:
             - name: traefik-data
               mountPath: /data
+            # Read by the bouncer plugin via crowdsecLapiKeyFile, so the key never
+            # appears in a Middleware manifest.
+            - name: crowdsec-key
+              mountPath: /etc/crowdsec
+              readOnly: true
       volumes:
         - name: traefik-data
           emptyDir: {}
+        - name: crowdsec-key
+          secret:
+            secretName: crowdsec-bouncer-key

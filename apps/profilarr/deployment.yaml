@@ -21,6 +21,10 @@ metadata:
     app: profilarr
 spec:
   replicas: 1
+  # Single replica on RWO volume(s): a RollingUpdate deadlocks on Multi-Attach when the
+  # replacement pod schedules on another node. Recreate releases the volume first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: profilarr

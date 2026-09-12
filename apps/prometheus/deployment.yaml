@@ -6,11 +6,10 @@ metadata:
   namespace: prometheus
 spec:
   replicas: 1
+  # Single replica on RWO volume(s): a RollingUpdate deadlocks on Multi-Attach when the
+  # replacement pod schedules on another node. Recreate releases the volume first.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 0
+    type: Recreate
   selector:
     matchLabels:
       app: prometheus

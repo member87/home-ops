@@ -104,6 +104,11 @@ spec:
             default:
               permissions: "~* &* +@all"
 
+      # The api/executor/registry images are Paketo buildpack (Liberica) builds: their JVM
+      # memory calculator refuses to boot unless the container sees more than the ~820Mi of
+      # fixed regions it reserves (metaspace + code cache + 250 thread stacks). The chart
+      # ships resources: {}, which left it reading whatever the node had free, so keep every
+      # Java limit comfortably above 1Gi.
       api:
         enabled: true
         existingSecret: true
@@ -112,23 +117,51 @@ spec:
         loadSampleData: false
         version: "2.33.1"
         replicaCount: "1"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
 
       executor:
         enabled: true
         existingSecret: true
         version: "2.33.1"
         replicaCount: "1"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
 
       registry:
         enabled: true
         existingSecret: true
         version: "2.33.1"
         replicaCount: "1"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1Gi
+          limits:
+            cpu: 500m
+            memory: 1536Mi
 
       ui:
         enabled: true
         version: "2.33.1"
         replicaCount: "1"
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
 
       # Chart ingress objects are off - Traefik IngressRoutes for these hosts live in
       # apps/terrakube/ingressroute.yaml. Domains stay set because the UI/API templates

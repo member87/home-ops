@@ -7,7 +7,9 @@ metadata:
   labels:
     app: dawarich
 spec:
-  replicas: 1
+  # Scaled to 0: parked until the nodes get more RAM (8GB each, single DIMM, control-plane
+  # only). PVCs and manifests stay so scaling back to 1 restores it with its data.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

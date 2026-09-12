@@ -89,19 +89,21 @@ pages:
               - title: Terrakube
                 url: https://terrakube.lab.jackhumes.com
                 icon: sh:opentofu
-              - title: Dawarich
-                url: https://dawarich.jackhumes.com
-                icon: sh:dawarich
-                alt-status-codes:
-                  - 401
+              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
+              # - title: Dawarich
+              #   url: https://dawarich.jackhumes.com
+              #   icon: sh:dawarich
+              #   alt-status-codes:
+              #     - 401
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection
                 alt-status-codes:
                   - 401
-              - title: Trek
-                url: https://trek.lab.jackhumes.com
-                icon: sh:trek
+              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
+              # - title: Trek
+              #   url: https://trek.lab.jackhumes.com
+              #   icon: sh:trek
           - type: monitor
             cache: 1m
             title: Media Stack
@@ -142,9 +144,10 @@ pages:
               - title: Qui (qBittorrent UI)
                 url: https://qui.lab.jackhumes.com
                 icon: sh:qui
-              - title: EPG (IPTV Guide)
-                url: https://epg.lab.jackhumes.com/guide.xml
-                icon: sh:satellite
+              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
+              # - title: EPG (IPTV Guide)
+              #   url: https://epg.lab.jackhumes.com/guide.xml
+              #   icon: sh:satellite
 
           - type: hacker-news
             limit: 15

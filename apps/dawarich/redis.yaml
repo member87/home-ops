@@ -7,7 +7,8 @@ metadata:
   labels:
     app: dawarich-redis
 spec:
-  replicas: 1
+  # Scaled to 0 with the rest of dawarich.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

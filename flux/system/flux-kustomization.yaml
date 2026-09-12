@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./flux/apps
+  path: ./flux/cluster
   prune: false
   wait: true
   sourceRef:

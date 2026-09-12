@@ -1,5 +1,0 @@
-{{- $files := list "namespace.yaml" "pvc.yaml" "sealedsecret.yaml" "configmap.yaml" "service.yaml" "ingressroute.yaml" "certificate.yaml" -}}
-{{- range $file := $files }}
----
-{{ $.Files.Get $file }}
-{{- end }}

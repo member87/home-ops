@@ -3,12 +3,20 @@
   "extends": ["config:recommended"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
-  "argocd": { 
-    "managerFilePatterns": ["/\\.yaml$/"] 
-  },
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
   },
+  "flux": {
+    "managerFilePatterns": ["/^flux/.+\\.yaml$/"]
+  },
+  "bumpVersions": [
+    {
+      "description": "Chart.yaml version is the deploy trigger for Git-sourced charts (reconcileStrategy: ChartVersion), so bump it whenever a chart dependency changes",
+      "filePatterns": ["{{packageFileDir}}/Chart.yaml"],
+      "matchStrings": ["(?m)^version:\\s*(?<version>[^\\s]+)"],
+      "bumpType": "{{#if isPatch}}patch{{else}}minor{{/if}}"
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",
@@ -165,9 +173,20 @@
       "semanticCommitScope": "etcd"
     },
     {
-      "groupName": "high confidence minor and patch dependency updates",
+      "description": "App image bumps: one PR per app, so a single bad bump cannot ride in with nine unrelated ones",
+      "matchFileNames": ["apps/**"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
+    },
+    {
+      "description": "Cluster-wide blast radius (storage, networking, TLS, Flux, Talos) is never automerged",
+      "matchFileNames": ["infrastructure/**", "charts/**", "flux/**", "talos/**"],
+      "automerge": false
+    },
+    {
+      "description": "Chart version changes re-render a whole Helm release: always reviewed by hand",
+      "matchManagers": ["helmv3", "flux"],
+      "automerge": false
     }
   ]
 }

@@ -1,0 +1,39 @@
+# HelmReleases are applied through these two Kustomizations so that ordering
+# (Kustomization dependsOn Kustomization) still works across Helm and plain manifests.
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-controllers
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./flux/helm/controllers
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-apps
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./flux/helm/apps
+  prune: true
+  wait: true
+  dependsOn:
+    - name: metallb-config
+    - name: radar-routing
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system

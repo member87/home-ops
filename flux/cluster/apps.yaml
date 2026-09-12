@@ -1,0 +1,755 @@
+# Applications
+# Generated per-component Flux Kustomizations: each path reconciles independently,
+# so a commit only mutates the components whose manifests actually changed.
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: alloy
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/alloy
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: audiobookshelf
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/audiobookshelf
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bazarr
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/bazarr
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cdn
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/cdn
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: changedetection
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/changedetection
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crowdsec
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/crowdsec
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dawarich
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./apps/dawarich
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: docs
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./apps/docs
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: epg
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/epg
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: frp-client
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/frp-client
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: glance
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/glance
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gluetun
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/gluetun
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/grafana
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headplane
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/headplane
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headscale
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./apps/headscale
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: home-assistant
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/home-assistant
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ip-checker
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/ip-checker
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jellyfin
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 15m0s
+  path: ./apps/jellyfin
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jellyseerr
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/jellyseerr
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/kube-state-metrics
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: lldap
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/lldap
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: loki
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/loki
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mqtt
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/mqtt
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: nas
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/nas
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: node-exporter
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/node-exporter
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: pocket-id
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/pocket-id
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: postgresql
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/postgresql
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: profilarr
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/profilarr
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prometheus
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/prometheus
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prowlarr
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/prowlarr
+  prune: true
+  wait: true
+  dependsOn:
+    - name: gluetun
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: qbittorrent
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/qbittorrent
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: qui
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/qui
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: radar-routing
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/radar
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: radarr
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/radarr
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sabnzbd
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/sabnzbd
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: shelfmark
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/shelfmark
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sonarr
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/sonarr
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tailscale-dns
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/tailscale-dns
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tailscale-exit-node-manager
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/tailscale-exit-node-manager
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tailscale-subnet-router
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/tailscale-subnet-router
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: threadfin
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/threadfin
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tinyauth
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/tinyauth
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: trek
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/trek
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ttyd
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/ttyd
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system

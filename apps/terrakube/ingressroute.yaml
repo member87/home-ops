@@ -42,3 +42,25 @@ spec:
           port: 8080
   tls:
     secretName: terrakube-tls
+---
+# The only publicly reachable part of Terrakube: GitHub webhook delivery, arriving over the
+# FRP tunnel (Caddy terminates TLS on the edge, so this listens on the plain `web`
+# entrypoint like the other FRP-fronted routes). It points at the gatekeeper, never at the
+# API: the gate verifies the GitHub HMAC and drops fork pull requests before Terrakube -
+# which has no fork check of its own - can run tofu with this repo's credentials.
+# No CrowdSec middleware here on purpose: an unsigned request is rejected outright, and
+# banning GitHub's delivery IPs would only break the integration.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: terrakube-webhook-gate
+  namespace: terrakube
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`terrakube-hook.jackhumes.com`) && PathPrefix(`/webhook/`)
+      kind: Rule
+      services:
+        - name: terrakube-webhook-gate
+          port: 8080

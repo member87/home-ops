@@ -42,3 +42,13 @@ data:
     localIP = "traefik.traefik.svc.cluster.local"
     localPort = 80
     remotePort = 8083
+
+    # Terrakube GitHub webhook tunnel - routes through Traefik to the webhook gatekeeper
+    # (apps/terrakube/webhook-gate.yaml), which is the only publicly reachable Terrakube
+    # component. The UI and API stay internal-only.
+    [[proxies]]
+    name = "terrakube-hook"
+    type = "tcp"
+    localIP = "traefik.traefik.svc.cluster.local"
+    localPort = 80
+    remotePort = 8084

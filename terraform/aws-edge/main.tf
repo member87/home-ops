@@ -37,6 +37,17 @@ resource "aws_lightsail_instance" "edge" {
     tailscale_authkey       = var.tailscale_authkey
   })
 
+  # user_data is ForceNew and only ever executes on first boot, so a launch-script edit
+  # would silently queue a replacement of the live edge box - resetting the Lightsail
+  # firewall and detaching the static IP (see the note at the top of this file) without
+  # re-running anything. Edits here describe how a *fresh* instance is built; roll them
+  # onto the running box over SSH, or replace the instance deliberately with
+  # `-replace=aws_lightsail_instance.edge` plus the two follow-up replaces.
+  # Rotating frps_auth_token or tailscale_authkey therefore does not churn the instance.
+  lifecycle {
+    ignore_changes = [user_data]
+  }
+
   tags = {
     Purpose = "home-ops public edge: frps + Caddy"
   }

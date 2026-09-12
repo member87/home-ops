@@ -89,6 +89,15 @@ dawarich.jackhumes.com {
 		output file /var/log/caddy/dawarich.log
 	}
 }
+
+# Terrakube GitHub webhook receiver (via Traefik -> in-cluster gatekeeper).
+# Only the webhook path is public; the Terrakube UI and API stay on the LAN.
+terrakube-hook.jackhumes.com {
+	reverse_proxy localhost:8084
+	log {
+		output file /var/log/caddy/terrakube-hook.log
+	}
+}
 EOF
 
 # Bind coturn ONLY to the VPC private IP. Binding all interfaces (or the

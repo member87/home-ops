@@ -10,3 +10,5 @@ terraform {
   # State lives in the Terrakube workspace "aws-edge" (organization homeops);
   # runs execute remotely. Never commit *.tfstate (gitignored).
 }
+
+# Pipeline smoke test: verifies Terrakube plans this stack on pull requests.

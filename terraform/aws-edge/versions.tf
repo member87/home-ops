@@ -10,3 +10,5 @@ terraform {
   # State lives in the Terrakube workspace "aws-edge" (organization homeops);
   # runs execute remotely. Never commit *.tfstate (gitignored).
 }
+
+# bot attribution probe

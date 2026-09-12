@@ -95,6 +95,16 @@ spec:
           persistence:
             storageClass: longhorn
             size: 10Gi
+          # The chart's default "nano" preset caps postgres at 192Mi, which it outgrew as
+          # soon as the API held real connections: it booted, reported "ready to accept
+          # connections", then died and looped with "database system was interrupted".
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
 
       valkey:
         auth:

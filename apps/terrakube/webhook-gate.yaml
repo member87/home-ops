@@ -16,7 +16,7 @@ spec:
       labels:
         app: terrakube-webhook-gate
       annotations:
-        checksum/script: "gate-py-v1"
+        checksum/script: "gate-py-v2-async"
     spec:
       securityContext:
         runAsNonRoot: true

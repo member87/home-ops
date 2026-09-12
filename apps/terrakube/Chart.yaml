@@ -1,7 +1,7 @@
 apiVersion: v2
 name: terrakube
 type: application
-version: 0.6.0
+version: 0.7.0
 description: Terrakube with local home-ops manifests.
 dependencies:
   - name: terrakube

@@ -130,6 +130,15 @@ spec:
         existingSecret: true
         version: "2.33.1"
         replicaCount: "1"
+        # Upstream wires the executor's tofu list through the API proxy
+        # (tofuReleasesUrl=${AzBuilderApiUrl}/tofu/index.json) but sends the terraform
+        # list straight to releases.hashicorp.com, which answers 406 to the executor's
+        # HTTP client and then NPEs in TerraformDownloader - killing every job, tofu
+        # workspaces included. Use the API's cached proxy for both. env overrides the
+        # value the chart puts in terrakube-executor-config.
+        env:
+          - name: CustomTerraformReleasesUrl
+            value: "http://terrakube-api-service:8080/terraform/index.json"
         resources:
           requests:
             cpu: 200m

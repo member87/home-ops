@@ -1,0 +1,102 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terrakube-webhook-gate
+  namespace: terrakube
+  labels:
+    app: terrakube-webhook-gate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: terrakube-webhook-gate
+  template:
+    metadata:
+      labels:
+        app: terrakube-webhook-gate
+      annotations:
+        checksum/script: "gate-py-v1"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      containers:
+        - name: gate
+          image: python:3.14-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -u
+            - /scripts/gate.py
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: UPSTREAM
+              value: "http://terrakube-api-service:8080"
+            - name: ALLOWED_REPO
+              value: "member87/home-ops"
+            # Only these logins may trigger a run with a `terrakube plan`/`terrakube apply`
+            # pull request comment. Everything else is dropped.
+            - name: ALLOWED_SENDERS
+              value: "member87"
+            - name: APPLY_BRANCH
+              value: "main"
+            - name: GITHUB_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: terrakube-webhook-gate-secret
+                  key: GITHUB_WEBHOOK_SECRET
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: terrakube-webhook-gate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: terrakube-webhook-gate
+  namespace: terrakube
+  labels:
+    app: terrakube-webhook-gate
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: terrakube-webhook-gate

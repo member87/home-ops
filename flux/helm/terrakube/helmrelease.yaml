@@ -107,6 +107,9 @@ spec:
       api:
         enabled: true
         existingSecret: true
+        # Chart default is true: seeds demo organizations (aws/azure/gcp/simple) and makes
+        # the API sync public registry modules on every start.
+        loadSampleData: false
         version: "2.33.1"
         replicaCount: "1"
 

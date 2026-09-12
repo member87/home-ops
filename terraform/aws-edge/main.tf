@@ -125,3 +125,9 @@ output "static_ip" {
 output "ssh_command" {
   value = "ssh ubuntu@${aws_lightsail_static_ip.edge.ip_address}"
 }
+
+# DELIBERATE FAILURE - proves a failed plan blocks the PR. To be reverted.
+resource "aws_lightsail_static_ip_attachment" "broken_probe" {
+  static_ip_name = var.this_variable_does_not_exist
+  instance_name  = "no-such-instance"
+}

@@ -104,11 +104,11 @@ spec:
             default:
               permissions: "~* &* +@all"
 
-      # The api/executor/registry images are Paketo buildpack (Liberica) builds: their JVM
+      # Sizing on a 3-node, control-plane-only cluster with ~7.3Gi allocatable per node:
+      # requests stay small so the scheduler and the API server are not starved, while the
+      # limits stay above 1Gi because these are Paketo buildpack (Liberica) images whose JVM
       # memory calculator refuses to boot unless the container sees more than the ~820Mi of
-      # fixed regions it reserves (metaspace + code cache + 250 thread stacks). The chart
-      # ships resources: {}, which left it reading whatever the node had free, so keep every
-      # Java limit comfortably above 1Gi.
+      # fixed regions it reserves (metaspace + code cache + 250 thread stacks).
       api:
         enabled: true
         existingSecret: true
@@ -119,8 +119,8 @@ spec:
         replicaCount: "1"
         resources:
           requests:
-            cpu: 200m
-            memory: 1Gi
+            cpu: 100m
+            memory: 512Mi
           limits:
             cpu: "1"
             memory: 2Gi
@@ -141,24 +141,17 @@ spec:
             value: "http://terrakube-api-service:8080/terraform/index.json"
         resources:
           requests:
-            cpu: 200m
-            memory: 1Gi
+            cpu: 100m
+            memory: 512Mi
           limits:
             cpu: "1"
             memory: 2Gi
 
+      # The private module/provider registry is not used: modules come from the public
+      # registry and this repo. It is a third JVM costing ~1Gi of requests, so it stays off
+      # along with its IngressRoute, cert SAN and SealedSecret.
       registry:
-        enabled: true
-        existingSecret: true
-        version: "2.33.1"
-        replicaCount: "1"
-        resources:
-          requests:
-            cpu: 100m
-            memory: 1Gi
-          limits:
-            cpu: 500m
-            memory: 1536Mi
+        enabled: false
 
       ui:
         enabled: true

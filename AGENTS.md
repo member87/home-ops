@@ -84,8 +84,12 @@ still trying to build the deleted `./flux/apps`.
 #    over the same objects (Helm converging backwards, SSA converging forwards) until it is
 #    adopted. Fix it or suspend it first. Healthy releases do not fight: drift detection is
 #    off by default, so helm-controller only re-applies on a chart/values change.
-flux get helmreleases -A | grep -v True       # must be empty, or suspend those releases
-flux suspend helmrelease longhorn             # merging re-upgrades it once; do that alone
+flux get helmreleases -A | grep -v True       # must be empty before merging
+# Merging re-upgrades the five Git-sourced charts once (version bump + values move).
+# Rendered output is unchanged, but Longhorn runs chart hooks on any upgrade, so watch it:
+#   kubectl -n longhorn-system get pods -w -l longhorn.io/component=instance-manager
+# `flux suspend` does NOT hold here - kustomize-controller re-applies spec.suspend from
+# Git. To genuinely hold a release back, commit `suspend: true` in flux/helm/<name>.
 # 1. deliver the new entrypoint (one time; afterwards the flux-system Kustomization owns it)
 kubectl apply -k flux/system
 flux reconcile kustomization home-ops --with-source
@@ -99,7 +103,6 @@ scripts/adopt-helmrelease.sh <name> --apply --purge-history
 # generated-ConfigMap renames leave the old fixed-name objects owned by nothing
 kubectl -n glance delete configmap glance-config
 kubectl -n headscale delete configmap headscale-config
-flux resume helmrelease longhorn              # watch instance-manager pods
 ```
 
 Final step, in a follow-up PR: flip the root `Kustomization` to `prune: true` (kept `false`

@@ -184,6 +184,11 @@
       "automerge": false
     },
     {
+      "description": "install.yaml/crds.yaml under infrastructure/ are complete upstream manifests vendored whole. Bumping only the image tag leaves probes, RBAC and env vars at the old version - that is how MetalLB 0.16 broke the LoadBalancer (#298). Upgrade by re-vendoring the whole manifest.",
+      "matchFileNames": ["infrastructure/**/install.yaml", "infrastructure/**/crds.yaml"],
+      "enabled": false
+    },
+    {
       "description": "Terraform providers keep the automerge they had under the old catch-all group",
       "matchFileNames": ["terraform/**"],
       "matchUpdateTypes": ["minor", "patch"],

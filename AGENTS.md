@@ -186,9 +186,17 @@ Every plan posts its comment and commit status twice. It is cosmetic — terrafo
 
 A job's Quartz context is created under the canonical key `TerrakubeV2_Job_<id>`, while `JobManageHook` status changes schedule extra one-shot contexts named `TerrakubeV2_Job_<id>_<uuid>`. `ScheduleJob.removeJobContext` deletes only whichever key fired, so when a one-shot handles completion the canonical repeating trigger survives, fires once more, and re-runs the completion path — which calls `PrCommentService.postPlanResult` and `sendCommitStatus` again with no idempotency guard. `JobReconciliationSweep.reconcileTrigger` recreates the canonical trigger unconditionally, so `sweepEnabled: false` does not help.
 
-### Comments are posted by the connected VCS identity
+### VCS auth is a GitHub App, not a user
 
-Plan comments and commit statuses appear as whichever GitHub identity the VCS connection authenticated as — currently the `member87` user via OAuth, so plans look like they were written by a human. Terrakube also supports `VcsConnectionType.STANDALONE`, where the connection holds a GitHub App's id and private key and `ScheduleGitHubAppToken` refreshes per-installation tokens; comments then come from `<app-name>[bot]`. Switching requires creating a GitHub App by hand, since GitHub has no API for creating one.
+Plans are posted by `terrakube-homeops-bot[bot]` — both the pull request comment and the commit status. The VCS connection is `terrakube-homeops-bot (GitHub App)`, `connectionType: STANDALONE`, holding the App's client id and PKCS#8 private key; `GitHubTokenService` signs an RS256 JWT with it, resolves the installation through `/repos/member87/home-ops/installation`, and caches per-installation tokens that `ScheduleGitHubAppToken` refreshes hourly. There is no user OAuth token in the database any more.
+
+Three things will bite whoever touches this next:
+
+- **The key must be PKCS#8.** GitHub hands out PKCS#1 (`BEGIN RSA PRIVATE KEY`); `generateJWT` strips only `-----BEGIN PRIVATE KEY-----` and feeds the rest to `PKCS8EncodedKeySpec`, so an unconverted key throws `InvalidKeySpecException`. Convert with `openssl pkcs8 -topk8 -nocrypt`.
+- **`Issues: write` is required, not just `Pull requests: write`.** Plan comments go to `/repos/{owner}/{repo}/issues/{n}/comments` and the acknowledgement reaction to `/issues/comments/{id}/reactions`. The App needs Contents read, Metadata read, Pull requests write, Issues write, Commit statuses write, and Repository hooks write (Terrakube maintains the repo webhook itself).
+- **The App's own webhook is deliberately disabled.** Deliveries must come from the repository webhook that points at the gatekeeper; an App-level webhook would deliver a second, ungated copy straight to the API.
+
+The private key exists only in the Terrakube database and wherever it was backed up — it is not in this repo and cannot be recovered from GitHub. Generate a fresh one from the App settings if it is ever lost.
 
 ## Monitoring
 

@@ -3,29 +3,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - rbac.yaml
   - sealedsecret.yaml
+  - admin-secret.yaml
   - alerting-secret.yaml
   - configmap.yaml
   - datasources.yaml
-  - dashboards-provisioning.yaml
-  - dashboard-k8s-cluster.yaml
-  - dashboard-pods.yaml
-  - dashboard-logs.yaml
-  - dashboard-k8s-global.yaml
-  - dashboard-k8s-namespaces.yaml
-  - dashboard-k8s-pods.yaml
-  - dashboard-k8s-nodes.yaml
-  - dashboard-unifi-network-sites.yaml
-  - dashboard-unifi-uap-insights.yaml
-  - dashboard-unifi-usw-insights.yaml
-  - dashboard-unifi-usg-insights.yaml
-  - dashboard-unifi-client-dpi.yaml
-  - dashboard-unifi-client-insights.yaml
-  - dashboard-unifi-clients-overview.yaml
-  - dashboard-crowdsec.yaml
-  - dashboard-pocket-id.yaml
-  - dashboard-pihole.yaml
   - alerting.yaml
   - deployment.yaml
   - service.yaml

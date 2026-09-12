@@ -16,7 +16,7 @@ spec:
       labels:
         app: terrakube-webhook-gate
       annotations:
-        checksum/script: "gate-py-v2-async"
+        checksum/script: "gate-py-v3-multisecret"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -45,11 +45,11 @@ spec:
               value: "member87"
             - name: APPLY_BRANCH
               value: "main"
-            - name: GITHUB_WEBHOOK_SECRET
+            - name: GITHUB_WEBHOOK_SECRETS
               valueFrom:
                 secretKeyRef:
                   name: terrakube-webhook-gate-secret
-                  key: GITHUB_WEBHOOK_SECRET
+                  key: GITHUB_WEBHOOK_SECRETS
           livenessProbe:
             httpGet:
               path: /healthz

@@ -79,20 +79,27 @@ entrypoint move to `./flux/cluster` must be applied by hand once. Until step 1 r
 still trying to build the deleted `./flux/apps`.
 
 ```bash
-# 0. only on a healthy cluster: all nodes Ready, no HelmRelease in a failed state
-flux suspend helmrelease longhorn                  # merging re-upgrades it once; do that alone
+# 0. preconditions: all nodes Ready, and no HelmRelease left in a failed/rollback state.
+#    A failing release keeps retrying remediation, so it would fight the new Kustomization
+#    over the same objects (Helm converging backwards, SSA converging forwards) until it is
+#    adopted. Fix it or suspend it first. Healthy releases do not fight: drift detection is
+#    off by default, so helm-controller only re-applies on a chart/values change.
+flux get helmreleases -A | grep -v True       # must be empty, or suspend those releases
+flux suspend helmrelease longhorn             # merging re-upgrades it once; do that alone
 # 1. deliver the new entrypoint (one time; afterwards the flux-system Kustomization owns it)
 kubectl apply -k flux/system
 flux reconcile kustomization home-ops --with-source
 scripts/validate-flux-manifests.sh
-flux get kustomizations -A                         # expect 56 Ready
+flux get kustomizations -A                    # expect 56 Ready
 # 2. adopt each component: dry run, then apply. Stateless first, PVC-backed apps last.
 scripts/adopt-helmrelease.sh ttyd
 scripts/adopt-helmrelease.sh ttyd --apply
 # 3. after every release is adopted
 scripts/adopt-helmrelease.sh <name> --apply --purge-history
-kubectl -n glance delete configmap glance-config   # orphan of the configMapGenerator rename
-flux resume helmrelease longhorn                   # watch instance-manager pods
+# generated-ConfigMap renames leave the old fixed-name objects owned by nothing
+kubectl -n glance delete configmap glance-config
+kubectl -n headscale delete configmap headscale-config
+flux resume helmrelease longhorn              # watch instance-manager pods
 ```
 
 Final step, in a follow-up PR: flip the root `Kustomization` to `prune: true` (kept `false`

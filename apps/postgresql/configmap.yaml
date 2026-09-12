@@ -5,8 +5,25 @@ metadata:
   name: postgresql-init
   namespace: postgresql
 data:
-  01-create-databases.sql: |
-    -- Create database and user for Pocket ID
-    CREATE USER pocketid WITH PASSWORD 'pocketid';
-    CREATE DATABASE pocketid OWNER pocketid;
-    GRANT ALL PRIVILEGES ON DATABASE pocketid TO pocketid;
+  # Runs once, on an empty data directory, via the image's /docker-entrypoint-initdb.d hook.
+  # A .sh script rather than .sql because the entrypoint sources shell scripts, which lets the
+  # role password come from the environment instead of being committed here in plaintext.
+  01-create-databases.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    if [ -z "${POCKETID_PASSWORD:-}" ]; then
+      echo "POCKETID_PASSWORD is not set; refusing to create the pocketid role" >&2
+      exit 1
+    fi
+
+    # The password goes to psql on stdin, never in argv: psql -v would put it in the
+    # container's process list. Single quotes are doubled so any generated character is
+    # a valid SQL string literal.
+    escaped_password=${POCKETID_PASSWORD//\'/\'\'}
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+      CREATE USER pocketid WITH PASSWORD '${escaped_password}';
+      CREATE DATABASE pocketid OWNER pocketid;
+      GRANT ALL PRIVILEGES ON DATABASE pocketid TO pocketid;
+    EOSQL

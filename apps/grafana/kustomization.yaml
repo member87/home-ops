@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - sealedsecret.yaml
   - admin-secret.yaml
+  - db-secret.yaml
   - alerting-secret.yaml
   - configmap.yaml
   - datasources.yaml

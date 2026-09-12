@@ -20,7 +20,9 @@ spec:
       # LAPI connection
       crowdsecLapiScheme: http
       crowdsecLapiHost: crowdsec-lapi.crowdsec.svc.cluster.local:8080
-      crowdsecLapiKey: "4bJNXg77hib46tHSShUaYJtmAzyAyY+2JHDYAn0twDE="
+      # Key is mounted into the Traefik pod from the sealed crowdsec-bouncer-key
+      # secret; never inline it here, this repo is public.
+      crowdsecLapiKeyFile: /etc/crowdsec/lapi-key
 
       # HTTP timeout for LAPI queries
       httpTimeoutSeconds: 10

@@ -49,6 +49,11 @@ spec:
                 secretKeyRef:
                   name: grafana-admin-secret
                   key: admin_password
+            - name: GF_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-db-secret
+                  key: GF_DATABASE_PASSWORD
           volumeMounts:
             - name: config
               mountPath: /etc/grafana

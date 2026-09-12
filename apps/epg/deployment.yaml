@@ -7,7 +7,9 @@ metadata:
   labels:
     app: epg
 spec:
-  replicas: 1
+  # Scaled to 0: parked until the nodes get more RAM (8GB each, single DIMM, control-plane
+  # only). Scale back to 1 to restore it. Threadfin loses its guide source while parked.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

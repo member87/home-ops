@@ -2,6 +2,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable;
+    # Flux inherited spec.volumeName from Helm's last-applied on some of these, and a
+    # server-side apply that omits it then tries to clear it. Create-only avoids that.
   name: jellyseerr-config
   namespace: jellyseerr
 spec:

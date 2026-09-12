@@ -5,6 +5,13 @@
 #   -replace=aws_lightsail_static_ip_attachment.edge
 # (name-based references do not re-converge on their own).
 
+# var.region was previously unused: local runs inherited the region from
+# ~/.aws/config, so the Terrakube executor had no region at all and every plan
+# failed with "invalid AWS Region".
+provider "aws" {
+  region = var.region
+}
+
 
 # Registers the workstation's existing key with Lightsail so `ssh ubuntu@<ip>`
 # works exactly like it did against the Oracle VPS.

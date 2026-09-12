@@ -163,6 +163,33 @@ This repo is public and Terrakube has no fork awareness, so a pull request from 
 
 Anything else gets a `202` and goes no further. It is the only Terrakube component reachable from the internet (`terrakube-hook.jackhumes.com`, frp remote port `8084`); the UI and API stay on the LAN. The HMAC secret is the one Terrakube generated when registering the webhook, sealed into `terrakube-webhook-gate-secret` so both sides verify the same signature.
 
+### Webhook event rules
+
+The webhook (`092e7d85-af89-410d-9b6e-65623fc16676`) carries three event rules, set through the API because the UI cannot express all of them. They are matched in `priority` order and the first match wins:
+
+| Priority | Event | Branch | Path | Template |
+| --- | --- | --- | --- | --- |
+| 1 | `PUSH` | `main` | `terraform/aws-edge/*` | Plan and apply |
+| 1 | `PULL_REQUEST` | `.*` | `terraform/aws-edge/*` | Plan |
+| 2 | `PULL_REQUEST` | `.*` | `**` | No IaC changes ack |
+
+Two things about this are easy to get wrong:
+
+- **`branch` is a Java regex, not a branch name**, and for a `pull_request` event Terrakube matches it against the *head* branch. A pull-request rule with `branch: main` therefore never fires — it silently logs `No valid template found for webhook event pull_request` and no job is created. Pull-request rules must use `.*`.
+- **The priority-2 rule exists to keep branch protection satisfiable.** `main` requires the status check `Terrakube - homeops - aws-edge`, and GitHub blocks a pull request forever if a required check never reports. A pull request touching no terraform would never get a status, so the fallback rule runs a `customScripts` template that does nothing but report success. It has `prWorkflowEnabled: false`, so it posts no comment.
+
+Branch protection on `main`: required status check `Terrakube - homeops - aws-edge`, `enforce_admins` on, no force pushes, no deletions. A failed plan leaves the pull request `mergeable_state: blocked` and merging returns HTTP 405 even for an admin.
+
+### Known upstream defect: duplicated plan comments
+
+Every plan posts its comment and commit status twice. It is cosmetic — terraform runs once — and there is no configuration that disables it.
+
+A job's Quartz context is created under the canonical key `TerrakubeV2_Job_<id>`, while `JobManageHook` status changes schedule extra one-shot contexts named `TerrakubeV2_Job_<id>_<uuid>`. `ScheduleJob.removeJobContext` deletes only whichever key fired, so when a one-shot handles completion the canonical repeating trigger survives, fires once more, and re-runs the completion path — which calls `PrCommentService.postPlanResult` and `sendCommitStatus` again with no idempotency guard. `JobReconciliationSweep.reconcileTrigger` recreates the canonical trigger unconditionally, so `sweepEnabled: false` does not help.
+
+### Comments are posted by the connected VCS identity
+
+Plan comments and commit statuses appear as whichever GitHub identity the VCS connection authenticated as — currently the `member87` user via OAuth, so plans look like they were written by a human. Terrakube also supports `VcsConnectionType.STANDALONE`, where the connection holds a GitHub App's id and private key and `ScheduleGitHubAppToken` refreshes per-installation tokens; comments then come from `<app-name>[bot]`. Switching requires creating a GitHub App by hand, since GitHub has no API for creating one.
+
 ## Monitoring
 
 - Monitoring stack includes Prometheus, Grafana, Loki, Alloy, kube-state-metrics, node-exporter, and Discord alerting.

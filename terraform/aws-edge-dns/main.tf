@@ -1,10 +1,9 @@
 # Public DNS for the edge, managed separately from the edge stack so the
-# Cloudflare provider cannot block instance operations. Apply only when a
-# Cloudflare API token (Zone.DNS Edit) is available:
+# Cloudflare provider cannot block instance operations. Runs execute in
+# Terrakube (organization homeops, workspace aws-edge-dns) with
+# cloudflare_api_token set as a sensitive workspace variable.
 #
-#   TF_VAR_cloudflare_api_token=... tofu apply
-#
-# The edge IP is read from the aws-edge stack's local state.
+# The edge IP is read from the aws-edge workspace's state.
 
 terraform {
   required_version = ">= 1.6"
@@ -21,10 +20,16 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+# The edge IP comes from the aws-edge workspace's state in Terrakube
+# (https://terrakube.lab.jackhumes.com), not a local state file.
 data "terraform_remote_state" "edge" {
-  backend = "local"
+  backend = "remote"
   config = {
-    path = "${path.module}/../aws-edge/terraform.tfstate"
+    hostname     = "terrakube-api.lab.jackhumes.com"
+    organization = "homeops"
+    workspaces = {
+      name = "aws-edge"
+    }
   }
 }
 

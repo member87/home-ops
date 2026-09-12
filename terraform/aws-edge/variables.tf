@@ -28,10 +28,10 @@ variable "bundle_id" {
   default     = "nano_3_0"
 }
 
-variable "ssh_public_key_path" {
-  description = "Local path to the SSH public key to install for the 'ubuntu' user (same key as the old Oracle VPS)."
+variable "ssh_public_key" {
+  description = "SSH public key installed for the 'ubuntu' user (same key as the old Oracle VPS). Key material, not a path: runs execute in a Terrakube executor container that has no ~/.ssh. Public keys are not secret, so the default is committed."
   type        = string
-  default     = "~/.ssh/id_ed25519.pub"
+  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3UXwi2ZmExP4hZLwcaRaryfSlUm9XTTwbMLv1pliEi jack@odin"
 }
 
 variable "admin_cidrs" {

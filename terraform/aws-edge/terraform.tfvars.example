@@ -1,12 +1,18 @@
+# Runs execute in Terrakube (organization homeops, workspace aws-edge), where these
+# are set as sensitive workspace variables rather than a tfvars file. This file is only
+# for applying from a workstation.
+#
 # Copy to terraform.tfvars (gitignored) or export TF_VAR_* instead.
 # Secrets must stay out of git - repo rule: never commit plaintext secrets.
 
 # Reuse the existing token so the in-cluster frpc authenticates unchanged:
-#   ssh ubuntu@140.238.67.83 'grep -A2 "auth.token" ~/frp-tunnel/frps.toml'
+#   ssh ubuntu@<edge-ip> 'grep -A2 "auth.token" ~/frp-tunnel/frps.toml'
 # frps_auth_token          = "..."
 # frps_dashboard_password  = "..."
+# tailscale_authkey        = "..."   # fresh Headscale preauth key per instance recreation
 
 # Optional overrides:
 # region             = "eu-west-2"
 # bundle_id          = "micro_3_0"   # 1GB RAM
 # admin_cidrs        = ["<your-ip>/32"]
+# ssh_public_key     = "ssh-ed25519 AAAA... user@host"

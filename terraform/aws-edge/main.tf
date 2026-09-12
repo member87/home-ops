@@ -10,7 +10,7 @@
 # works exactly like it did against the Oracle VPS.
 resource "aws_lightsail_key_pair" "edge" {
   name       = "${var.instance_name}-key"
-  public_key = file(pathexpand(var.ssh_public_key_path))
+  public_key = var.ssh_public_key
 }
 
 resource "aws_lightsail_instance" "edge" {

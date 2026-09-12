@@ -7,6 +7,6 @@ terraform {
       version = "~> 6.0"
     }
   }
-  # State is local-only: this stack manages exactly one tiny instance and is
-  # applied manually from a workstation. Do not commit *.tfstate (gitignored).
+  # State lives in the Terrakube workspace "aws-edge" (organization homeops);
+  # runs execute remotely. Never commit *.tfstate (gitignored).
 }

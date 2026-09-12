@@ -16,15 +16,21 @@ spec:
   interval: 10m0s
   releaseName: terrakube
   targetNamespace: terrakube
+  # disableWait: this release delivers the SealedSecrets its own pods consume, so gating
+  # the Helm operation on pod readiness deadlocks - a bad Secret keeps the pods pending,
+  # the release stays pending-install for the whole timeout, and the corrected Secret
+  # cannot be applied until it expires. Readiness is observed via the pods, not Helm.
   install:
     createNamespace: true
+    disableWait: true
     remediation:
       retries: 3
-    timeout: 15m
+    timeout: 10m
   upgrade:
+    disableWait: true
     remediation:
       retries: 3
-    timeout: 15m
+    timeout: 10m
   chart:
     spec:
       chart: apps/terrakube

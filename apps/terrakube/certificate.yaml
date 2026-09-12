@@ -1,0 +1,15 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: terrakube-cert
+  namespace: terrakube
+spec:
+  secretName: terrakube-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - terrakube.lab.jackhumes.com
+    - terrakube-api.lab.jackhumes.com
+    - terrakube-registry.lab.jackhumes.com

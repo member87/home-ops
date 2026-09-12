@@ -121,6 +121,31 @@ talos-reencrypt:
     sops updatekeys --yes --input-type yaml --output-type yaml talos/talosconfig
     echo "==> Done."
 
+# --- Oracle VPS (FRP) ---
+
+VPS_SSH := "ubuntu@140.238.67.83"
+VPS_COMPOSE_DIR := "/home/ubuntu/frp-tunnel"
+
+# Update the Oracle VPS: OS packages + Docker services, then optionally reboot.
+# Usage: just update-vps          (update only)
+#        just update-vps yes      (update and reboot)
+update-vps reboot="no":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "==> Updating VPS OS packages (apt)..."
+    ssh -o BatchMode=yes {{VPS_SSH}} 'sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade && sudo apt-get -y autoremove'
+    echo "==> Updating Docker services (frp-tunnel compose)..."
+    ssh -o BatchMode=yes {{VPS_SSH}} 'cd {{VPS_COMPOSE_DIR}} && sudo docker compose pull && sudo docker compose up -d'
+    echo "==> Service status:"
+    ssh -o BatchMode=yes {{VPS_SSH}} 'cd {{VPS_COMPOSE_DIR}} && sudo docker compose ps'
+    if [ "{{reboot}}" = "yes" ]; then
+        echo "==> Rebooting VPS..."
+        ssh -o BatchMode=yes {{VPS_SSH}} 'sudo reboot' || true
+        echo "==> Reboot triggered; reconnect in ~1 min (ssh {{VPS_SSH}})."
+    else
+        echo "==> Skipped reboot (run 'just update-vps yes' to reboot)."
+    fi
+
 # --- Help ---
 
 # List all available commands

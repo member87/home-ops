@@ -1,0 +1,61 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: terrakube-ui
+  namespace: terrakube
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`terrakube.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: terrakube-ui-service
+          port: 8080
+  tls:
+    secretName: terrakube-tls
+---
+# Dex is reverse-proxied under the API host at /dex (matches security.dexIssuerUri
+# and the OIDC client's redirect URI). The PathPrefix route must win over the
+# catch-all API route on the same host, hence the explicit priorities.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: terrakube-api
+  namespace: terrakube
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`terrakube-api.lab.jackhumes.com`) && PathPrefix(`/dex`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: terrakube-dex
+          port: 5556
+    - match: Host(`terrakube-api.lab.jackhumes.com`)
+      kind: Rule
+      priority: 10
+      services:
+        - name: terrakube-api-service
+          port: 8080
+  tls:
+    secretName: terrakube-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: terrakube-registry
+  namespace: terrakube
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`terrakube-registry.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: terrakube-registry-service
+          port: 8075
+  tls:
+    secretName: terrakube-tls

@@ -1,0 +1,141 @@
+# Terrakube: self-hosted Terraform/OpenTofu plan+apply UI for the stacks in terraform/.
+# Namespace, TLS, IngressRoutes and every SealedSecret are plain manifests in
+# apps/terrakube, packaged by that chart's templates/manifests.yaml glob wrapper.
+# Values live here, not in the chart dir: reconcileStrategy: ChartVersion means chart-dir
+# edits only deploy on a Chart.yaml version bump, while a values edit deploys immediately.
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: terrakube
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  suspend: false
+  interval: 10m0s
+  releaseName: terrakube
+  targetNamespace: terrakube
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+    timeout: 15m
+  upgrade:
+    remediation:
+      retries: 3
+    timeout: 15m
+  chart:
+    spec:
+      chart: apps/terrakube
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: GitRepository
+        name: home-ops
+        namespace: flux-system
+      interval: 10m0s
+  values:
+    # Renders the local manifests (glob wrapper) and enables the upstream subchart.
+    enabled: true
+
+    # All secret material (patSecret, internalSecret, database/minio/valkey passwords, the
+    # Pocket ID OIDC client secret) is supplied by SealedSecrets in apps/terrakube via
+    # existingSecret / configSecret.create: false - never as literal values here.
+    terrakube:
+      name: "terrakube"
+      enableIPv6: false
+
+      security:
+        useOpenLDAP: false
+        # Must match the Pocket ID group name emitted in the `groups` claim - the only
+        # group on this instance is `admin`, and it is the allowed group for this client.
+        adminGroup: "admin"
+        dexClientId: "terrakube"
+        dexClientScope: "email openid profile offline_access groups"
+        dexIssuerUri: "https://terrakube-api.lab.jackhumes.com/dex"
+
+      # Dex reads its whole config from the terrakube-dex-config SealedSecret because it
+      # embeds the Pocket ID client secret. config.issuer is duplicated here (non-sensitive)
+      # only because terrakube's own api/ui templates read .Values.dex.config.issuer; keep it
+      # in sync with the issuer inside that Secret.
+      dex:
+        enabled: true
+        config:
+          issuer: "https://terrakube-api.lab.jackhumes.com/dex"
+        configSecret:
+          create: false
+          name: terrakube-dex-config
+        volumes: []
+
+      storage:
+        defaultStorage: true
+        default:
+          region: "us-east-1"
+
+      minio:
+        auth:
+          existingSecret: terrakube-minio-credentials
+        defaultBuckets: "terrakube"
+        persistence:
+          storageClass: longhorn
+          size: 20Gi
+
+      postgresql:
+        auth:
+          username: "terrakube"
+          database: "terrakube"
+          existingSecret: terrakube-postgresql-credentials
+        primary:
+          persistence:
+            storageClass: longhorn
+            size: 10Gi
+
+      valkey:
+        auth:
+          enabled: true
+          usersExistingSecret: "terrakube-valkey-users"
+          aclUsers:
+            default:
+              permissions: "~* &* +@all"
+
+      api:
+        enabled: true
+        existingSecret: true
+        version: "2.33.1"
+        replicaCount: "1"
+
+      executor:
+        enabled: true
+        existingSecret: true
+        version: "2.33.1"
+        replicaCount: "1"
+
+      registry:
+        enabled: true
+        existingSecret: true
+        version: "2.33.1"
+        replicaCount: "1"
+
+      ui:
+        enabled: true
+        version: "2.33.1"
+        replicaCount: "1"
+
+      # Chart ingress objects are off - Traefik IngressRoutes for these hosts live in
+      # apps/terrakube/ingressroute.yaml. Domains stay set because the UI/API templates
+      # read ingress.*.domain to build the OIDC redirect and API URLs regardless.
+      ingress:
+        useTls: true
+        ui:
+          enabled: false
+          domain: "terrakube.lab.jackhumes.com"
+        api:
+          enabled: false
+          domain: "terrakube-api.lab.jackhumes.com"
+        registry:
+          enabled: false
+          domain: "terrakube-registry.lab.jackhumes.com"
+        executor:
+          enabled: false
+        dex:
+          enabled: false

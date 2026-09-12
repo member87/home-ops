@@ -1,0 +1,10 @@
+apiVersion: v2
+name: terrakube
+type: application
+version: 0.2.0
+description: Terrakube with local home-ops manifests.
+dependencies:
+  - name: terrakube
+    version: 4.7.10
+    repository: https://terrakube-io.github.io/terrakube-helm-chart
+    condition: enabled

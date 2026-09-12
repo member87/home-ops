@@ -86,6 +86,9 @@ pages:
               - title: Longhorn
                 url: https://longhorn.lab.jackhumes.com
                 icon: sh:rancher-longhorn
+              - title: Terrakube
+                url: https://terrakube.lab.jackhumes.com
+                icon: sh:opentofu
               - title: Dawarich
                 url: https://dawarich.jackhumes.com
                 icon: sh:dawarich

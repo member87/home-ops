@@ -22,6 +22,7 @@ Keep this file short. Prefer discovering current details from the repo over stor
 - Use SOPS with age for Talos configs in `talos/`.
 - Pin container images to explicit versions; never use `latest`.
 - Update Glance dashboard icons/links when adding or removing apps.
+- When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/configmap.yaml` AND the matching Caddy site block on the VPS; see Public Access & Oracle VPS (FRP).
 - Read files before editing and make targeted changes.
 - Test or validate changes when feasible.
 - Flux reconciles from Git; do not manually mutate cluster state unless troubleshooting or explicitly requested.
@@ -109,6 +110,35 @@ Final step, in a follow-up PR: flip the root `Kustomization` to `prune: true` (k
 for the cutover so nothing can be deleted), and move the raw manifests still inside the five
 Git-sourced chart dirs out to their own Kustomizations - their `helm.sh/resource-policy: keep`
 annotations are the prerequisite that makes that safe.
+## Public Access & Oracle VPS (FRP)
+
+External access for `<app>.jackhumes.com` is routed through the Oracle VPS (`140.238.67.83`) over FRP. Full chain: client -> Caddy (TLS) -> frps remote port -> frpc tunnel -> Traefik -> app IngressRoute.
+
+Two configs are required when exposing a new public service (both must be done; the cluster side alone is not enough):
+1. `apps/frp-client/configmap.yaml` — add a `[[proxies]]` TCP entry whose `remotePort` forwards to Traefik `:80`.
+2. VPS Caddyfile (`/home/ubuntu/frp-tunnel/Caddyfile`) — add a site block reverse-proxying the host to `localhost:<remotePort>`. Caddy auto-issues the public Let's Encrypt cert.
+
+Tunnel map:
+
+| Host | frpc remotePort | Target |
+| --- | --- | --- |
+| `auth.jackhumes.com` | `8081` | Traefik -> Pocket ID |
+| `headscale.jackhumes.com` | `8082` | Headscale (direct) |
+| `dawarich.jackhumes.com` | `8083` | Traefik -> Dawarich |
+
+### SSH to the VPS
+
+```bash
+ssh ubuntu@140.238.67.83        # key-based (host is already in known_hosts); prefix system/docker commands with sudo
+```
+
+Caddy and frps run in Docker (compose project `frp-tunnel` in `~/frp-tunnel`). After editing the Caddyfile, reload Caddy without downtime:
+
+```bash
+sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Keep the VPS patched with `just update-vps` (optional reboot with `just update-vps yes`).
 
 ## Monitoring
 
@@ -132,9 +162,9 @@ annotations are the prerequisite that makes that safe.
 - Use `nfs-manual` or direct NFS PVs only for shared media/download data.
 - NAS paths: `/volume1/kubernetes/media`, `/volume1/kubernetes/downloads`, and Longhorn backups at `/volume1/kubernetes/longhorn-backups`.
 - MetalLB address pool is `10.0.0.200-10.0.0.250`.
-- External access uses FRP through Oracle VPS `140.238.67.83`.
-- Public `auth.jackhumes.com` traffic must route through Traefik so CrowdSec can block banned IPs.
-- FRP maps Pocket ID through Traefik on remote port `8081`; Headscale maps directly to `headscale.headscale.svc:8080` on remote port `8082`.
+- External access uses FRP through the Oracle VPS (`140.238.67.83`); see Public Access & Oracle VPS (FRP) for the full chain, tunnel map, and SSH steps.
+- Public traffic for `auth.jackhumes.com` and `dawarich.jackhumes.com` must route through Traefik so CrowdSec can block banned IPs.
+- FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Dawarich `8083` (via Traefik).
 - Headscale public URL is `https://headscale.jackhumes.com`.
 - Headscale internal URL is `https://headscale.lab.jackhumes.com`.
 - Home Assistant runs Home Assistant, OTBR, and Matter Server together and uses `hostNetwork`; preserve the Thread dataset because losing it requires factory-resetting Thread devices.
@@ -191,6 +221,12 @@ just talos-status
 
 - Symptom: `pihole-dns-tcp`/`-udp` appear as NodePort, `10.0.0.201` disappears, and nothing in the cluster can resolve external names because CoreDNS forwards to `10.0.0.201`. Chart dependency fetches then fail too, so Flux cannot fix it - break the loop by patching the Services back to `type: LoadBalancer` with `loadBalancerIP: 10.0.0.201` and the `metallb.universe.tf/allow-shared-ip: pihole-svc` annotation.
 - Cause: the release was reconciled while its values were missing (values live in the `HelmRelease` `spec.values`, not in the chart dir). A values-less Pi-hole release means NodePort services and no `*.lab.jackhumes.com` wildcard.
+### Leaked VPN Kill Switch On A Node
+
+- Symptom: host-originated egress is dead on one or more nodes. Image pulls time out, `talosctl dmesg` logs `write: operation not permitted` for NTP, and off-LAN TCP is blackholed while `10.0.0.0/24` still works.
+- Diagnose: from a privileged `hostNetwork` pod on the node, `iptables-nft -L -n` shows filter `INPUT`/`OUTPUT`/`FORWARD` policy `DROP` with a gluetun allowlist: `lo`, `ESTABLISHED`, LAN/pod/service CIDRs, ProtonVPN endpoints on `udp/51820`, and a `-o tun0` rule for an interface that does not exist on the host.
+- Fix: set the three policies back to `ACCEPT` and delete only the leaked gluetun rules; keep the `KUBE-FIREWALL` and `FLANNEL-FWD` jumps intact.
+- Prevent: exit-node pods must never use `hostNetwork` — gluetun's kill switch then writes into the host netns and survives pod deletion. The `exit-node-manager-deny-hostnetwork` ValidatingAdmissionPolicy enforces this in the `tailscale-exit-node-manager` namespace; gluetun's firewall inside its own pod netns is correct and stays on.
 ## Commit Style
 
 Use concise conventional commits:

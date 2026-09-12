@@ -174,6 +174,23 @@ just talos-status
 - Grafana dashboard stale: check Flux status, dashboard ConfigMap, dashboard sidecar logs, and Grafana folder annotations.
 - Loki duplicate logs: filter queries to a single log collection job.
 
+### A Traefik Replica Serving 404 For Every Route On One Entrypoint
+
+- Symptom: a host 404s roughly half the time. `auth.jackhumes.com` and `dawarich.jackhumes.com` 404'd while `headscale.jackhumes.com` (which bypasses Traefik) was fine, and Pocket ID answered 200 from inside the cluster.
+- Diagnose: curl each Traefik pod IP directly with a `Host:` header. One replica answered 200 and the other 404 for the same request, while `/api/http/routers` on both reported an identical 64-router config - the router tree for the `web` entrypoint was never built. The bad pod had restarted 7 times during an apiserver outage.
+- Fix: `kubectl -n traefik delete pod <replica>`; it rebuilds its config on start.
+- Related trap: a client using a public resolver bypasses Pi-hole's `*.lab.jackhumes.com` wildcard and hits the public edge, which 404s for internal-only hosts. Test internal hosts with `curl --resolve <host>:443:10.0.0.200`.
+
+### Renovate Bumped An Image Inside A Vendored Upstream Manifest
+
+- Symptom: MetalLB speaker failed liveness with `statuscode: 400`, the release rollback-looped, and everything behind it (metallb-config, pihole, therefore LAN DNS) stayed NotReady.
+- Cause: `infrastructure/*/install.yaml` are complete upstream manifests vendored whole. Renovate rewrote only the `image:` tags to v0.16.1, so 0.16 images ran against 0.15 plumbing (`/metrics` on 7472 over HTTP vs upstream's `/healthz` on 17472).
+- Fix: pin the images back to the vendored manifest's version. Renovate is now disabled for those files; upgrading means re-vendoring the whole manifest.
+
+### Pi-hole Deployed With Chart Defaults (LAN DNS Dies)
+
+- Symptom: `pihole-dns-tcp`/`-udp` appear as NodePort, `10.0.0.201` disappears, and nothing in the cluster can resolve external names because CoreDNS forwards to `10.0.0.201`. Chart dependency fetches then fail too, so Flux cannot fix it - break the loop by patching the Services back to `type: LoadBalancer` with `loadBalancerIP: 10.0.0.201` and the `metallb.universe.tf/allow-shared-ip: pihole-svc` annotation.
+- Cause: the release was reconciled while its values were missing (values live in the `HelmRelease` `spec.values`, not in the chart dir). A values-less Pi-hole release means NodePort services and no `*.lab.jackhumes.com` wildcard.
 ## Commit Style
 
 Use concise conventional commits:

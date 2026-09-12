@@ -12,3 +12,4 @@ terraform {
 }
 
 # Pipeline smoke test: verifies Terrakube plans this stack on pull requests.
+// pipeline retrigger 1789250760

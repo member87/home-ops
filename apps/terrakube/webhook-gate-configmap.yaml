@@ -22,7 +22,11 @@ data:
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     UPSTREAM = os.environ.get("UPSTREAM", "http://terrakube-api-service:8080").rstrip("/")
-    SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "").encode()
+    SECRETS = [
+        s.strip().encode()
+        for s in os.environ.get("GITHUB_WEBHOOK_SECRETS", "").split(",")
+        if s.strip()
+    ]
     REPO = os.environ.get("ALLOWED_REPO", "")
     SENDERS = {s.strip() for s in os.environ.get("ALLOWED_SENDERS", "").split(",") if s.strip()}
     BRANCH = os.environ.get("APPLY_BRANCH", "main")
@@ -42,12 +46,19 @@ data:
 
 
     def signature_ok(body, provided):
-        if not SECRET:
+        # One secret per Terrakube workspace: the v1 webhook secret is base64(workspaceId),
+        # so each workspace's GitHub hook signs with a different key and the gate has to
+        # accept any of them. Every candidate is checked with compare_digest, and the
+        # unknown-secret case still ends in a 401.
+        if not SECRETS:
             return False
         if not provided or not provided.startswith("sha256="):
             return False
-        expected = "sha256=" + hmac.new(SECRET, body, hashlib.sha256).hexdigest()
-        return hmac.compare_digest(expected, provided)
+        for secret in SECRETS:
+            expected = "sha256=" + hmac.new(secret, body, hashlib.sha256).hexdigest()
+            if hmac.compare_digest(expected, provided):
+                return True
+        return False
 
 
     def decide(event, payload):
@@ -176,13 +187,16 @@ data:
 
 
     def main():
-        if not SECRET:
-            log("GITHUB_WEBHOOK_SECRET is empty - refusing to start")
+        if not SECRETS:
+            log("GITHUB_WEBHOOK_SECRETS is empty - refusing to start")
             sys.exit(1)
         if not REPO:
             log("ALLOWED_REPO is empty - refusing to start")
             sys.exit(1)
-        log(f"listening on :8080, upstream {UPSTREAM}, repo {REPO}, apply branch {BRANCH}")
+        log(
+            f"listening on :8080, upstream {UPSTREAM}, repo {REPO}, "
+            f"apply branch {BRANCH}, {len(SECRETS)} webhook secret(s)"
+        )
         ThreadingHTTPServer(("", 8080), Handler).serve_forever()
 
 

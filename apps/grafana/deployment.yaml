@@ -14,89 +14,17 @@ spec:
       labels:
         app: grafana
     spec:
-      serviceAccountName: grafana
       initContainers:
         - name: init-dirs
           image: busybox:1.38
           command:
             - sh
             - -c
-            - |
-              mkdir -p /var/lib/grafana/dashboards/kubernetes
-              mkdir -p /var/lib/grafana/dashboards/unifi
-              mkdir -p /var/lib/grafana/dashboards/general
-              # Make dashboards dir writable by sidecar (runs as nobody:65534)
-              chmod 777 /dashboards
+            - mkdir -p /var/lib/grafana/plugins
           volumeMounts:
             - name: storage
               mountPath: /var/lib/grafana
-            - name: dashboards
-              mountPath: /dashboards
-        # Pre-populate dashboards before Grafana starts to avoid race condition
-        - name: init-dashboards
-          image: alpine/k8s:1.37.0
-          command:
-            - sh
-            - -c
-            - |
-              set -e
-              echo "Fetching dashboard ConfigMaps..."
-              
-              # Get all configmaps with the grafana_dashboard label
-              for CM in $(kubectl get configmap -n grafana -l grafana_dashboard=1 -o name); do
-                CM_NAME=$(echo "$CM" | sed 's|configmap/||')
-                echo "Processing $CM_NAME..."
-                
-                # Get folder annotation
-                FOLDER=$(kubectl get "$CM" -n grafana -o jsonpath='{.metadata.annotations.grafana_folder}' 2>/dev/null || echo "General")
-                [ -z "$FOLDER" ] && FOLDER="General"
-                
-                mkdir -p "/dashboards/$FOLDER"
-                # Make folder writable by sidecar
-                chmod 777 "/dashboards/$FOLDER"
-                
-                # Get all .json keys and extract each one
-                KEYS=$(kubectl get "$CM" -n grafana -o json | jq -r '.data | keys[] | select(endswith(".json"))')
-                for KEY in $KEYS; do
-                  echo "  Extracting $KEY to /dashboards/$FOLDER/"
-                  kubectl get "$CM" -n grafana -o json | jq -r --arg key "$KEY" '.data[$key]' > "/dashboards/$FOLDER/$KEY"
-                  # Make file writable by sidecar
-                  chmod 666 "/dashboards/$FOLDER/$KEY"
-                done
-              done
-              
-              echo "Dashboard init complete. Files:"
-              find /dashboards -name "*.json" -type f -exec ls -la {} \; | head -20
-          volumeMounts:
-            - name: dashboards
-              mountPath: /dashboards
       containers:
-        # Sidecar that watches for dashboard ConfigMap changes and copies them
-        - name: dashboard-sidecar
-          image: kiwigrid/k8s-sidecar:2.11.2
-          env:
-            - name: LABEL
-              value: "grafana_dashboard"
-            - name: LABEL_VALUE
-              value: "1"
-            - name: FOLDER
-              value: /dashboards
-            - name: RESOURCE
-              value: configmap
-            - name: NAMESPACE
-              value: grafana
-            - name: FOLDER_ANNOTATION
-              value: grafana_folder
-          volumeMounts:
-            - name: dashboards
-              mountPath: /dashboards
-          resources:
-            requests:
-              cpu: 10m
-              memory: 64Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
         - name: grafana
           image: grafana/grafana:13.2.1
           ports:
@@ -112,6 +40,15 @@ spec:
                 secretKeyRef:
                   name: grafana-alerting-secrets
                   key: discord_webhook_url
+            # Dashboards are applied over the HTTP API by terraform/grafana. Grafana
+            # cannot provision a service account token declaratively, so the admin
+            # user authenticates the provider over API basic auth instead; the login
+            # form stays disabled and humans still sign in through Pocket ID.
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-secret
+                  key: admin_password
           volumeMounts:
             - name: config
               mountPath: /etc/grafana
@@ -122,10 +59,6 @@ spec:
               mountPath: /var/lib/grafana
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
-            - name: dashboards-provisioning
-              mountPath: /etc/grafana/provisioning/dashboards
-            - name: dashboards
-              mountPath: /dashboards
             - name: alerting
               mountPath: /etc/grafana/provisioning/alerting
           livenessProbe:
@@ -159,11 +92,6 @@ spec:
         - name: datasources
           configMap:
             name: grafana-datasources
-        - name: dashboards-provisioning
-          configMap:
-            name: grafana-dashboards-provisioning
-        - name: dashboards
-          emptyDir: {}
         - name: alerting
           configMap:
             name: grafana-alerting

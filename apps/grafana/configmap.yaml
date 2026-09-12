@@ -27,7 +27,10 @@ data:
     oauth_auto_login = true
 
     [auth.basic]
-    enabled = false
+    # Enabled for the HTTP API only: terraform/grafana authenticates as the admin user
+    # to apply dashboards, because Grafana has no declarative way to issue a service
+    # account token. disable_login_form above still keeps humans on Pocket ID SSO.
+    enabled = true
 
     [auth.generic_oauth]
     enabled = true

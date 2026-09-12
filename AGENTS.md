@@ -261,3 +261,5 @@ fix(<scope>): resolve <problem>
 docs(<scope>): update <topic>
 chore(<scope>): perform maintenance
 ```
+
+<!-- protection probe -->

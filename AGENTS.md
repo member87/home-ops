@@ -148,7 +148,11 @@ Keep the edge patched with `just update-vps` (optional reboot with `just update-
 
 Everything under `terraform/` is planned and applied by Terrakube in-cluster. There are no GitHub Actions: GitHub only delivers webhooks, and all execution happens in the `terrakube` namespace.
 
-- Organization `homeops`; workspace `aws-edge` -> `terraform/aws-edge` on `main`, OpenTofu, remote execution. State lives in Terrakube (MinIO-backed), never in a local `terraform.tfstate`.
+- Organization `homeops`. Two workspaces, each with its own state, webhook and commit-status context:
+  - `aws-edge` -> `terraform/aws-edge`, the Lightsail edge box and its FRP/Caddy config.
+  - `grafana` -> `terraform/grafana`, every Grafana dashboard and folder.
+- Both are OpenTofu with remote execution, so `iacType` must be `tofu`; setting it to `terraform` with an OpenTofu version fails the job with "Invalid Terraform version range". State lives in Terrakube (MinIO-backed), never in a local `terraform.tfstate`.
+- Each workspace registers its own GitHub webhook, and the v1 HMAC secret is `base64(workspaceId)`, so the gatekeeper takes a comma-separated `GITHUB_WEBHOOK_SECRETS` and accepts any of them. Adding a workspace means adding its secret there too.
 - Pull request -> `Plan` template. Push to `main` -> `Plan and apply`. Both carry a file filter so only changes under the workspace's directory trigger a run.
 - Terrakube posts the plan as a pull request comment and sets a GitHub commit status (`pending` -> `success`/`failure`), which is what branch protection requires to block a pull request with a failing plan. `terrakube plan` re-runs a plan from a comment; apply-via-comment is deliberately off.
 - Secrets (AWS keys, `frps_auth_token`, `frps_dashboard_password`, `tailscale_authkey`) are sensitive workspace variables in Terrakube, not files in this repo.
@@ -202,8 +206,11 @@ The private key exists only in the Terrakube database and wherever it was backed
 
 - Monitoring stack includes Prometheus, Grafana, Loki, Alloy, kube-state-metrics, node-exporter, and Discord alerting.
 - Alloy replaces Promtail; do not add Promtail.
-- Grafana dashboards are ConfigMaps labeled `grafana_dashboard: "1"`.
-- Use `grafana_folder` annotations for dashboard folders.
+- Grafana dashboards live in `terraform/grafana/dashboards/<folder>/<name>.json` and are applied over the Grafana HTTP API by the `grafana` Terrakube workspace. They are not ConfigMaps and there is no dashboard sidecar; do not reintroduce either.
+- To add a dashboard: drop the JSON in the right folder directory, give it a stable `uid`, strip `id`/`version`/`iteration`, and open a pull request. The plan runs on the PR, the apply runs on merge.
+- A new folder directory also needs a title in `var.folders`, or the plan fails on its precondition instead of quietly using General.
+- Folders carry `prevent_destroy`. The Kubernetes folder holds the provisioned alert rules from `apps/grafana/alerting.yaml`, and deleting a Grafana folder deletes the rules inside it.
+- The Grafana provider authenticates as the admin user over API basic auth, because Grafana cannot provision a service account token declaratively. The password is sealed in `grafana-admin-secret` and mirrored into the workspace's sensitive `grafana_auth` variable. `GF_SECURITY_ADMIN_PASSWORD` only takes effect when the admin user is first created, so rotating it on an existing database also needs `grafana cli admin reset-admin-password` once inside a Grafana pod.
 - Avoid alert fatigue. Add alerts only for actionable service availability, high error rate, severe latency, resource exhaustion, data integrity, or security issues.
 - Existing cluster alerts already cover basic pod health, restarts, CPU, memory, and disk.
 

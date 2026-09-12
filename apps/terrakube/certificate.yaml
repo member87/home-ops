@@ -12,4 +12,3 @@ spec:
   dnsNames:
     - terrakube.lab.jackhumes.com
     - terrakube-api.lab.jackhumes.com
-    - terrakube-registry.lab.jackhumes.com

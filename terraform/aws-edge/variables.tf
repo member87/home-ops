@@ -31,7 +31,11 @@ variable "bundle_id" {
 variable "ssh_public_key" {
   description = "SSH public key installed for the 'ubuntu' user (same key as the old Oracle VPS). Key material, not a path: runs execute in a Terrakube executor container that has no ~/.ssh. Public keys are not secret, so the default is committed."
   type        = string
-  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3UXwi2ZmExP4hZLwcaRaryfSlUm9XTTwbMLv1pliEi jack@odin"
+  # Keep the trailing newline. The key pair was originally created from
+  # file(pathexpand("~/.ssh/id_ed25519.pub")), so the newline is part of the value AWS
+  # stored. public_key is ForceNew, so dropping it plans a replacement of the live edge
+  # box's key pair on every run.
+  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3UXwi2ZmExP4hZLwcaRaryfSlUm9XTTwbMLv1pliEi jack@odin\n"
 }
 
 variable "admin_cidrs" {

@@ -8,7 +8,11 @@ spec:
   timeout: 10m0s
   path: ./flux/cluster
   prune: false
-  wait: true
+  # wait: false - the root only applies Kustomization/HelmRelease objects and each child
+  # runs its own health checks. Waiting here also never succeeds: a suspended child reports
+  # observedGeneration: -1, which kstatus reads as InProgress forever (audiobookshelf,
+  # shelfmark), so every root reconcile burned its full timeout on a HealthCheckFailed.
+  wait: false
   sourceRef:
     kind: GitRepository
     name: home-ops

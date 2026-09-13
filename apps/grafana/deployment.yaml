@@ -14,16 +14,16 @@ spec:
       labels:
         app: grafana
     spec:
-      initContainers:
-        - name: init-dirs
-          image: busybox:1.38
-          command:
-            - sh
-            - -c
-            - mkdir -p /var/lib/grafana/plugins
-          volumeMounts:
-            - name: storage
-              mountPath: /var/lib/grafana
+      # Grafana runs as uid 472 and installs its datasource plugins into
+      # /var/lib/grafana/plugins at startup. fsGroup makes the emptyDir group-owned by
+      # 472 so that write succeeds; without it every plugin install dies with
+      # "permission denied, make sure you have write access to plugin dir" and the Loki
+      # datasource silently never registers. No init container is needed - Grafana
+      # creates the directories itself once the volume is writable.
+      securityContext:
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
       containers:
         - name: grafana
           image: grafana/grafana:13.2.1
@@ -35,6 +35,14 @@ spec:
               value: /etc/grafana/grafana.ini
             - name: GF_PATHS_PROVISIONING
               value: /etc/grafana/provisioning
+            # Grafana 13 stopped bundling the Loki datasource: the image ships only
+            # prometheus, tempo, zipkin, opentsdb, stackdriver and pyroscope in
+            # data/plugins-bundled. Without this, the provisioned Loki datasource
+            # resolves to "Data source not found" and every logs panel returns No data.
+            # Deliberately unversioned: the catalog serves the build that matches this
+            # Grafana, so a pin here would break on the next image bump instead.
+            - name: GF_PLUGINS_PREINSTALL
+              value: loki
             - name: DISCORD_WEBHOOK_URL
               valueFrom:
                 secretKeyRef:

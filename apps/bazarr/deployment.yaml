@@ -82,7 +82,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: bazarr
-          image: ghcr.io/home-operations/bazarr:1.6.0
+          image: ghcr.io/home-operations/bazarr:1.6.1
           ports:
             - containerPort: 6767
               name: http

@@ -42,7 +42,7 @@ spec:
             - /bin/sh
             - -c
           args:
-            - cp /input/mosquitto.conf /work/mosquitto.conf && mosquitto_passwd -b -c /work/passwd "$(cat /auth/username)" "$(cat /auth/password)" && chown mosquitto:mosquitto /work/mosquitto.conf /work/passwd && chmod 600 /work/passwd && chmod 644 /work/mosquitto.conf
+            - cp /input/mosquitto.conf /work/mosquitto.conf && mosquitto_passwd -b -c /work/passwd "$(cat /auth/username)" "$(cat /auth/password)" && mosquitto_passwd -b /work/passwd "$(cat /zigbee-auth/username)" "$(cat /zigbee-auth/password)" && chown mosquitto:mosquitto /work/mosquitto.conf /work/passwd && chmod 600 /work/passwd && chmod 644 /work/mosquitto.conf
           volumeMounts:
             - name: mqtt-config-template
               mountPath: /input
@@ -52,6 +52,9 @@ spec:
               readOnly: true
             - name: mqtt-runtime-config
               mountPath: /work
+            - name: zigbee-auth
+              mountPath: /zigbee-auth
+              readOnly: true
       containers:
         - name: mqtt
           image: eclipse-mosquitto:2.1.2-alpine
@@ -93,6 +96,9 @@ spec:
         - name: mqtt-auth
           secret:
             secretName: mqtt-auth
+        - name: zigbee-auth
+          secret:
+            secretName: zigbee2mqtt-auth
         - name: mqtt-runtime-config
           emptyDir: {}
         - name: mqtt-data

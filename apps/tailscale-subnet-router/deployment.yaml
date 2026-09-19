@@ -88,8 +88,11 @@ spec:
               containerPort: 1883
               protocol: TCP
           readinessProbe:
-            tcpSocket:
-              port: mqtt-tailnet
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - socat -T1 /dev/null TCP:100.64.0.14:1883
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:

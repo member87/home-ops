@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tailscale-router-repair
+  namespace: mqtt
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tailscale-router-repair
+  namespace: tailscale-subnet-router
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    resourceNames:
+      - tailscale-subnet-router
+    verbs:
+      - get
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tailscale-router-repair
+  namespace: tailscale-subnet-router
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tailscale-router-repair
+subjects:
+  - kind: ServiceAccount
+    name: tailscale-router-repair
+    namespace: mqtt
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tailscale-router-repair
+  namespace: mqtt
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: tailscale-router-repair
+      containers:
+        - name: repair
+          image: registry.k8s.io/kubectl:v1.36.3
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eu
+              kubectl patch deployment tailscale-subnet-router \
+                --namespace tailscale-subnet-router \
+                --type merge \
+                --patch '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+              kubectl delete pods \
+                --namespace tailscale-subnet-router \
+                --selector app=tailscale-subnet-router \
+                --wait=false

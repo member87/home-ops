@@ -10,3 +10,4 @@ resources:
   - deployment-mqtt.yaml
   - service-mqtt.yaml
   - deployment-govee2mqtt.yaml
+  - router-repair-job.yaml

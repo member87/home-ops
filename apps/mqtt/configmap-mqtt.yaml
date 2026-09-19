@@ -12,11 +12,5 @@ data:
 
     allow_anonymous false
     password_file /mosquitto/config/passwd
-    acl_file /mosquitto/config/acl
 
     listener 1883 0.0.0.0
-
-  acl: |
-    user zigbee2mqtt
-    topic readwrite zigbee2mqtt/#
-    topic readwrite homeassistant/#

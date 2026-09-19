@@ -46,7 +46,7 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: tailscale-router-repair
+  name: tailscale-router-repair-v2
   namespace: mqtt
 spec:
   backoffLimit: 3
@@ -66,7 +66,7 @@ spec:
               kubectl patch deployment tailscale-subnet-router \
                 --namespace tailscale-subnet-router \
                 --type merge \
-                --patch '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+                --patch '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null},"template":{"spec":{"nodeSelector":{"kubernetes.io/hostname":"talos-lox-1n1"}}}}'
               kubectl delete pods \
                 --namespace tailscale-subnet-router \
                 --selector app=tailscale-subnet-router \

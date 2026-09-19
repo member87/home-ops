@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - sealedsecret-mqtt-auth.yaml
-  - sealedsecret-zigbee2mqtt-auth.yaml
   - sealedsecret-govee2mqtt.yaml
   - configmap-mqtt.yaml
   - deployment-mqtt.yaml

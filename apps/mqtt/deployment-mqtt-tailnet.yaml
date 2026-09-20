@@ -1,0 +1,127 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mqtt-tailnet
+  namespace: mqtt
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mqtt-tailnet
+  namespace: mqtt
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mqtt-tailnet
+  namespace: mqtt
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mqtt-tailnet
+subjects:
+  - kind: ServiceAccount
+    name: mqtt-tailnet
+    namespace: mqtt
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-tailnet
+  namespace: mqtt
+  labels:
+    app: mqtt-tailnet
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mqtt-tailnet
+  template:
+    metadata:
+      labels:
+        app: mqtt-tailnet
+    spec:
+      serviceAccountName: mqtt-tailnet
+      containers:
+        - name: tailscale
+          image: tailscale/tailscale:v1.102.4
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-tailscale-auth
+                  key: TS_AUTHKEY
+            - name: TS_HOSTNAME
+              value: mqtt-tailnet
+            - name: TS_KUBE_SECRET
+              value: mqtt-tailnet-state
+            - name: TS_USERSPACE
+              value: "true"
+            - name: TS_AUTH_ONCE
+              value: "true"
+            - name: TS_ACCEPT_DNS
+              value: "false"
+            - name: TS_EXTRA_ARGS
+              value: "--login-server=https://headscale.lab.jackhumes.com"
+            - name: TS_ENABLE_HEALTH_CHECK
+              value: "true"
+            - name: TS_LOCAL_ADDR_PORT
+              value: "0.0.0.0:9002"
+          ports:
+            - name: health
+              containerPort: 9002
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        - name: mqtt-proxy
+          image: alpine/socat:1.8.1.3
+          args:
+            - TCP-LISTEN:1883,reuseaddr,fork
+            - TCP:mqtt.mqtt.svc.cluster.local:1883
+          ports:
+            - name: mqtt
+              containerPort: 1883
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - socat -T1 /dev/null TCP:mqtt.mqtt.svc.cluster.local:1883
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

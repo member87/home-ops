@@ -5,8 +5,10 @@ resources:
   - namespace.yaml
   - sealedsecret-mqtt-auth.yaml
   - sealedsecret-zigbee2mqtt-auth.yaml
+  - sealedsecret-mqtt-tailscale.yaml
   - sealedsecret-govee2mqtt.yaml
   - configmap-mqtt.yaml
   - deployment-mqtt.yaml
+  - deployment-mqtt-tailnet.yaml
   - service-mqtt.yaml
   - deployment-govee2mqtt.yaml

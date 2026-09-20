@@ -36,6 +36,15 @@ spec:
         app: mqtt
     spec:
       initContainers:
+        - name: init-data-permissions
+          image: eclipse-mosquitto:2.1.2-alpine
+          command:
+            - chown
+            - mosquitto:mosquitto
+            - /mosquitto/data
+          volumeMounts:
+            - name: mqtt-data
+              mountPath: /mosquitto/data
         - name: setup-auth
           image: eclipse-mosquitto:2.1.2-alpine
           command:

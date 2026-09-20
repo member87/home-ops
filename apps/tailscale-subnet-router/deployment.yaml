@@ -82,33 +82,6 @@ spec:
               mountPath: /var/lib/tailscale
             - name: dev-net-tun
               mountPath: /dev/net/tun
-        # Tailnet-only TCP endpoint for the cluster MQTT broker. The router's
-        # Kubernetes-backed Tailscale state preserves this node's 100.64.0.14
-        # address across pod recreation; binding it prevents LAN exposure.
-        - name: mqtt-tailnet-proxy
-          image: alpine/socat:1.8.1.3
-          args:
-            - TCP-LISTEN:1883,bind=100.64.0.14,reuseaddr,fork
-            - TCP:mqtt.mqtt.svc.cluster.local:1883
-          ports:
-            - name: mqtt-tailnet
-              containerPort: 1883
-              protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - socat -T1 /dev/null TCP:100.64.0.14:1883
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 100m
-              memory: 64Mi
       volumes:
         - name: tailscale-state
           emptyDir: {}

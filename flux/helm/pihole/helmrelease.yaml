@@ -103,6 +103,8 @@ spec:
       dnsmasq:
         enableCustomDnsMasq: true
         customDnsEntries:
+          # Direct UGREEN NFS endpoint; nas.lab remains Traefik-backed HTTPS.
+          - address=/nas-nfs.lab.jackhumes.com/10.0.0.9
           # Wildcard DNS for lab domain - routes all *.lab.jackhumes.com to Traefik
           - address=/.lab.jackhumes.com/10.0.0.200
         customCnameEntries: []

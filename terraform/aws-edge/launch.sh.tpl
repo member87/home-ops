@@ -84,6 +84,10 @@ EOF
 cat > /opt/frp-tunnel/frps.toml <<EOF
 bindPort = 7000
 
+# Caddy is the public entrypoint. All FRP proxy ports, including the metrics
+# receiver, are loopback-only; frpc control traffic still uses bindPort 7000.
+proxyBindAddr = "127.0.0.1"
+
 auth.method = "token"
 auth.token = "${frps_auth_token}"
 

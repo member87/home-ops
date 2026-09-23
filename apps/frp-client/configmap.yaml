@@ -43,6 +43,15 @@ data:
     localPort = 80
     remotePort = 8083
 
+    # Edge metrics reach Prometheus only through the FRP tunnel. The Lightsail
+    # firewall does not expose this remote port publicly.
+    [[proxies]]
+    name = "prometheus-remote-write"
+    type = "tcp"
+    localIP = "prometheus.prometheus.svc.cluster.local"
+    localPort = 9090
+    remotePort = 9091
+
     # Terrakube GitHub webhook tunnel - routes through Traefik to the webhook gatekeeper
     # (apps/terrakube/webhook-gate.yaml), which is the only publicly reachable Terrakube
     # component. The UI and API stay internal-only.

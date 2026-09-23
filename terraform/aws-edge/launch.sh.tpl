@@ -44,9 +44,41 @@ services:
     network_mode: host
     command: -n --stun-only --no-cli --no-tls --no-dtls --listening-ip=__VPCIP__ --listening-port=3478
 
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: node-exporter
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - --web.listen-address=127.0.0.1:9100
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host/root
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+
+  prometheus-agent:
+    image: prom/prometheus:v3.14.0
+    container_name: prometheus-agent
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - --web.listen-address=127.0.0.1:9090
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --agent
+      - --storage.agent.path=/prometheus
+    volumes:
+      - ./prometheus-agent.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_agent_data:/prometheus
+
 volumes:
   caddy_data:
   caddy_config:
+  prometheus_agent_data:
 EOF
 
 cat > /opt/frp-tunnel/frps.toml <<EOF
@@ -62,6 +94,29 @@ webServer.user = "admin"
 webServer.password = "${frps_dashboard_password}"
 
 transport.tls.force = false
+EOF
+
+# The agent is deliberately host-networked: remote-write reaches FRP on
+# loopback and node-exporter is never exposed on the public interface.
+cat > /opt/frp-tunnel/prometheus-agent.yml <<'EOF'
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: aws-edge-node
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+        labels:
+          instance: aws-edge
+
+  - job_name: aws-edge-prometheus-agent
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+        labels:
+          instance: aws-edge
+
+remote_write:
+  - url: http://127.0.0.1:9091/api/v1/write
 EOF
 
 # Caddy auto-issues Let's Encrypt certs once public DNS points here.

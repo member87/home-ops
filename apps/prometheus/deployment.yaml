@@ -31,6 +31,8 @@ spec:
             - '--web.console.libraries=/usr/share/prometheus/console_libraries'
             - '--web.console.templates=/usr/share/prometheus/consoles'
             - '--web.enable-lifecycle'
+            # Receives the edge-local Prometheus agent through the private FRP tunnel.
+            - '--web.enable-remote-write-receiver'
             - '--storage.tsdb.retention.size=14GB'
           ports:
             - containerPort: 9090

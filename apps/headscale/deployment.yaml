@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: headscale
-          image: headscale/headscale:v0.29.3
+          image: headscale/headscale:v0.29.4
           args:
             - serve
           ports:

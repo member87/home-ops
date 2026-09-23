@@ -36,13 +36,9 @@ spec:
       global:
         timezone: Europe/London
 
-      # Hotfix for Longhorn 1.11.0 regressions
-      image:
-        longhorn:
-          manager:
-            tag: v1.11.1
-          instanceManager:
-            tag: v1.11.1
+      # Component versions are defined only by the pinned chart dependency. Do not
+      # override individual images here: Longhorn manager, engine, UI, CSI, and
+      # share-manager must run the same release.
 
       # Longhorn settings
       defaultSettings:

@@ -3,6 +3,24 @@
 if [ -z "$${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -euo pipefail
 
+# Use the Terraform-owned host identity before configuration management connects.
+# HostKeyAlgorithms prevents sshd from selecting an image-generated fallback key.
+printf '%s' '${ssh_host_private_key_b64}' | base64 --decode > /etc/ssh/ssh_host_ed25519_key
+printf '%s' '${ssh_host_public_key_b64}' | base64 --decode > /etc/ssh/ssh_host_ed25519_key.pub
+chmod 600 /etc/ssh/ssh_host_ed25519_key
+chmod 644 /etc/ssh/ssh_host_ed25519_key.pub
+install -d -o ubuntu -g ubuntu -m 0700 /home/ubuntu/.ssh
+printf '%s' '${authorized_keys_b64}' | base64 --decode > /home/ubuntu/.ssh/authorized_keys
+chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys
+chmod 600 /home/ubuntu/.ssh/authorized_keys
+install -d -m 0755 /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/99-home-ops-host-key.conf <<'EOF'
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKeyAlgorithms ssh-ed25519
+EOF
+/usr/sbin/sshd -t
+systemctl restart ssh
+
 timedatectl set-timezone Europe/London
 
 apt-get update
@@ -16,148 +34,14 @@ grep -q /swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 mkdir -p /opt/frp-tunnel /var/log/caddy
 
-cat > /opt/frp-tunnel/docker-compose.yml <<'EOF'
-services:
-  frps:
-    image: fatedier/frps:v0.61.1
-    container_name: frps
-    restart: unless-stopped
-    network_mode: host
-    volumes:
-      - ./frps.toml:/etc/frp/frps.toml:ro
-    command: -c /etc/frp/frps.toml
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy
-    restart: unless-stopped
-    network_mode: host
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-
-  coturn:
-    image: coturn/coturn:4.6.3
-    container_name: coturn
-    restart: unless-stopped
-    network_mode: host
-    command: -n --stun-only --no-cli --no-tls --no-dtls --listening-ip=__VPCIP__ --listening-port=3478
-
-  node-exporter:
-    image: prom/node-exporter:v1.12.1
-    container_name: node-exporter
-    restart: unless-stopped
-    network_mode: host
-    command:
-      - --web.listen-address=127.0.0.1:9100
-      - --path.procfs=/host/proc
-      - --path.sysfs=/host/sys
-      - --path.rootfs=/host/root
-      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)
-      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/host/root:ro,rslave
-
-  prometheus-agent:
-    image: prom/prometheus:v3.14.0
-    container_name: prometheus-agent
-    restart: unless-stopped
-    network_mode: host
-    command:
-      - --web.listen-address=127.0.0.1:9090
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --agent
-      - --storage.agent.path=/prometheus
-    volumes:
-      - ./prometheus-agent.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_agent_data:/prometheus
-
-volumes:
-  caddy_data:
-  caddy_config:
-  prometheus_agent_data:
-EOF
-
-cat > /opt/frp-tunnel/frps.toml <<EOF
-bindPort = 7000
-
-# Caddy is the public entrypoint. All FRP proxy ports, including the metrics
-# receiver, are loopback-only; frpc control traffic still uses bindPort 7000.
-proxyBindAddr = "127.0.0.1"
-
-auth.method = "token"
-auth.token = "${frps_auth_token}"
-
-# Dashboard, loopback-only (reach via: ssh -L 7500:127.0.0.1:7500 ubuntu@<static-ip>)
-webServer.addr = "127.0.0.1"
-webServer.port = 7500
-webServer.user = "admin"
-webServer.password = "${frps_dashboard_password}"
-
-transport.tls.force = false
-EOF
-
-# The agent is deliberately host-networked: remote-write reaches FRP on
-# loopback and node-exporter is never exposed on the public interface.
-cat > /opt/frp-tunnel/prometheus-agent.yml <<'EOF'
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: aws-edge-node
-    static_configs:
-      - targets: ["127.0.0.1:9100"]
-        labels:
-          instance: aws-edge
-
-  - job_name: aws-edge-prometheus-agent
-    static_configs:
-      - targets: ["127.0.0.1:9090"]
-        labels:
-          instance: aws-edge
-
-remote_write:
-  - url: http://127.0.0.1:9091/api/v1/write
-EOF
-
-# Caddy auto-issues Let's Encrypt certs once public DNS points here.
-cat > /opt/frp-tunnel/Caddyfile <<'EOF'
-# Pocket ID (auth via Traefik) - public access
-auth.jackhumes.com {
-	reverse_proxy localhost:8081
-	log {
-		output file /var/log/caddy/auth.log
-	}
-}
-
-# Headscale control plane + embedded DERP - public access
-headscale.jackhumes.com {
-	reverse_proxy localhost:8082
-	log {
-		output file /var/log/caddy/headscale.log
-	}
-}
-
-# Dawarich (via Traefik) - public access
-dawarich.jackhumes.com {
-	reverse_proxy localhost:8083
-	log {
-		output file /var/log/caddy/dawarich.log
-	}
-}
-
-# Terrakube GitHub webhook receiver (via Traefik -> in-cluster gatekeeper).
-# Only the webhook path is public; the Terrakube UI and API stay on the LAN.
-terrakube-hook.jackhumes.com {
-	reverse_proxy localhost:8084
-	log {
-		output file /var/log/caddy/terrakube-hook.log
-	}
-}
-EOF
+# These files are rendered from terraform/aws-edge/config. Terraform also deploys
+# the same content to existing instances through terraform_data.edge_config.
+printf '%s' '${docker_compose_b64}' | base64 --decode > /opt/frp-tunnel/docker-compose.yml
+printf '%s' '${frps_config_b64}' | base64 --decode > /opt/frp-tunnel/frps.toml
+printf '%s' '${prometheus_agent_config_b64}' | base64 --decode > /opt/frp-tunnel/prometheus-agent.yml
+printf '%s' '${caddy_config_b64}' | base64 --decode > /opt/frp-tunnel/Caddyfile
+printf '%s' '${egress_cap_service_b64}' | base64 --decode > /etc/systemd/system/egress-cap.service
+chmod 600 /opt/frp-tunnel/frps.toml
 
 # Bind coturn ONLY to the VPC private IP. Binding all interfaces (or the
 # tailscale0 address) coincided with two full network blackholes on this
@@ -172,20 +56,6 @@ systemctl enable --now docker
 # Egress cap FIRST: a 4mbit tbf bounds relay burn from any broken client.
 # Applied before the tailnet join so a hanging join can never leave the
 # box without its guardrails.
-cat > /etc/systemd/system/egress-cap.service <<'EOF'
-[Unit]
-Description=Egress bandwidth cap (Lightsail data-transfer budget guard)
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/sbin/tc qdisc replace dev ens5 root tbf rate 4mbit burst 256kbit latency 50ms
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
 systemctl daemon-reload
 systemctl enable --now egress-cap.service
 

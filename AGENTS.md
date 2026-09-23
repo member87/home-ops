@@ -22,7 +22,7 @@ Keep this file short. Prefer discovering current details from the repo over stor
 - Use SOPS with age for Talos configs in `talos/`.
 - Pin container images to explicit versions; never use `latest`.
 - Update Glance dashboard icons/links when adding or removing apps.
-- When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/configmap.yaml` AND the Caddy site block in `terraform/aws-edge/launch.sh.tpl` plus the live box; see Public Access & AWS Lightsail Edge (FRP).
+- When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/configmap.yaml` and the Caddy site block in `terraform/aws-edge/config/Caddyfile`; see Public Access & AWS Lightsail Edge (FRP).
 - Read files before editing and make targeted changes.
 - Test or validate changes when feasible.
 - Flux reconciles from Git; do not manually mutate cluster state unless troubleshooting or explicitly requested.
@@ -117,7 +117,7 @@ External access for `<app>.jackhumes.com` is routed through the AWS Lightsail ed
 
 Three places must agree when exposing a new public service (the cluster side alone is not enough):
 1. `apps/frp-client/configmap.yaml` — add a `[[proxies]]` TCP entry whose `remotePort` forwards to Traefik `:80`.
-2. `terraform/aws-edge/launch.sh.tpl` — add the Caddy site block reverse-proxying the host to `localhost:<remotePort>`. This is the source of truth, but it only runs on first boot: `user_data` carries `lifecycle { ignore_changes = [user_data] }` so editing it never replaces the live instance. Roll the same block onto the running box over SSH (below).
+2. `terraform/aws-edge/config/Caddyfile` — add the site block reverse-proxying the host to `localhost:<remotePort>`. Terrakube deploys and validates the edge config over SSH after merge; never edit the live file as the source of truth.
 3. Cloudflare DNS — an A record for the host pointing at the edge IP, managed by `terraform/aws-edge-dns` (`public_hostnames`). Keep proxying off: ACME HTTP-01 and DERP need the real IP.
 
 Tunnel map:
@@ -128,6 +128,7 @@ Tunnel map:
 |`headscale.jackhumes.com`|`8082`|Headscale (direct)|
 |`dawarich.jackhumes.com`|`8083`|Traefik -> Dawarich|
 |`terrakube-hook.jackhumes.com`|`8084`|Traefik -> Terrakube webhook gatekeeper|
+|Edge-local metrics receiver|`9091`|Prometheus remote-write API; bound to loopback and closed by the Lightsail firewall|
 
 ### SSH to the edge
 
@@ -135,12 +136,7 @@ Tunnel map:
 ssh ubuntu@18.171.34.111        # key-based; prefix system/docker commands with sudo
 ```
 
-Caddy and frps run in Docker (compose project `frp-tunnel` in `/opt/frp-tunnel`). After editing `/opt/frp-tunnel/Caddyfile`, validate and reload without downtime:
-
-```bash
-sudo docker exec caddy caddy validate --config /etc/caddy/Caddyfile
-sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile
-```
+Caddy, FRP, node-exporter, and the Prometheus agent are managed by the `terraform_data.edge_config` resource from files under `terraform/aws-edge/config/`. Terrakube validates and deploys those files over SSH, then recreates the Compose services. Manual edits under `/opt/frp-tunnel` are overwritten by the next applicable Terraform run.
 
 Keep the edge patched with `just update-vps` (optional reboot with `just update-vps yes`).
 
@@ -155,7 +151,7 @@ Everything under `terraform/` is planned and applied by Terrakube in-cluster. Th
 - Each workspace registers its own GitHub webhook, and the v1 HMAC secret is `base64(workspaceId)`, so the gatekeeper takes a comma-separated `GITHUB_WEBHOOK_SECRETS` and accepts any of them. Adding a workspace means adding its secret there too.
 - Pull request -> `Plan` template. Push to `main` -> `Plan and apply`. Both carry a file filter so only changes under the workspace's directory trigger a run.
 - Terrakube posts the plan as a pull request comment and sets a GitHub commit status (`pending` -> `success`/`failure`), which is what branch protection requires to block a pull request with a failing plan. `terrakube plan` re-runs a plan from a comment; apply-via-comment is deliberately off.
-- Secrets (AWS keys, `frps_auth_token`, `frps_dashboard_password`, `tailscale_authkey`) are sensitive workspace variables in Terrakube, not files in this repo.
+- Secrets (`frps_auth_token`, `frps_dashboard_password`, `tailscale_authkey`, and AWS credentials) are sensitive workspace variables in Terrakube, not files in this repo. Terraform generates the edge deployment and host SSH identities into sensitive state; state access therefore grants edge SSH access. Additional operator public keys live in `admin_ssh_public_keys` without labels.
 
 ### Why the webhook gatekeeper exists
 

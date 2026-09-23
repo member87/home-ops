@@ -1,0 +1,32 @@
+# Pocket ID (auth via Traefik) - public access
+auth.jackhumes.com {
+	reverse_proxy localhost:8081
+	log {
+		output file /var/log/caddy/auth.log
+	}
+}
+
+# Headscale control plane + embedded DERP - public access
+headscale.jackhumes.com {
+	reverse_proxy localhost:8082
+	log {
+		output file /var/log/caddy/headscale.log
+	}
+}
+
+# Dawarich (via Traefik) - public access
+dawarich.jackhumes.com {
+	reverse_proxy localhost:8083
+	log {
+		output file /var/log/caddy/dawarich.log
+	}
+}
+
+# Terrakube GitHub webhook receiver (via Traefik -> in-cluster gatekeeper).
+# Only the webhook path is public; the Terrakube UI and API stay on the LAN.
+terrakube-hook.jackhumes.com {
+	reverse_proxy localhost:8084
+	log {
+		output file /var/log/caddy/terrakube-hook.log
+	}
+}

@@ -112,13 +112,15 @@ connection string.
 ## Operational model
 
 Flux reconciles the Kubernetes side from Git. Terrakube plans pull requests and
-applies OpenTofu after changes merge to `main`. The edge is exceptional: its
-launch script describes a fresh instance, but a live edge service change must
-also be rolled out over SSH because Terraform intentionally ignores `user_data`
-updates on the existing Lightsail instance.
+applies OpenTofu after changes merge to `main`. For the edge, `user_data`
+bootstraps a fresh Lightsail instance while `terraform_data.edge_config`
+converges the versioned service configuration on the existing VM over SSH.
 
-This split keeps routine cluster changes declarative while preserving deliberate,
-reviewable control of the internet-facing edge.
+Terraform generates the deployment and host SSH identities into sensitive
+Terrakube state, so state access grants edge SSH access. Only unlabeled
+operator public keys are committed. Every configuration change is validated
+before installation, then Compose services are recreated from the reviewed files
+under `terraform/aws-edge/config/`.
 
 ## Architecture notes
 

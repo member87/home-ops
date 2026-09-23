@@ -28,16 +28,14 @@ variable "bundle_id" {
   default     = "nano_3_0"
 }
 
-variable "ssh_public_key" {
-  description = "SSH public key installed for the 'ubuntu' user (same key as the old Oracle VPS). Key material, not a path: runs execute in a Terrakube executor container that has no ~/.ssh. Public keys are not secret, so the default is committed."
-  type        = string
-  # Keep the trailing newline. The key pair was originally created from
-  # file(pathexpand("~/.ssh/id_ed25519.pub")), so the newline is part of the value AWS
-  # stored. public_key is ForceNew, so dropping it plans a replacement of the live edge
-  # box's key pair on every run.
-  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3UXwi2ZmExP4hZLwcaRaryfSlUm9XTTwbMLv1pliEi jack@odin\n"
+variable "admin_ssh_public_keys" {
+  description = "Additional public keys installed for direct operator SSH access. Terraform's generated deployment key is included automatically."
+  type        = list(string)
+  default = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL3UXwi2ZmExP4hZLwcaRaryfSlUm9XTTwbMLv1pliEi",
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKB5yZ34+4OSm/TIe0WEbvHRy8HR5QH22Im5K1UG4f84",
+  ]
 }
-
 variable "admin_cidrs" {
   description = "CIDRs allowed to reach SSH (22/tcp). Lightsail browser SSH remains available as a fallback if your home IP changes."
   type        = list(string)

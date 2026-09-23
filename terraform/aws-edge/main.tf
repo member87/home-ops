@@ -156,11 +156,11 @@ resource "aws_lightsail_instance_public_ports" "edge" {
 }
 
 # Lightsail reports the instance ready before its launch script replaces the
-# generated SSH host key. Wait once per instance so the pinned connection below
-# never races the bootstrap identity.
+# generated SSH host key. Allow the launch script a full minute before the
+# pinned configuration-management connection starts.
 resource "terraform_data" "edge_bootstrap_wait" {
   provisioner "local-exec" {
-    command = "sleep 30"
+    command = "sleep 60"
   }
 
   depends_on = [

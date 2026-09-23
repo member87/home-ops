@@ -131,6 +131,22 @@
   ],
   "packageRules": [
     {
+      "description": "Longhorn components must move together with the upstream chart; individual image bumps create unsupported manager and engine version skew.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/^(?:docker\\.io\\/)?longhornio\\//"],
+      "enabled": false
+    },
+    {
+      "description": "Upgrade Longhorn only through its pinned chart dependency, in one reviewed release PR.",
+      "matchManagers": ["helmv3"],
+      "matchFileNames": ["infrastructure/longhorn/Chart.yaml"],
+      "groupName": "Longhorn",
+      "commitMessageTopic": "Longhorn",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "longhorn",
+      "automerge": false
+    },
+    {
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/^ghcr\\.io\\/siderolabs\\//"],
       "enabled": false

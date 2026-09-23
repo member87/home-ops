@@ -97,7 +97,13 @@ for path in "${paths[@]}"; do
   fi
 done
 
-# 4. Git-sourced HelmReleases use reconcileStrategy: ChartVersion, so a change inside one of
+# 4. Longhorn is a tightly coupled release. Its upstream chart dependency pins every
+# component; an image override here can split manager, engine, UI, and CSI versions.
+if yq -e '.spec.values.longhorn.image.longhorn' flux/helm/longhorn/helmrelease.yaml >/dev/null 2>&1; then
+  fail "flux/helm/longhorn/helmrelease.yaml overrides individual Longhorn images; pin the chart dependency instead"
+fi
+
+# 5. Git-sourced HelmReleases use reconcileStrategy: ChartVersion, so a change inside one of
 #    those chart dirs only deploys if Chart.yaml's version moves. Catch the silent no-deploy.
 base="${VALIDATE_BASE:-origin/main}"
 if git rev-parse --verify -q "$base" >/dev/null 2>&1; then

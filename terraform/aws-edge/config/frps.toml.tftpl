@@ -1,0 +1,16 @@
+bindPort = 7000
+
+# Caddy is the public entrypoint. All FRP proxy ports, including the metrics
+# receiver, are loopback-only; frpc control traffic still uses bindPort 7000.
+proxyBindAddr = "127.0.0.1"
+
+auth.method = "token"
+auth.token = "${frps_auth_token}"
+
+# Dashboard, loopback-only (reach via: ssh -L 7500:127.0.0.1:7500 ubuntu@<static-ip>)
+webServer.addr = "127.0.0.1"
+webServer.port = 7500
+webServer.user = "admin"
+webServer.password = "${frps_dashboard_password}"
+
+transport.tls.force = false

@@ -43,16 +43,19 @@ flowchart LR
     TF["terraform/aws-edge"] -->|"tofu apply"| LS["Cloud VPS instance"]
     TF --> FW["Firewall rules<br/>(22, 80, 443 tcp / 3478 udp)"]
     TF --> SIP["Static public IP"]
-    TF --> KP["SSH key"]
-    LS -->|"user_data launch script"| SVC["docker compose:<br/>tunnel server + TLS + STUN"]
+    TF --> KP["Generated deployment + host SSH keys"]
+    LS -->|"user_data bootstrap"| BOOT["Docker + swap + Tailscale"]
+    TF -->|"validated SSH deployment"| SVC["docker compose:<br/>FRP + TLS + STUN + metrics"]
     SVC --> CAP["Egress cap (systemd, 4mbit)"]
-    SVC --> SW["1G swapfile"]
 ```
 
-- The launch script is idempotent and lives in Git: a destroyed/replaced VM
-  converges to the same state.
-- Secrets (tunnel token) are injected at apply time via environment variables,
-  never committed.
+- `user_data` bootstraps a replacement VM from the same files used for live
+  configuration, but stays ignored by lifecycle to prevent accidental replacement.
+- `terraform_data.edge_config` hashes, validates, and deploys service files over
+  SSH whenever they change, then recreates the Compose services.
+- Terraform-generated SSH private keys remain in sensitive Terrakube state;
+  additional unlabeled operator public keys are versioned configuration.
+- Other secrets are sensitive Terrakube workspace variables, never committed.
 - DNS records are the one manual island (managed DNS console).
 
 ## Change flow

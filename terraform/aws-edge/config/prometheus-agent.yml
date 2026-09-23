@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: aws-edge-node
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+        labels:
+          instance: aws-edge
+
+  - job_name: aws-edge-prometheus-agent
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+        labels:
+          instance: aws-edge
+
+remote_write:
+  - url: http://127.0.0.1:9091/api/v1/write

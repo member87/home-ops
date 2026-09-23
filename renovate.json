@@ -149,8 +149,12 @@
       "semanticCommitScope": "talos"
     },
     {
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["kubernetes/kubernetes"],
+      "description": "Keep every Kubernetes control-plane and kubelet image on the same non-major release; Kubernetes detects image references with the docker datasource, while the Talos custom manager uses github-releases",
+      "matchPackageNames": [
+        "kubernetes/kubernetes",
+        "/^(?:ghcr\\.io\\/siderolabs\\/kubelet|registry\\.k8s\\.io\\/kube-(?:apiserver|controller-manager|proxy|scheduler))$/"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Kubernetes",
       "commitMessageTopic": "Kubernetes",
       "semanticCommitType": "chore",

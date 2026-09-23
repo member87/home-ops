@@ -14,10 +14,11 @@ variable "folders" {
   description = "Maps each directory under dashboards/ to the Grafana folder title it is provisioned into. A directory with no entry here fails the plan rather than silently landing dashboards in the General folder."
   type        = map(string)
   default = {
-    kubernetes = "Kubernetes"
-    logs       = "Logs"
-    network    = "Network"
-    security   = "Security"
-    unifi      = "UniFi"
+    kubernetes     = "Kubernetes"
+    infrastructure = "Infrastructure"
+    logs           = "Logs"
+    network        = "Network"
+    security       = "Security"
+    unifi          = "UniFi"
   }
 }

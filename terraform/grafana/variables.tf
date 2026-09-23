@@ -5,7 +5,7 @@ variable "grafana_url" {
 }
 
 variable "grafana_auth" {
-  description = "Grafana service account token (glsa_...) for a service account with the Admin role. Set as a sensitive variable on the Terrakube workspace, never committed."
+  description = "Grafana administrator credentials (<username>:<password>) for HTTP API basic authentication. Set as a sensitive variable on the Terrakube workspace, never committed."
   type        = string
   sensitive   = true
 }

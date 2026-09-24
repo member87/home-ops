@@ -66,7 +66,7 @@ sops --input-type yaml --output-type yaml talos/talosconfig
 
 - Put app resources under `apps/<app-name>/`.
 - Typical files: `namespace.yaml`, `deployment.yaml`, `service.yaml`, `configmap.yaml`, `sealedsecret.yaml`, `ingressroute.yaml`, `kustomization.yaml`.
-- Every hand-written manifest carries an explicit `metadata.namespace`; the only namespace transformers are `apps/{glance,ip-checker,nas}`, and glance/headscale need theirs because generated ConfigMaps have no namespace of their own. `kustomization.yaml` must reference every file in the directory.
+- Every hand-written manifest carries an explicit `metadata.namespace`; the only namespace transformers are `apps/{frp-client,glance,headscale,ip-checker,nas}`, where generated ConfigMaps need the transformer to receive a namespace. `kustomization.yaml` must reference every file in the directory.
 - Add a Flux `Kustomization` for the app in `flux/cluster/apps.yaml`, then run `scripts/validate-flux-manifests.sh`.
 - Only reach for a `HelmRelease` in `flux/helm/` when the app needs an upstream chart.
 - Use health checks where supported. Use TCP probes when no HTTP health endpoint exists.

@@ -11,6 +11,8 @@
 #   ssh ubuntu@<edge-ip> 'grep -A2 "auth.token" ~/frp-tunnel/frps.toml'
 # frps_auth_token          = "..."
 # frps_dashboard_password  = "..."
+# tailscale_authkey is rendered into user_data: never run the launch script with
+# shell tracing, and revoke the key immediately if it appears in logs.
 # tailscale_authkey        = "..."   # fresh Headscale preauth key per instance recreation
 
 # Optional overrides:

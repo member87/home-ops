@@ -18,19 +18,33 @@ cat > /etc/ssh/sshd_config.d/99-home-ops-host-key.conf <<'EOF'
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKeyAlgorithms ssh-ed25519
 EOF
+# cloud-init validates user scripts before Ubuntu's ssh service creates this.
+install -d -m 0755 /run/sshd
 /usr/sbin/sshd -t
 systemctl restart ssh
 
 timedatectl set-timezone Europe/London
 
+# Docker's large packages OOM-kill dpkg on the 512 MB bundle without swap.
+# Keep this idempotent so a failed bootstrap can be resumed safely.
+if ! swapon --show=NAME --noheadings | grep -qx '/swapfile'; then
+  if [ ! -f /swapfile ]; then
+    fallocate -l 1G /swapfile
+  fi
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+fi
+grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
 apt-get update
 apt-get install -y ca-certificates curl
+# The Lightsail image may activate Snap Docker during initialization. Its
+# confinement cannot bind-mount the managed files under /opt.
+if command -v snap >/dev/null 2>&1 && snap list docker >/dev/null 2>&1; then
+  snap remove docker
+fi
 curl -fsSL https://get.docker.com | sh
-
-# 512MB RAM is tight for docker+4 daemons; spikes (cert ops, pulls, netcheck
-# bursts) otherwise trigger reclaim storms that blackhole networking.
-fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
-grep -q /swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 mkdir -p /opt/frp-tunnel /var/log/caddy
 
@@ -61,11 +75,11 @@ systemctl enable --now egress-cap.service
 
 docker compose up -d
 
-# Join the tailnet LAST and non-fatal: the box must serve public traffic
-# even if the join fails; the edge re-provisions cleanly on the next apply.
+# Join the tailnet LAST, bounded, and non-fatal: enrollment depends on Headscale
+# becoming reachable through the Caddy/FRP services started immediately above.
 if [ -n "${tailscale_authkey}" ]; then
   curl -fsSL https://tailscale.com/install.sh | sh
-  tailscale up \
+  timeout 60 tailscale up \
     --login-server=https://headscale.jackhumes.com \
     --authkey="${tailscale_authkey}" \
     --hostname=aws-edge \

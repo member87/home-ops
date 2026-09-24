@@ -1,6 +1,6 @@
 services:
   frps:
-    image: fatedier/frps:v0.61.1
+    image: fatedier/frps:v0.71.0
     container_name: frps
     restart: unless-stopped
     network_mode: host

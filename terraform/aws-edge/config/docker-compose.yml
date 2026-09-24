@@ -23,7 +23,7 @@ services:
     container_name: coturn
     restart: unless-stopped
     network_mode: host
-    command: -n --stun-only --no-cli --no-tls --no-dtls --listening-ip=__VPCIP__ --listening-port=3478
+    command: -n --stun-only --no-tls --listening-ip=__VPCIP__ --listening-port=3478
 
   node-exporter:
     image: prom/node-exporter:v1.12.1

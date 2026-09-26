@@ -78,8 +78,8 @@ spec:
               value: "false"
             - name: TS_EXTRA_ARGS
               value: "--login-server=https://headscale.lab.jackhumes.com --advertise-exit-node"
-            # Keep the host-network listener distinct from tailscale-dns's
-            # published UDP/41642 on the same node.
+            # Stable UDP socket for direct peers; the DNS endpoint uses
+            # UDP/41642 on a different host-network node.
             - name: TS_TAILSCALED_EXTRA_ARGS
               value: "--port=41641"
           securityContext:

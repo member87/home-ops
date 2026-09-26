@@ -72,6 +72,27 @@ sequenceDiagram
     Note over A,B: relay remains as fallback only
 ```
 
+## DNS endpoint: avoid pod egress NAT
+
+Headscale sends DNS queries to `pihole-dns` (`100.64.0.2`), which DNATs them to
+Pi-hole's LAN VIP (`10.0.0.201`). The DNS Tailscale daemon uses `hostNetwork` on
+`talos-tug-zp7` and a fixed UDP/41642 socket; the subnet router uses
+`hostNetwork` on `talos-lox-1n1` and UDP/41641. They cannot share a host network
+namespace: both daemons manage `tailscale0` and netfilter rules. Keep the DNS
+node's Longhorn state volume when moving it so its tailnet IP stays stable.
+
+A regular Flannel pod is not a usable direct DNS endpoint here: outbound UDP
+passes through `MASQUERADE --random-fully`, so STUN advertises the translated
+port while Kubernetes `hostPort` forwards the untranslated port. STUN working
+does **not** prove the advertised endpoint can receive peer traffic. Do not
+replace `hostNetwork` with `hostPort` for the DNS daemon.
+
+Verify both paths with `tailscale ping 100.64.0.2` and
+`tailscale ping 100.64.0.14`, then time
+`dig glance.lab.jackhumes.com @100.64.0.2` and load
+`https://glance.lab.jackhumes.com`. A direct ping shows a peer IP:port;
+`DERP(headscale)` means traffic goes through the bandwidth-capped edge.
+
 ## Health checks that matter
 
 | Symptom | Meaning |

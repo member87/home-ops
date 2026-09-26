@@ -19,10 +19,12 @@ spec:
       labels:
         app: tailscale-dns
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: tailscale
-      # The subnet router already owns the node's Tailscale UDP port.
+      # A separate TUN-capable node avoids sharing the subnet router's host netns.
       nodeSelector:
-        kubernetes.io/hostname: talos-lox-1n1
+        kubernetes.io/hostname: talos-tug-zp7
       containers:
         - name: tailscale
           image: tailscale/tailscale:v1.102.5
@@ -38,11 +40,6 @@ spec:
               ln -sf xtables-nft-multi /usr/sbin/ip6tables-restore
 
               exec /usr/local/bin/containerboot
-          ports:
-            - name: wireguard
-              containerPort: 41642
-              hostPort: 41642
-              protocol: UDP
           env:
             - name: TS_AUTHKEY
               valueFrom:
@@ -65,9 +62,8 @@ spec:
               value: "false"
             - name: TS_EXTRA_ARGS
               value: "--login-server=https://headscale.lab.jackhumes.com"
-            # Forward the pod's WireGuard/discovery socket through the node.
-            # Without hostPort, Flannel SNAT exposes an endpoint that peers
-            # cannot reliably reach for direct connections.
+            # A fixed host-network UDP socket avoids Flannel's per-flow SNAT,
+            # which made the STUN-advertised port unreachable by peers.
             - name: TS_TAILSCALED_EXTRA_ARGS
               value: "--port=41642"
           securityContext:

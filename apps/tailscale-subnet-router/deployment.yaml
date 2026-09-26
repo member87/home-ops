@@ -53,6 +53,11 @@ spec:
 
               echo "SNAT masquerade configured for Tailscale-to-LAN and exit-node traffic"
               exec /usr/local/bin/containerboot
+          ports:
+            - name: wireguard
+              containerPort: 41641
+              hostPort: 41641
+              protocol: UDP
           env:
             - name: TS_AUTHKEY
               valueFrom:
@@ -73,6 +78,10 @@ spec:
               value: "false"
             - name: TS_EXTRA_ARGS
               value: "--login-server=https://headscale.lab.jackhumes.com --advertise-exit-node"
+            # Keep the host-network listener distinct from tailscale-dns's
+            # published UDP/41642 on the same node.
+            - name: TS_TAILSCALED_EXTRA_ARGS
+              value: "--port=41641"
           securityContext:
             capabilities:
               add:

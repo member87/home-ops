@@ -1,9 +1,9 @@
 apiVersion: v2
 name: longhorn
 type: application
-version: 0.2.1
+version: 0.3.0
 description: Longhorn with local home-ops manifests.
 dependencies:
   - name: longhorn
-    version: 1.12.1
+    version: 1.13.0
     repository: https://charts.longhorn.io

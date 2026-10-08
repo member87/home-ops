@@ -193,8 +193,10 @@ machine:
     install:
         # The disk used for installations.
         disk: /dev/sdb
-        # Custom installer with iscsi-tools, util-linux-tools, and i915 extensions
-        image: factory.talos.dev/installer/056d8e12ba2b9711c613665c43f0ebf86eb451839a22f360a42110362f84faa1:v1.12.4
+        # Custom installer with iscsi-tools, util-linux-tools, and i915 extensions. This is the
+        # source of truth for every node's Talos version and schematic: `just talos-sync` rolls it
+        # out. From Talos 1.14 the factory only serves installers under metal-installer/.
+        image: factory.talos.dev/metal-installer/056d8e12ba2b9711c613665c43f0ebf86eb451839a22f360a42110362f84faa1:v1.14.2
         # Indicates if the installation disk should be wiped at installation time.
         wipe: false
         # # Look up disk using disk attributes like model, size, serial and others.

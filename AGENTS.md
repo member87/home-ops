@@ -19,7 +19,7 @@ Keep this file short. Prefer discovering current details from the repo over stor
 
 - Never commit plaintext secrets.
 - Use Sealed Secrets for Kubernetes app secrets.
-- Use SOPS with age for Talos configs in `talos/`. `talos/controlplane.yaml` lags the nodes (Renovate bumps Kubernetes there that was never rolled out), so never `just talos-apply` it for a small change; put plaintext, secret-free documents in `talos/patches/` and apply them with `just talos-patch <node-ip> <file>` (`--dry-run` first).
+- Use SOPS with age for Talos configs in `talos/`. The Talos version, factory schematic and Kubernetes version pinned in `talos/controlplane.yaml` are what the nodes should run: `just talos-drift` shows the gap (exit 2 when behind) and `just talos-sync` closes it. It goes one node and one minor at a time, checks every step against the Talos support matrix, and refuses a Kubernetes pin the pinned Talos cannot run. Bump Talos before Kubernetes. Renovate opens PRs for both but never automerges `talos/**`; run `just talos-sync` after merging one. Do not `just talos-apply` the full file for a small change; put plaintext, secret-free documents in `talos/patches/`, written for the pinned Talos version. `talos-sync` applies them once a node runs that version, and `just talos-patch <node-ip> <file>` applies one alone (`--dry-run` first).
 - Pin container images to explicit versions; never use `latest`.
 - Update Glance dashboard icons/links when adding or removing apps.
 - When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/configmap.yaml` and the Caddy site block in `terraform/aws-edge/config/Caddyfile`; see Public Access & AWS Lightsail Edge (FRP).
@@ -213,7 +213,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 
 ## Cluster Facts
 
-- Platform: Talos Linux, Kubernetes v1.34+.
+- Platform: Talos Linux, version pinned in `talos/controlplane.yaml` (`just talos-drift` to compare).
 - Base domain: `lab.jackhumes.com`.
 - Auth server: `auth.jackhumes.com` externally and `auth.lab.jackhumes.com` internally.
 - Flux namespace: `flux-system`.
@@ -254,6 +254,8 @@ kubectl describe pod -n <namespace> <pod-name>
 kubectl port-forward -n <namespace> svc/<service> <local-port>:<remote-port>
 just help
 just talos-status
+just talos-drift    # nodes vs the Talos/Kubernetes versions in Git
+just talos-sync     # upgrade nodes to them
 ```
 
 ## Troubleshooting Pointers

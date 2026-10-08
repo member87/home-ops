@@ -19,13 +19,14 @@
   ],
   "customManagers": [
     {
+      "description": "Talos version, read from the factory installer image (the schematic ID stays). Matching only ghcr.io/siderolabs/installer left Talos frozen at v1.12.4 while Kubernetes kept bumping past what that Talos supports.",
       "customType": "regex",
       "managerFilePatterns": [
         "/^talos/controlplane\\.yaml$/",
         "/^talos/worker\\.yaml$/"
       ],
       "matchStrings": [
-        "image: ghcr\\.io/siderolabs/installer:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "image: factory\\.talos\\.dev/(?:metal-)?installer/[0-9a-f]{64}:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "siderolabs/talos",
       "datasourceTemplate": "github-releases",

@@ -48,7 +48,11 @@ spec:
         defaultDataLocality: best-effort
         # Storage reservation for system operations
         storageMinimalAvailablePercentage: 15
-        storageOverProvisioningPercentage: 100
+        # Scheduling counts each replica's full size against (disk - 30% reserved), so at
+        # 100% a 20Gi jellyfin-config replica no longer fit on lox or tug (164G/173G of 177G
+        # scheduled) while both had ~180G actually free; the volume ran on one replica and
+        # blocked that node's drain. storageMinimalAvailablePercentage still guards real space.
+        storageOverProvisioningPercentage: 200
         # Auto-delete workload pods when volume is detached unexpectedly
         autoDeletePodWhenVolumeDetachedUnexpectedly: true
         # Node drain policy

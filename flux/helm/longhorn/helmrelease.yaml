@@ -55,8 +55,14 @@ spec:
         storageOverProvisioningPercentage: 200
         # Auto-delete workload pods when volume is detached unexpectedly
         autoDeletePodWhenVolumeDetachedUnexpectedly: true
-        # Node drain policy
-        nodeDrainPolicy: block-if-contains-last-replica
+        # Node drain policy. A node holding the last healthy replica of an attached volume
+        # still cannot drain; a detached volume (workload scaled to 0) no longer blocks one.
+        nodeDrainPolicy: allow-if-replica-is-stopped
+        # One rebuild per node at a time. The nodes' SATA SSDs share the disk with etcd:
+        # a single 21Gi rebuild pushed tug's write latency from ~3ms to ~250ms and stalled
+        # etcd long enough for t8o to go NotReady and have its pods evicted. Longhorn's
+        # rebuild bandwidth limit only exists for the v2 engine.
+        concurrentReplicaRebuildPerNodeLimit: 1
         # Snapshot cleanup
         autoCleanupSystemGeneratedSnapshot: true
         # Concurrent volume backup/restore

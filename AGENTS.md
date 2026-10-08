@@ -19,7 +19,7 @@ Keep this file short. Prefer discovering current details from the repo over stor
 
 - Never commit plaintext secrets.
 - Use Sealed Secrets for Kubernetes app secrets.
-- Use SOPS with age for Talos configs in `talos/`.
+- Use SOPS with age for Talos configs in `talos/`. `talos/controlplane.yaml` lags the nodes (Renovate bumps Kubernetes there that was never rolled out), so never `just talos-apply` it for a small change; put plaintext, secret-free documents in `talos/patches/` and apply them with `just talos-patch <node-ip> <file>` (`--dry-run` first).
 - Pin container images to explicit versions; never use `latest`.
 - Update Glance dashboard icons/links when adding or removing apps.
 - When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/configmap.yaml` and the Caddy site block in `terraform/aws-edge/config/Caddyfile`; see Public Access & AWS Lightsail Edge (FRP).
@@ -70,6 +70,7 @@ sops --input-type yaml --output-type yaml talos/talosconfig
 - Add a Flux `Kustomization` for the app in `flux/cluster/apps.yaml`, then run `scripts/validate-flux-manifests.sh`.
 - Only reach for a `HelmRelease` in `flux/helm/` when the app needs an upstream chart.
 - Use health checks where supported. Use TCP probes when no HTTP health endpoint exists.
+- Give every application container a memory limit, init containers included. The Talos OOM ranking (`talos/patches/oom-config.yaml`) kills limited pods first and treats pods without a limit as infrastructure (Longhorn instance-manager, kube-apiserver), killed last. An app without a limit silently joins that protected tier. For Helm wrapper charts, values go under the dependency key, e.g. `values.podinfo.resources`.
 - For OIDC apps, create a Pocket ID client and seal the client secret.
 - For non-OIDC apps, add Tiny Auth ForwardAuth middleware.
 - Only add Grafana dashboards or app alerts when the app exposes Prometheus metrics or has a real exporter.

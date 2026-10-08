@@ -84,6 +84,12 @@ talos-apply node_ip config_file mode="reboot":
     sops --decrypt talos/{{config_file}} > "${TMPFILE}"
     talosctl --talosconfig "${TMPCONFIG}" -e {{CONTROL_PLANE_IPS}} -n {{node_ip}} apply-config --file "${TMPFILE}" --mode {{mode}}
 
+# talos/controlplane.yaml lags the nodes, so a full apply-config is not safe for a small change.
+# Extra args pass through, e.g.: just talos-patch 10.0.0.20 oom-config.yaml --dry-run
+# Merge one plaintext patch from talos/patches into a node's live config, rest untouched
+talos-patch node_ip patch *ARGS:
+    just _talosctl -n {{node_ip}} patch mc --patch @talos/patches/{{patch}} {{ARGS}}
+
 # --- Debugging & Maintenance ---
 
 # View logs for a specific service on a node

@@ -7,7 +7,9 @@ metadata:
   labels:
     app: changedetection
 spec:
-  replicas: 1
+  # Scaled to 0: parked until the nodes get more RAM (8GB each, single DIMM, control-plane
+  # only). The PVC stays, so scaling back to 1 restores it with its watches.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

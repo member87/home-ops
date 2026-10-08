@@ -85,6 +85,13 @@ spec:
               volumeMounts:
                 - name: geoip-data
                   mountPath: /geoip
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
           volumes:
             - name: geoip-data
               persistentVolumeClaim:

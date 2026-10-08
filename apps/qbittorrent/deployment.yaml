@@ -101,6 +101,13 @@ spec:
           volumeMounts:
             - name: qbittorrent-config
               mountPath: /config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
       containers:
         - name: gluetun
           image: qmcgaw/gluetun:v3.41.3

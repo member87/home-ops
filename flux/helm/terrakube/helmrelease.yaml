@@ -119,6 +119,13 @@ spec:
       # limits stay above 1Gi because these are Paketo buildpack (Liberica) images whose JVM
       # memory calculator refuses to boot unless the container sees more than the ~820Mi of
       # fixed regions it reserves (metaspace + code cache + 250 thread stacks).
+      #
+      # Heap is capped explicitly. Left alone, the calculator hands the whole remainder of the
+      # 2Gi limit to the heap (-Xmx ~1.2-1.3G), and these pods carry limits, so the Talos OOM
+      # controller never picks them: the two idle JVMs sat at ~2.8Gi on one node and every
+      # memory squeeze killed kube-apiserver and Longhorn's instance-manager instead. The
+      # calculator honours a user -Xmx and still sizes metaspace and code cache around it.
+      # ExitOnOutOfMemoryError is on, so an undersized heap shows up as restarts.
       api:
         enabled: true
         existingSecret: true
@@ -127,6 +134,9 @@ spec:
         loadSampleData: false
         version: "2.33.1"
         replicaCount: "1"
+        env:
+          - name: JAVA_TOOL_OPTIONS
+            value: "-Xmx768m"
         resources:
           requests:
             cpu: 100m
@@ -149,6 +159,10 @@ spec:
         env:
           - name: CustomTerraformReleasesUrl
             value: "http://terrakube-api-service:8080/terraform/index.json"
+          # tofu runs as a child process in this container, so the limit keeps headroom
+          # above the heap for it.
+          - name: JAVA_TOOL_OPTIONS
+            value: "-Xmx512m"
         resources:
           requests:
             cpu: 100m

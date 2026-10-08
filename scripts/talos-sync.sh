@@ -14,9 +14,12 @@
 # step is checked against the Talos support matrix before anything changes.
 #
 # Before every reboot: all nodes Ready, `talosctl health` passes, no Longhorn volume is faulted
-# or still rebuilding, and the node does not hold the last healthy replica of any volume
-# (Longhorn's block-if-contains-last-replica drain policy would stall the drain). Set
-# ALLOW_VOLUME_OUTAGE=1 to reboot anyway; that volume is offline until the node returns.
+# or still rebuilding, the worst system-disk write latency over the last 2 minutes (from
+# Prometheus, through the API server proxy) is under DISK_LATENCY_MAX_MS (default 50), and
+# the node holds no attached volume's last healthy replica (the Longhorn drain policy would
+# block the drain). Scale such a workload to 0 first; a detached volume does not block it.
+# etcd shares the system disk with Longhorn, so rebooting into an I/O-saturated disk can
+# stall etcd long enough to get a node marked NotReady and its pods evicted.
 #
 # Talos API credentials: $TALOSCONFIG when set, otherwise talos/talosconfig decrypted with sops.
 set -euo pipefail
@@ -173,19 +176,34 @@ fi
 
 # --- apply ---------------------------------------------------------------------------------
 
+PROM_QUERY=/api/v1/namespaces/prometheus/services/prometheus:9090/proxy/api/v1/query
+DISK_LATENCY_MAX_MS=${DISK_LATENCY_MAX_MS:-50}
+disk_latency_ms() { # worst sda write latency across nodes over 2m; empty when Prometheus is unreachable
+  local q='max(rate(node_disk_write_time_seconds_total{device="sda"}[2m]) / rate(node_disk_writes_completed_total{device="sda"}[2m])) * 1000'
+  kubectl get --raw "$PROM_QUERY?query=$(jq -rn --arg q "$q" '$q | @uri')" 2>/dev/null |
+    jq -r '.data.result[0].value[1] // empty'
+}
+
 wait_healthy() { # via-node: a node that is not about to reboot
   kubectl wait node --all --for=condition=Ready --timeout=20m >/dev/null
   tc "$1" health --wait-timeout 20m >/dev/null
-  local deadline=$((SECONDS + 3600)) busy faulted
+  local deadline=$((SECONDS + 3600)) volumes busy faulted latency reason
   while :; do
-    local volumes; volumes=$(kubectl -n longhorn-system get volumes.longhorn.io -o json)
+    volumes=$(kubectl -n longhorn-system get volumes.longhorn.io -o json)
     faulted=$(jq -r '.items[] | select(.status.robustness == "faulted") | .status.kubernetesStatus.pvcName // .metadata.name' <<< "$volumes")
     [[ -z $faulted ]] || die "Longhorn volumes faulted: $(tr '\n' ' ' <<< "$faulted")"
     # degraded with Scheduled=True is a rebuild in progress; Scheduled=False cannot place a replica
     busy=$(jq -r '.items[] | select(.status.robustness == "degraded" and any((.status.conditions // [])[]; .type == "Scheduled" and .status == "True")) | .status.kubernetesStatus.pvcName // .metadata.name' <<< "$volumes")
-    [[ -z $busy ]] && return
-    (( SECONDS < deadline )) || die "Longhorn still rebuilding after 60m: $(tr '\n' ' ' <<< "$busy")"
-    log "waiting for Longhorn to rebuild: $(tr '\n' ' ' <<< "$busy")"
+    if [[ -n $busy ]]; then
+      reason="Longhorn rebuilding: $(tr '\n' ' ' <<< "$busy")"
+    else
+      latency=$(disk_latency_ms)
+      # NaN means no writes at all in the window
+      [[ -n $latency ]] && awk -v l="$latency" -v m="$DISK_LATENCY_MAX_MS" 'BEGIN { exit !(l == "NaN" || l + 0 < m) }' && return
+      reason="system disk write latency ${latency:+$(printf '%.0f' "$latency")ms}${latency:-unknown (Prometheus unreachable)}, limit ${DISK_LATENCY_MAX_MS}ms"
+    fi
+    (( SECONDS < deadline )) || die "not healthy after 60m: $reason"
+    log "waiting: $reason"
     sleep 30
   done
 }
@@ -193,15 +211,16 @@ wait_healthy() { # via-node: a node that is not about to reboot
 check_last_replicas() { # node-ip
   local name sole
   name=$(node_name "$1")
-  sole=$(kubectl -n longhorn-system get replicas.longhorn.io -o json | jq -r --arg n "$name" '
-    [.items[] | select(.spec.healthyAt != "" and .spec.failedAt == "")]
-    | group_by(.spec.volumeName)[] | select(all(.[]; .spec.nodeID == $n)) | .[0].spec.volumeName')
+  # only attached volumes: with nodeDrainPolicy allow-if-replica-is-stopped a detached
+  # volume's last replica does not block the drain
+  sole=$({ kubectl -n longhorn-system get replicas.longhorn.io -o json
+           kubectl -n longhorn-system get volumes.longhorn.io -o json; } | jq -rs --arg n "$name" '
+    .[0].items as $replicas
+    | (.[1].items | map(select(.status.state == "attached") | {key: .metadata.name, value: "\(.status.kubernetesStatus.namespace)/\(.status.kubernetesStatus.pvcName)"}) | from_entries) as $attached
+    | [$replicas[] | select(.spec.healthyAt != "" and .spec.failedAt == "" and $attached[.spec.volumeName] != null)]
+    | group_by(.spec.volumeName)[] | select(all(.[]; .spec.nodeID == $n)) | $attached[.[0].spec.volumeName]')
   [[ -z $sole ]] && return
-  local pvcs; pvcs=$(for v in $sole; do
-    kubectl -n longhorn-system get volumes.longhorn.io "$v" \
-      -o jsonpath='{.status.kubernetesStatus.namespace}/{.status.kubernetesStatus.pvcName}{" "}'; done)
-  [[ ${ALLOW_VOLUME_OUTAGE:-0} == 1 ]] && { log "$1 holds the last replica of: $pvcs(ALLOW_VOLUME_OUTAGE=1)"; return; }
-  die "$1 ($name) holds the last healthy replica of: $pvcs- fix the replica count or set ALLOW_VOLUME_OUTAGE=1"
+  die "$1 ($name) holds the last healthy replica of attached volume(s): $(tr '\n' ' ' <<< "$sole")- scale the workload to 0 or add a replica first"
 }
 
 other_node() { local n; for n in "${NODES[@]}"; do [[ $n != "$1" ]] && { echo "$n"; return; }; done; echo "$1"; }

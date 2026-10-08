@@ -1,0 +1,14 @@
+# Periodic fstrim for every filesystem that supports it (EPHEMERAL, which holds etcd, the
+# container images and Longhorn's replicas). Written for Talos 1.14, the first version with
+# this document; `just talos-sync` applies it once a node runs the pinned version.
+#
+# Upgraded clusters get no trim by default, and nothing trimmed these disks before 1.14.
+# tug's SATA SSD reached ~250ms write latency at 25 MB/s during a rebuild, consistent with
+# an SSD that has never been told which blocks are free [inference: unconfirmed by SMART].
+#
+# Talos runs each volume's trim at a hash-derived time inside the interval, spread across
+# nodes, so 24h gets every disk a first trim within a day without trimming all three at
+# once. A first trim of ~180G of free space is itself heavy I/O.
+apiVersion: v1alpha1
+kind: FilesystemTrimConfig
+interval: 24h

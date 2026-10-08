@@ -9,9 +9,9 @@ CONTROL_PLANE_IPS        := "10.0.0.10,10.0.0.20,10.0.0.21"
 ALL_NODES                := CONTROL_PLANE_IPS
 CLUSTER_NAME     := "talos-cluster"
 
-# Talos Factory schematic ID (includes iscsi-tools + util-linux-tools + i915 extensions)
-TALOS_SCHEMATIC  := "056d8e12ba2b9711c613665c43f0ebf86eb451839a22f360a42110362f84faa1"
-TALOS_IMAGE      := "factory.talos.dev/installer/" + TALOS_SCHEMATIC
+# Upgrade order for talos-sync: tug has the most memory headroom, t8o the least, so it goes last.
+# The Talos version and factory schematic come from talos/controlplane.yaml, not from here.
+UPGRADE_ORDER    := "10.0.0.20,10.0.0.21,10.0.0.10"
 
 # Internal: decrypt talosconfig to a temp file, export TALOSCONFIG, run command
 # Usage: just _talosctl -n 10.0.0.10 get machinestatus
@@ -48,30 +48,15 @@ talos-dash node_ip=PRIMARY_CONTROL_PLANE_IP:
 talos-bootstrap:
     just _talosctl -n {{PRIMARY_CONTROL_PLANE_IP}} bootstrap
 
-# Upgrade Talos on a specific node (uses factory image with extensions)
-talos-upgrade node_ip image_version:
-    just _talosctl -n {{node_ip}} upgrade --image "{{TALOS_IMAGE}}:v{{image_version}}"
+# Exits 2 when a node is behind Git; changes nothing
+# Show each node's Talos/Kubernetes drift from talos/controlplane.yaml and the upgrade path
+talos-drift:
+    scripts/talos-sync.sh plan {{UPGRADE_ORDER}}
 
-# Rolling upgrade of all control plane nodes
-talos-rolling-upgrade image_version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    TMPCONFIG=$(mktemp /tmp/talosconfig.XXXXXX)
-    trap "rm -f ${TMPCONFIG}" EXIT
-    sops --decrypt --input-type yaml --output-type yaml talos/talosconfig > "${TMPCONFIG}"
-    TALOS="talosctl --talosconfig ${TMPCONFIG} -e {{CONTROL_PLANE_IPS}}"
-    IMAGE="{{TALOS_IMAGE}}:v{{image_version}}"
-    IFS=',' read -ra NODES <<< "{{CONTROL_PLANE_IPS}}"
-    echo "==> Starting rolling upgrade to ${IMAGE}"
-    echo ""
-    for node in "${NODES[@]}"; do
-        echo "==> Upgrading control plane node ${node}..."
-        ${TALOS} -n "${node}" upgrade --image "${IMAGE}" --wait
-        echo "==> Control plane node ${node} upgraded successfully"
-        echo ""
-    done
-    echo "==> Rolling upgrade complete. Checking cluster status..."
-    ${TALOS} -n {{ALL_NODES}} get machinestatus
+# One node and one minor at a time, guarded by health and Longhorn replica checks; see the script
+# Upgrade every node to the Talos/Kubernetes versions in Git, then apply talos/patches
+talos-sync:
+    scripts/talos-sync.sh apply {{UPGRADE_ORDER}}
 
 # Apply a Talos config to a node (decrypts automatically)
 talos-apply node_ip config_file mode="reboot":

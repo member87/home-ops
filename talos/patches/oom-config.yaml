@@ -1,6 +1,8 @@
 # Talos userspace OOM controller: what gets killed first when a node runs out of memory.
-# Plaintext on purpose - it holds no secrets - and applied on its own with
-# `just talos-patch <node-ip> oom-config.yaml`, not through a full apply-config.
+# Plaintext on purpose - it holds no secrets. Written for the Talos version pinned in
+# talos/controlplane.yaml (1.14): `just talos-sync` applies every file in talos/patches once a
+# node runs that version (`strictCgroupClassOrdering` does not exist before 1.14, so older
+# nodes reject this file). `just talos-patch <node-ip> oom-config.yaml` re-applies it alone.
 #
 # The default ranking scores every cgroup that has a memory limit as 0, so only pods
 # without one were ever killed. Here that meant kube-apiserver and Longhorn's
@@ -21,13 +23,22 @@
 # The convention that follows: every application container sets a memory limit. A pod
 # without one silently joins the infrastructure tiers.
 #
-# All three fields are set even where they equal the defaults: siderolabs/talos#14584
-# drops CEL fields that are absent from the last patch merged into this document.
+# strictCgroupClassOrdering is off: in 1.14 it defaults to true, which kills the lowest QoS
+# class first (BestEffort traefik, longhorn-manager, CSI) before any Burstable app, whatever
+# the score. triggerExpression is the 1.14 default, which fires on Talos/kubelet/containerd
+# memory stalls rather than on any pod stalling.
+#
+# Every field is set even where it equals the default: siderolabs/talos#14584 drops CEL
+# fields that are absent from the last patch merged into this document.
 apiVersion: v1alpha1
 kind: OOMConfig
-triggerExpression: 'memory_full_avg10 > 12.0 && d_memory_full_avg10 > 0.0 && time_since_trigger > duration("500ms")'
+triggerExpression: >-
+  multiply_qos_vectors(d_qos_memory_full_total, {System: 8.0, Podruntime: 4.0}) > 3000.0 &&
+  multiply_qos_vectors(qos_memory_full_avg10, {System: 1.0, Podruntime: 1.0}) > 5.0 &&
+  time_since_trigger > duration("5s")
 cgroupRankingExpression: >-
   (class == Guaranteed || class == Podruntime || class == System) ? 0.0 :
   ((memory_max.hasValue() ? 2e12 : (class == Besteffort ? 1e12 : 0.0))
   + double(memory_current.orValue(0u)))
+strictCgroupClassOrdering: false
 sampleInterval: 100ms

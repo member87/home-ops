@@ -186,7 +186,13 @@ disk_latency_ms() { # worst sda write latency across nodes over 2m; empty when P
 
 wait_healthy() { # via-node: a node that is not about to reboot
   kubectl wait node --all --for=condition=Ready --timeout=20m >/dev/null
-  tc "$1" health --wait-timeout 20m >/dev/null
+  local attempt
+  for attempt in 1 2 3; do # a single Talos API timeout should not abort a multi-hour rollout
+    tc "$1" health --wait-timeout 20m >/dev/null && break
+    (( attempt < 3 )) || die "talosctl health via $1 failed 3 times"
+    log "talosctl health via $1 failed (attempt $attempt), retrying in 30s"
+    sleep 30
+  done
   local deadline=$((SECONDS + 3600)) volumes busy faulted latency reason
   while :; do
     volumes=$(kubectl -n longhorn-system get volumes.longhorn.io -o json)
@@ -233,13 +239,14 @@ apply_patches() { # node-ip
   done
 }
 
-# Waves: every node takes its next step before any node takes the one after.
-while :; do
-  progressed=0
+# Waves by version, oldest first: every node whose next step is V takes it before any node goes
+# past V. A rollout that stopped halfway therefore resumes in step: a node left behind catches
+# up alone before the rest move on, so the cluster never spans more than one Talos minor.
+mapfile -t WAVES < <(for ip in "${NODES[@]}"; do tr ' ' '\n' <<< "${STEPS[$ip]:-}"; done | grep . | sort -uV)
+for step in "${WAVES[@]}"; do
   for ip in "${NODES[@]}"; do
     read -ra rest <<< "${STEPS[$ip]:-}"
-    (( ${#rest[@]} )) || continue
-    step=${rest[0]}
+    (( ${#rest[@]} )) && [[ ${rest[0]} == "$step" ]] || continue
     STEPS[$ip]=${rest[*]:1}
     via=$(other_node "$ip")
     log "$ip: pre-flight"
@@ -253,9 +260,7 @@ while :; do
     got=$(node_schematic "$ip")
     [[ $got == "$SCHEMATIC" ]] || die "$ip booted schematic $got, expected $SCHEMATIC"
     [[ $step == "$WANT_TALOS" ]] && apply_patches "$ip"
-    progressed=1
   done
-  (( progressed )) || break
 done
 
 for ip in "${NODES[@]}"; do # nodes that were already on the target still get the patches

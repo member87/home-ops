@@ -45,6 +45,13 @@ spec:
           volumeMounts:
             - name: mqtt-data
               mountPath: /mosquitto/data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
         - name: setup-auth
           image: eclipse-mosquitto:2.1.2-alpine
           command:
@@ -64,6 +71,13 @@ spec:
             - name: zigbee-auth
               mountPath: /zigbee-auth
               readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
       containers:
         - name: mqtt
           image: eclipse-mosquitto:2.1.2-alpine

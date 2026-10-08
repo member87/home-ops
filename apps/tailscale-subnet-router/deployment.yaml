@@ -25,6 +25,9 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: talos-lox-1n1
       containers:
+        # No memory limit on purpose: remote access is infrastructure, so this pod sits in the
+        # second Talos OOM tier with traefik instead of dying first with the apps
+        # (talos/patches/oom-config.yaml).
         - name: tailscale
           image: tailscale/tailscale:v1.102.5
           command:

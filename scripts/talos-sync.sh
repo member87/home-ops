@@ -185,12 +185,15 @@ disk_latency_ms() { # worst sda write latency across nodes over 2m; empty when P
 }
 
 wait_healthy() { # via-node: a node that is not about to reboot
-  kubectl wait node --all --for=condition=Ready --timeout=20m >/dev/null
   local attempt
-  for attempt in 1 2 3; do # a single Talos API timeout should not abort a multi-hour rollout
-    tc "$1" health --wait-timeout 20m >/dev/null && break
-    (( attempt < 3 )) || die "talosctl health via $1 failed 3 times"
-    log "talosctl health via $1 failed (attempt $attempt), retrying in 30s"
+  # A transient API timeout should not abort a multi-hour rollout; a just-rebooted node's
+  # kube-apiserver refuses connections for a minute, which is why the kubeconfig should point
+  # at the control-plane VIP rather than one node.
+  for attempt in 1 2 3; do
+    kubectl wait node --all --for=condition=Ready --timeout=20m >/dev/null &&
+      tc "$1" health --wait-timeout 20m >/dev/null && break
+    (( attempt < 3 )) || die "nodes not Ready or talosctl health via $1 failing after 3 attempts"
+    log "health check via $1 failed (attempt $attempt), retrying in 30s"
     sleep 30
   done
   local deadline=$((SECONDS + 3600)) volumes busy faulted latency reason

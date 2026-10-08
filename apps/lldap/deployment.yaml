@@ -70,6 +70,13 @@ spec:
             port: 17170
           initialDelaySeconds: 10
           periodSeconds: 5
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
       volumes:
       - name: data
         persistentVolumeClaim:

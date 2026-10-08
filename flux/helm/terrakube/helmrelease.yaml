@@ -72,6 +72,15 @@ spec:
           create: false
           name: terrakube-dex-config
         volumes: []
+        # A memory limit puts dex in the first Talos OOM tier with the other apps; without one
+        # it would rank alongside the cluster infrastructure (see talos/patches/oom-config.yaml).
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
 
       storage:
         defaultStorage: true
@@ -113,6 +122,22 @@ spec:
           aclUsers:
             default:
               permissions: "~* &* +@all"
+        # Same reason as dex. initResources too: a pod only gets a pod-level memory limit
+        # when every container, init containers included, has one.
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        initResources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
 
       # Sizing on a 3-node, control-plane-only cluster with ~7.3Gi allocatable per node:
       # requests stay small so the scheduler and the API server are not starved, while the
@@ -121,9 +146,9 @@ spec:
       # fixed regions it reserves (metaspace + code cache + 250 thread stacks).
       #
       # Heap is capped explicitly. Left alone, the calculator hands the whole remainder of the
-      # 2Gi limit to the heap (-Xmx ~1.2-1.3G), and these pods carry limits, so the Talos OOM
-      # controller never picks them: the two idle JVMs sat at ~2.8Gi on one node and every
-      # memory squeeze killed kube-apiserver and Longhorn's instance-manager instead. The
+      # 2Gi limit to the heap (-Xmx ~1.2-1.3G): the two idle JVMs sat at ~2.8Gi on one node.
+      # Being the largest limited pods, they are now the first Talos OOM victims
+      # (talos/patches/oom-config.yaml), so a smaller heap also means fewer kills. The
       # calculator honours a user -Xmx and still sizes metaspace and code cache around it.
       # ExitOnOutOfMemoryError is on, so an undersized heap shows up as restarts.
       api:

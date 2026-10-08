@@ -1,0 +1,33 @@
+# Talos userspace OOM controller: what gets killed first when a node runs out of memory.
+# Plaintext on purpose - it holds no secrets - and applied on its own with
+# `just talos-patch <node-ip> oom-config.yaml`, not through a full apply-config.
+#
+# The default ranking scores every cgroup that has a memory limit as 0, so only pods
+# without one were ever killed. Here that meant kube-apiserver and Longhorn's
+# instance-manager. Killing instance-manager takes out every Longhorn volume served from
+# that node (EIO, ext4 aborts). The apps all carry limits and were never chosen.
+#
+# The ranking only sees memory_current/memory_peak/memory_max, the QoS class and the raw
+# cgroup path (/sys/fs/cgroup/kubepods/<qos>/pod<uid>), with no namespace or priority
+# class, so the tiers key off the memory limit:
+#   1st  pods with a memory limit (applications)
+#   2nd  BestEffort pods without one (traefik, cert-manager, longhorn-manager, CSI, metallb)
+#   last Burstable pods without one (Longhorn instance-manager, kube-apiserver,
+#        controller-manager, scheduler, flannel)
+#   never Guaranteed pods and Talos' own podruntime/system cgroups (the default rule too)
+# Within a tier the largest memory_current goes first. The offsets are far above any
+# node's RAM, so a tier is never outranked by a lower one.
+#
+# The convention that follows: every application container sets a memory limit. A pod
+# without one silently joins the infrastructure tiers.
+#
+# All three fields are set even where they equal the defaults: siderolabs/talos#14584
+# drops CEL fields that are absent from the last patch merged into this document.
+apiVersion: v1alpha1
+kind: OOMConfig
+triggerExpression: 'memory_full_avg10 > 12.0 && d_memory_full_avg10 > 0.0 && time_since_trigger > duration("500ms")'
+cgroupRankingExpression: >-
+  (class == Guaranteed || class == Podruntime || class == System) ? 0.0 :
+  ((memory_max.hasValue() ? 2e12 : (class == Besteffort ? 1e12 : 0.0))
+  + double(memory_current.orValue(0u)))
+sampleInterval: 100ms

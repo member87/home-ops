@@ -31,19 +31,23 @@ spec:
         name: home-ops
         namespace: flux-system
       interval: 10m0s
+  # apps/podinfo is a wrapper chart, so upstream values must sit under its dependency key.
+  # They were top-level before and silently ignored (the pod ran the chart's 16Mi request
+  # with no limit, which would have ranked it with the protected infrastructure tier).
   values:
-    replicaCount: 1
-    service:
-      enabled: true
-      type: ClusterIP
-      httpPort: 9898
-    resources:
-      limits:
-        cpu: 200m
-        memory: 256Mi
-      requests:
-        cpu: 100m
-        memory: 64Mi
-    ui:
-      color: "#34577c"
-      message: "Welcome to Podinfo - Home Lab"
+    podinfo:
+      replicaCount: 1
+      service:
+        enabled: true
+        type: ClusterIP
+        httpPort: 9898
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      ui:
+        color: "#34577c"
+        message: "Welcome to Podinfo - Home Lab"

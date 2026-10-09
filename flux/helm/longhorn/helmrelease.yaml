@@ -129,8 +129,11 @@ spec:
 
       # CSI settings
       csi:
-        attacherReplicaCount: 1
-        provisionerReplicaCount: 1
+        # Longhorn gives csi-attacher and csi-provisioner a minAvailable: 1 PDB. With one
+        # replica that PDB never allows an eviction, so the node hosting them cannot drain
+        # (a Talos upgrade of lox timed out on it). Two replicas, leader-elected.
+        attacherReplicaCount: 2
+        provisionerReplicaCount: 2
         resizerReplicaCount: 1
         snapshotterReplicaCount: 1
 

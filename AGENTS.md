@@ -19,7 +19,12 @@ Keep this file short. Prefer discovering current details from the repo over stor
 
 - Never commit plaintext secrets.
 - Use Sealed Secrets for Kubernetes app secrets.
-- Use SOPS with age for Talos configs in `talos/`. The Talos version, factory schematic and Kubernetes version pinned in `talos/controlplane.yaml` are what the nodes should run: `just talos-drift` shows the gap (exit 2 when behind) and `just talos-sync` closes it. It goes one node and one minor at a time, checks every step against the Talos support matrix, and refuses a Kubernetes pin the pinned Talos cannot run. Bump Talos before Kubernetes. Renovate opens PRs for both but never automerges `talos/**`; run `just talos-sync` after merging one. Do not `just talos-apply` the full file for a small change; put plaintext, secret-free documents in `talos/patches/`, written for the pinned Talos version. `talos-sync` applies them once a node runs that version, and `just talos-patch <node-ip> <file>` applies one alone (`--dry-run` first).
+- Use SOPS with age for Talos configs in `talos/`. The Talos version, factory schematic and Kubernetes version pinned in `talos/controlplane.yaml` are what the nodes should run: `just talos-drift` shows the gap (exit 2 when behind) and `just talos-sync` closes it. It goes one node and one minor at a time, checks every step against the Talos support matrix, and refuses a Kubernetes pin the pinned Talos cannot run. Bump Talos before Kubernetes. Renovate opens PRs for both but never automerges `talos/**`; run `just talos-sync` after merging one. Do not `just talos-apply` the full file for a small change; put plaintext, secret-free documents in `talos/patches/`, written for the pinned Talos version. `talos-sync` applies each one before a node's upgrade to that version if the running version accepts it (server-side dry-run), otherwise right after. `just talos-patch <node-ip> <file>` applies one alone (`--dry-run` first).
+- Before `just talos-sync`:
+  - **Network path:** reach `10.0.0.0/24` over the LAN (`tailscale set --accept-routes=false` on the workstation), not through the in-cluster Tailscale subnet router. That router is pinned to lox, so draining lox cuts the session mid-upgrade.
+  - **Kubeconfig:** point it at the control-plane VIP `https://10.0.0.15:6443`, not one node.
+  - **Reasons for the script's other steps:** Talos 1.14 cold boots hang until time syncs, and IPv6 NTP gets no answer here, so `talos/patches/time-sync.yaml` must be on a node before it first boots 1.14; the script applies accepted patches early. `upgrade-k8s` overwrites the CoreDNS Corefile, and the script re-applies `infrastructure/coredns`. A zero-disruption PDB blocks drains; the pre-flight names it.
+- No swap on the nodes: Talos only supports swap partitions, and EPHEMERAL fills each node's single disk.
 - Pin container images to explicit versions; never use `latest`.
 - Update Glance dashboard icons/links when adding or removing apps.
 - When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/configmap.yaml` and the Caddy site block in `terraform/aws-edge/config/Caddyfile`; see Public Access & AWS Lightsail Edge (FRP).
@@ -213,7 +218,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 
 ## Cluster Facts
 
-- Platform: Talos Linux, version pinned in `talos/controlplane.yaml` (`just talos-drift` to compare).
+- Platform: Talos Linux, version pinned in `talos/controlplane.yaml` (`just talos-drift` to compare). Nodes are Lenovo ThinkCentre (10T8), legacy BIOS/GRUB, 8GiB RAM, one 256GB SATA SSD shared by etcd and Longhorn (a large Longhorn rebuild can stall etcd; rebuilds run one per node).
 - Base domain: `lab.jackhumes.com`.
 - Auth server: `auth.jackhumes.com` externally and `auth.lab.jackhumes.com` internally.
 - Flux namespace: `flux-system`.

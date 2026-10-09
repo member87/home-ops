@@ -1,0 +1,23 @@
+# Time sync over IPv4 by address. Valid on 1.13 and 1.14, and needed *before* a node first
+# boots 1.14: `just talos-sync` applies a patch ahead of the upgrade when the running version
+# accepts it.
+#
+# Talos 1.14 defaults to NTS against time.cloudflare.com. The nodes have SLAAC IPv6 addresses
+# from the ISP prefix, so they resolve AAAA and query [2606:4700:f1::1]:123, but IPv6 UDP/123
+# does not get answers on this network (it times out from the LAN too) while IPv4 does. Time
+# never synced, and Talos holds etcd, trustd and kubelet until it does, so a cold boot into 1.14
+# hung: the first 1.14 upgrade of tug fell back to 1.13.11 and a power-cycle stalled the same way.
+# Name lookups at boot also go through Pi-hole, which runs in this cluster.
+#
+# Addresses (no DNS at boot) keep NTS off: 1.14 only defaults it on when no time config is
+# given, and it would need hostnames. Do not add `useNTS: false`; 1.13 rejects the key, which
+# would push this patch to after the upgrade, when the boot has already hung.
+# The router does not serve NTP. bootTimeout releases the boot sequence if no server answers;
+# sync keeps retrying afterwards.
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+bootTimeout: 2m
+ntp:
+  servers:
+    - 162.159.200.1
+    - 162.159.200.123

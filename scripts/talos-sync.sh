@@ -100,10 +100,15 @@ node_name() {
   kubectl get nodes -o json | jq -r --arg ip "$1" \
     '.items[] | select(any(.status.addresses[]; .type == "InternalIP" and .address == $ip)) | .metadata.name'
 }
-live_k8s() { # oldest kubelet or control-plane component in the cluster
+# Oldest kubelet, control-plane component or kube-proxy: upgrade-k8s detects the cluster's
+# version from all of them, and kube-proxy was left on 1.34.1 while everything else ran 1.35.
+live_k8s() {
   { kubectl get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.kubeletVersion}{"\n"}{end}'
-    kubectl -n kube-system get pods -l tier=control-plane \
-      -o jsonpath='{range .items[*]}{.spec.containers[0].image}{"\n"}{end}' | sed 's/.*://'
+    { kubectl -n kube-system get pods -l tier=control-plane \
+        -o jsonpath='{range .items[*]}{.spec.containers[0].image}{"\n"}{end}'
+      kubectl -n kube-system get daemonset kube-proxy \
+        -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+    } | sed 's/.*://'
   } | grep -E '^v[0-9]' | sort -V | head -1
 }
 
@@ -167,7 +172,7 @@ else
   printf '    Kubernetes %s in sync\n' "$LIVE_K8S"
 fi
 patches=(talos/patches/*.yaml)
-printf '    patches applied once a node runs %s: %s\n' "$WANT_TALOS" "${patches[*]##*/}"
+printf '    patches for %s (before the upgrade where the running version accepts them): %s\n' "$WANT_TALOS" "${patches[*]##*/}"
 
 if [[ $MODE == plan ]]; then
   (( drift )) && exit 2
@@ -185,8 +190,17 @@ disk_latency_ms() { # worst sda write latency across nodes over 2m; empty when P
 }
 
 wait_healthy() { # via-node: a node that is not about to reboot
-  kubectl wait node --all --for=condition=Ready --timeout=20m >/dev/null
-  tc "$1" health --wait-timeout 20m >/dev/null
+  local attempt
+  # A transient API timeout should not abort a multi-hour rollout; a just-rebooted node's
+  # kube-apiserver refuses connections for a minute, which is why the kubeconfig should point
+  # at the control-plane VIP rather than one node.
+  for attempt in 1 2 3; do
+    kubectl wait node --all --for=condition=Ready --timeout=20m >/dev/null &&
+      tc "$1" health --wait-timeout 20m >/dev/null && break
+    (( attempt < 3 )) || die "nodes not Ready or talosctl health via $1 failing after 3 attempts"
+    log "health check via $1 failed (attempt $attempt), retrying in 30s"
+    sleep 30
+  done
   local deadline=$((SECONDS + 3600)) volumes busy faulted latency reason
   while :; do
     volumes=$(kubectl -n longhorn-system get volumes.longhorn.io -o json)
@@ -223,6 +237,29 @@ check_last_replicas() { # node-ip
   die "$1 ($name) holds the last healthy replica of attached volume(s): $(tr '\n' ' ' <<< "$sole")- scale the workload to 0 or add a replica first"
 }
 
+# A PodDisruptionBudget that allows no disruption and covers a pod on the node stalls the drain
+# until --drain-timeout, after the new image is already installed. Longhorn's instance-manager
+# PDBs are left out: Longhorn releases them as the drain detaches volumes, and the last-replica
+# check covers the case where it cannot. Only matchLabels selectors are evaluated.
+wait_drainable() { # node-ip
+  local name deadline=$((SECONDS + 1800)) blocking ns pdb selector
+  name=$(node_name "$1")
+  while :; do
+    blocking=""
+    while read -r ns pdb selector; do
+      [[ -n $selector ]] || continue
+      [[ -n $(kubectl -n "$ns" get pods -l "$selector" --field-selector "spec.nodeName=$name" -o name) ]] &&
+        blocking+="$ns/$pdb "
+    done < <(kubectl get pdb -A -o json | jq -r '.items[]
+      | select(.status.disruptionsAllowed == 0 and (.metadata.name | startswith("instance-manager-") | not))
+      | "\(.metadata.namespace) \(.metadata.name) \(.spec.selector.matchLabels // {} | to_entries | map("\(.key)=\(.value)") | join(","))"')
+    [[ -z $blocking ]] && return
+    (( SECONDS < deadline )) || die "$1 ($name) cannot drain; PDBs allowing no disruption: $blocking"
+    log "waiting: PDBs allowing no disruption cover pods on $name: $blocking"
+    sleep 30
+  done
+}
+
 other_node() { local n; for n in "${NODES[@]}"; do [[ $n != "$1" ]] && { echo "$n"; return; }; done; echo "$1"; }
 
 apply_patches() { # node-ip
@@ -233,18 +270,37 @@ apply_patches() { # node-ip
   done
 }
 
-# Waves: every node takes its next step before any node takes the one after.
-while :; do
-  progressed=0
+# Before a node's upgrade to the target: apply every patch its running version already accepts
+# (the server validates a dry-run). Some must be in place for the first boot of the target:
+# without time-sync.yaml a 1.14 cold boot waits forever for NTS over broken IPv6. The rest are
+# applied by apply_patches once the node runs the target.
+apply_patches_early() { # node-ip
+  local f
+  for f in "${patches[@]}"; do
+    if tc "$1" patch mc --dry-run --mode=no-reboot --patch @"$f" >/dev/null 2>&1; then
+      log "$1: patch mc ${f##*/} (before the upgrade)"
+      tc "$1" patch mc --mode=no-reboot --patch @"$f" >/dev/null
+    else
+      log "$1: ${f##*/} not accepted by the running version; applied after the upgrade"
+    fi
+  done
+}
+
+# Waves by version, oldest first: every node whose next step is V takes it before any node goes
+# past V. A rollout that stopped halfway therefore resumes in step: a node left behind catches
+# up alone before the rest move on, so the cluster never spans more than one Talos minor.
+mapfile -t WAVES < <(for ip in "${NODES[@]}"; do tr ' ' '\n' <<< "${STEPS[$ip]:-}"; done | grep . | sort -uV)
+for step in "${WAVES[@]}"; do
   for ip in "${NODES[@]}"; do
     read -ra rest <<< "${STEPS[$ip]:-}"
-    (( ${#rest[@]} )) || continue
-    step=${rest[0]}
+    (( ${#rest[@]} )) && [[ ${rest[0]} == "$step" ]] || continue
     STEPS[$ip]=${rest[*]:1}
     via=$(other_node "$ip")
     log "$ip: pre-flight"
     wait_healthy "$via"
     check_last_replicas "$ip"
+    wait_drainable "$ip"
+    [[ $step == "$WANT_TALOS" ]] && apply_patches_early "$ip"
     log "$ip: upgrading to Talos $step ($(installer_image "$step"))"
     # drain-timeout covers qbittorrent's 30 minute termination grace period
     tc "$ip" upgrade --image "$(installer_image "$step")" --wait --timeout 45m --drain-timeout 35m
@@ -253,20 +309,25 @@ while :; do
     got=$(node_schematic "$ip")
     [[ $got == "$SCHEMATIC" ]] || die "$ip booted schematic $got, expected $SCHEMATIC"
     [[ $step == "$WANT_TALOS" ]] && apply_patches "$ip"
-    progressed=1
   done
-  (( progressed )) || break
 done
 
 for ip in "${NODES[@]}"; do # nodes that were already on the target still get the patches
   [[ -v STEPS[$ip] ]] || apply_patches "$ip"
 done
 
+# upgrade-k8s re-applies Talos' bootstrap manifests with forced ownership, which replaces the
+# CoreDNS Corefile (Pi-hole forwarding, the *.lab wildcard) with the Talos default. Flux owns
+# the real one (infrastructure/coredns); put it straight back rather than waiting for the next
+# reconcile, which may be suspended during maintenance. CoreDNS' reload plugin picks it up.
+COREDNS_CONFIG=infrastructure/coredns/custom-hosts.yaml
 for step in $K8S_STEPS; do
   log "pre-flight"
   wait_healthy "${NODES[0]}"
   log "upgrading Kubernetes to $step"
   tc "${NODES[0]}" upgrade-k8s --to "${step#v}"
+  log "re-applying $COREDNS_CONFIG"
+  kubectl apply --server-side --force-conflicts --field-manager=kustomize-controller -f "$COREDNS_CONFIG" >/dev/null
 done
 
 log "post-flight"

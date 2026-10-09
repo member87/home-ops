@@ -91,6 +91,28 @@ spec:
     name: home-ops
     namespace: flux-system
 ---
+# The kube-system/coredns ConfigMap (Corefile forwarding to Pi-hole, which serves the
+# *.lab.jackhumes.com wildcard). Talos also renders this object and `talosctl upgrade-k8s`
+# re-applies the Talos default (`forward . /etc/resolv.conf`) with forced ownership, so Flux
+# re-asserts it here; `just talos-sync` also re-applies it right after each upgrade-k8s step.
+# prune: false: Talos owns the object too, and pruning it would take cluster DNS down.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: coredns
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./infrastructure/coredns
+  prune: false
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
 # The entrypoint manages itself: without this, a change to flux/system (such as the
 # path change in this migration) is never delivered and has to be applied by hand.
 # wait: false because it reconciles its own parent Kustomization.

@@ -167,7 +167,7 @@ else
   printf '    Kubernetes %s in sync\n' "$LIVE_K8S"
 fi
 patches=(talos/patches/*.yaml)
-printf '    patches applied once a node runs %s: %s\n' "$WANT_TALOS" "${patches[*]##*/}"
+printf '    patches for %s (before the upgrade where the running version accepts them): %s\n' "$WANT_TALOS" "${patches[*]##*/}"
 
 if [[ $MODE == plan ]]; then
   (( drift )) && exit 2
@@ -242,6 +242,22 @@ apply_patches() { # node-ip
   done
 }
 
+# Before a node's upgrade to the target: apply every patch its running version already accepts
+# (the server validates a dry-run). Some must be in place for the first boot of the target:
+# without time-sync.yaml a 1.14 cold boot waits forever for NTS over broken IPv6. The rest are
+# applied by apply_patches once the node runs the target.
+apply_patches_early() { # node-ip
+  local f
+  for f in "${patches[@]}"; do
+    if tc "$1" patch mc --dry-run --mode=no-reboot --patch @"$f" >/dev/null 2>&1; then
+      log "$1: patch mc ${f##*/} (before the upgrade)"
+      tc "$1" patch mc --mode=no-reboot --patch @"$f" >/dev/null
+    else
+      log "$1: ${f##*/} not accepted by the running version; applied after the upgrade"
+    fi
+  done
+}
+
 # Waves by version, oldest first: every node whose next step is V takes it before any node goes
 # past V. A rollout that stopped halfway therefore resumes in step: a node left behind catches
 # up alone before the rest move on, so the cluster never spans more than one Talos minor.
@@ -255,6 +271,7 @@ for step in "${WAVES[@]}"; do
     log "$ip: pre-flight"
     wait_healthy "$via"
     check_last_replicas "$ip"
+    [[ $step == "$WANT_TALOS" ]] && apply_patches_early "$ip"
     log "$ip: upgrading to Talos $step ($(installer_image "$step"))"
     # drain-timeout covers qbittorrent's 30 minute termination grace period
     tc "$ip" upgrade --image "$(installer_image "$step")" --wait --timeout 45m --drain-timeout 35m

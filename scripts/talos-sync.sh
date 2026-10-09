@@ -100,10 +100,15 @@ node_name() {
   kubectl get nodes -o json | jq -r --arg ip "$1" \
     '.items[] | select(any(.status.addresses[]; .type == "InternalIP" and .address == $ip)) | .metadata.name'
 }
-live_k8s() { # oldest kubelet or control-plane component in the cluster
+# Oldest kubelet, control-plane component or kube-proxy: upgrade-k8s detects the cluster's
+# version from all of them, and kube-proxy was left on 1.34.1 while everything else ran 1.35.
+live_k8s() {
   { kubectl get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.kubeletVersion}{"\n"}{end}'
-    kubectl -n kube-system get pods -l tier=control-plane \
-      -o jsonpath='{range .items[*]}{.spec.containers[0].image}{"\n"}{end}' | sed 's/.*://'
+    { kubectl -n kube-system get pods -l tier=control-plane \
+        -o jsonpath='{range .items[*]}{.spec.containers[0].image}{"\n"}{end}'
+      kubectl -n kube-system get daemonset kube-proxy \
+        -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+    } | sed 's/.*://'
   } | grep -E '^v[0-9]' | sort -V | head -1
 }
 

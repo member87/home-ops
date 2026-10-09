@@ -232,6 +232,29 @@ check_last_replicas() { # node-ip
   die "$1 ($name) holds the last healthy replica of attached volume(s): $(tr '\n' ' ' <<< "$sole")- scale the workload to 0 or add a replica first"
 }
 
+# A PodDisruptionBudget that allows no disruption and covers a pod on the node stalls the drain
+# until --drain-timeout, after the new image is already installed. Longhorn's instance-manager
+# PDBs are left out: Longhorn releases them as the drain detaches volumes, and the last-replica
+# check covers the case where it cannot. Only matchLabels selectors are evaluated.
+wait_drainable() { # node-ip
+  local name deadline=$((SECONDS + 1800)) blocking ns pdb selector
+  name=$(node_name "$1")
+  while :; do
+    blocking=""
+    while read -r ns pdb selector; do
+      [[ -n $selector ]] || continue
+      [[ -n $(kubectl -n "$ns" get pods -l "$selector" --field-selector "spec.nodeName=$name" -o name) ]] &&
+        blocking+="$ns/$pdb "
+    done < <(kubectl get pdb -A -o json | jq -r '.items[]
+      | select(.status.disruptionsAllowed == 0 and (.metadata.name | startswith("instance-manager-") | not))
+      | "\(.metadata.namespace) \(.metadata.name) \(.spec.selector.matchLabels // {} | to_entries | map("\(.key)=\(.value)") | join(","))"')
+    [[ -z $blocking ]] && return
+    (( SECONDS < deadline )) || die "$1 ($name) cannot drain; PDBs allowing no disruption: $blocking"
+    log "waiting: PDBs allowing no disruption cover pods on $name: $blocking"
+    sleep 30
+  done
+}
+
 other_node() { local n; for n in "${NODES[@]}"; do [[ $n != "$1" ]] && { echo "$n"; return; }; done; echo "$1"; }
 
 apply_patches() { # node-ip
@@ -271,6 +294,7 @@ for step in "${WAVES[@]}"; do
     log "$ip: pre-flight"
     wait_healthy "$via"
     check_last_replicas "$ip"
+    wait_drainable "$ip"
     [[ $step == "$WANT_TALOS" ]] && apply_patches_early "$ip"
     log "$ip: upgrading to Talos $step ($(installer_image "$step"))"
     # drain-timeout covers qbittorrent's 30 minute termination grace period

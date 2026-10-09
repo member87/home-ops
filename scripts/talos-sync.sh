@@ -316,11 +316,18 @@ for ip in "${NODES[@]}"; do # nodes that were already on the target still get th
   [[ -v STEPS[$ip] ]] || apply_patches "$ip"
 done
 
+# upgrade-k8s re-applies Talos' bootstrap manifests with forced ownership, which replaces the
+# CoreDNS Corefile (Pi-hole forwarding, the *.lab wildcard) with the Talos default. Flux owns
+# the real one (infrastructure/coredns); put it straight back rather than waiting for the next
+# reconcile, which may be suspended during maintenance. CoreDNS' reload plugin picks it up.
+COREDNS_CONFIG=infrastructure/coredns/custom-hosts.yaml
 for step in $K8S_STEPS; do
   log "pre-flight"
   wait_healthy "${NODES[0]}"
   log "upgrading Kubernetes to $step"
   tc "${NODES[0]}" upgrade-k8s --to "${step#v}"
+  log "re-applying $COREDNS_CONFIG"
+  kubectl apply --server-side --force-conflicts --field-manager=kustomize-controller -f "$COREDNS_CONFIG" >/dev/null
 done
 
 log "post-flight"

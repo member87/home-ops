@@ -120,7 +120,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: sonarr
-          image: ghcr.io/home-operations/sonarr:4.0.20
+          image: ghcr.io/home-operations/sonarr:5.0.0
           ports:
             - containerPort: 8989
               name: http

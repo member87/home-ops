@@ -112,12 +112,12 @@ talos-reencrypt:
     sops updatekeys --yes --input-type yaml --output-type yaml talos/talosconfig
     echo "==> Done."
 
-# --- Oracle VPS (FRP) ---
+# --- AWS Lightsail edge (FRP + Caddy, built by terraform/aws-edge) ---
 
-VPS_SSH := "ubuntu@140.238.67.83"
-VPS_COMPOSE_DIR := "/home/ubuntu/frp-tunnel"
+VPS_SSH := "ubuntu@18.171.34.111"
+VPS_COMPOSE_DIR := "/opt/frp-tunnel"
 
-# Update the Oracle VPS: OS packages + Docker services, then optionally reboot.
+# Update the edge: OS packages + Docker services, then optionally reboot.
 # Usage: just update-vps          (update only)
 #        just update-vps yes      (update and reboot)
 update-vps reboot="no":

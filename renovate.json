@@ -158,6 +158,12 @@
       "sourceUrl": "https://github.com/traefik/traefik"
     },
     {
+      "description": "linuxserver.io images: tags are <upstream version>[base]-ls<n> (12.2ubu2604-ls55, 4.0.20.3014-ls329, 5.1.4-r3-ls453). Since Jellyfin 12 there is no plain version tag, and docker versioning never changes a suffix, so a plain pin silently stops updating: pin the full tag. -ls<n> is a per-image counter that only grows, so it is the build part (regex versioning ignores revision without build) and a 4th upstream part is not needed for ordering. The base (ubuNNNN, alpine -rN, plex hash) is ignored so rebases do not stall updates; the narrow middle keeps branch and legacy tags (5.14-2.0.0.5344-ls15) out.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["lscr.io/linuxserver/**", "ghcr.io/linuxserver/**", "linuxserver/**", "docker.io/linuxserver/**"],
+      "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?(?:\\.\\d+)?(?:ubu\\d{4}|-r\\d+|-[0-9a-f]{9})?-ls(?<build>\\d+)$"
+    },
+    {
       "matchDatasources": ["github-releases"],
       "matchPackageNames": ["siderolabs/talos"],
       "groupName": "Talos",

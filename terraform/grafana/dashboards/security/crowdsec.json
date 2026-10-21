@@ -12,10 +12,24 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "loki",
+          "uid": "${lokiDatasource}"
+        },
+        "enable": true,
+        "expr": "{namespace=\"traefik\", container=\"traefik\"} |= \"CrowdsecBouncerTraefikPlugin\" |= \"crowdsecQuery:unreachable\"",
+        "iconColor": "red",
+        "name": "Bouncer LAPI unreachable",
+        "titleFormat": "Bouncer cannot reach LAPI (fail-closed)",
+        "textFormat": "{{pod}}"
       }
     ]
   },
-  "description": "Dashboard for monitoring CrowdSec security decisions, banned IPs, and Traefik bouncer activity",
+  "description": "CrowdSec decisions, banned IPs and Traefik bouncer activity",
+  "editable": true,
+  "graphTooltip": 1,
   "panels": [
     {
       "collapsed": false,
@@ -25,150 +39,17 @@
         "x": 0,
         "y": 0
       },
+      "id": 1,
+      "panels": [],
       "title": "Overview",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "${lokiDatasource}"
+        "type": "prometheus",
+        "uid": "${promDatasource}"
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 5
-              },
-              {
-                "color": "red",
-                "value": 20
-              }
-            ]
-          },
-          "unit": "none"
-        }
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 1
-      },
-      "id": 1,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.3.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${lokiDatasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"crowdsec\", filename=~\".+\"} |~ \"ban on Ip\" [$__range]))",
-          "queryType": "instant",
-          "refId": "A"
-        }
-      ],
-      "title": "Total Decisions",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${lokiDatasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 3
-              },
-              {
-                "color": "red",
-                "value": 10
-              }
-            ]
-          },
-          "unit": "none"
-        }
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 1
-      },
-      "id": 2,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.3.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${lokiDatasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"traefik\"} | json | DownstreamStatus = `403` [15m]))",
-          "queryType": "instant",
-          "refId": "A"
-        }
-      ],
-      "title": "Blocked Requests (15m)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${lokiDatasource}"
-      },
+      "description": "Every IP the bouncer currently refuses: local CrowdSec detections plus the community blocklist.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -184,19 +65,21 @@
               }
             ]
           },
-          "unit": "none"
-        }
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
+        "w": 4,
+        "x": 0,
         "y": 1
       },
-      "id": 3,
+      "id": 2,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -206,29 +89,105 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
       },
-      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "${lokiDatasource}"
+            "type": "prometheus",
+            "uid": "${promDatasource}"
           },
           "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"crowdsec\", filename=~\".+\"} |= \"bucket overflow\" [1h]))",
-          "queryType": "instant",
-          "refId": "A"
+          "expr": "sum(cs_active_decisions{action=\"ban\"})",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
-      "title": "Scenario Triggers (1h)",
+      "title": "Active Bans",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "loki",
-        "uid": "${lokiDatasource}"
+        "type": "prometheus",
+        "uid": "${promDatasource}"
       },
+      "description": "Active bans CrowdSec issued itself from the Traefik access logs (origin crowdsec), plus manual cscli bans.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(cs_active_decisions{action=\"ban\", origin=~\"crowdsec|cscli\"}) or vector(0)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "Local Bans",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "description": "Active bans pulled from the CrowdSec Central API (CAPI) and console blocklists. These never appear in the CrowdSec logs.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -244,19 +203,21 @@
               }
             ]
           },
-          "unit": "none"
-        }
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 8,
         "y": 1
       },
       "id": 4,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -266,9 +227,83 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
       },
-      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(cs_active_decisions{action=\"ban\", origin=~\"CAPI|lists\"}) or vector(0)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "Community Blocklist",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "Requests to the public hosts the bouncer answered with 403 before they reached a backend, over the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
       "targets": [
         {
           "datasource": {
@@ -276,12 +311,152 @@
             "uid": "${lokiDatasource}"
           },
           "editorMode": "code",
-          "expr": "sum(count_over_time({namespace=\"crowdsec\", filename=~\".+\"} |= \"alert\" [$__range]))",
-          "queryType": "instant",
-          "refId": "A"
+          "expr": "sum(count_over_time({namespace=\"traefik\", container=\"traefik\"} |= \"\\\"DownstreamStatus\\\":403,\" |= \"\\\"OriginStatus\\\":0,\" | json ClientHost, RequestHost | RequestHost !~ `.+\\.lab\\.jackhumes\\.com` [$__range])) or vector(0)",
+          "refId": "A",
+          "queryType": "instant"
         }
       ],
-      "title": "Total Alerts",
+      "title": "Blocked Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "Distinct client IPs the bouncer rejected over the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "count(sum by (ClientHost) (count_over_time({namespace=\"traefik\", container=\"traefik\"} |= \"\\\"DownstreamStatus\\\":403,\" |= \"\\\"OriginStatus\\\":0,\" | json ClientHost, RequestHost | RequestHost !~ `.+\\.lab\\.jackhumes\\.com` [$__range]))) or vector(0)",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "title": "Blocked IPs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "Times the Traefik bouncer could not reach the CrowdSec LAPI. It fails closed, so while this is non-zero it 403s every client, legitimate ones included; check the Blocked IPs table against the red annotations.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true,
+        "showPercentChange": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"traefik\", container=\"traefik\"} |= \"CrowdsecBouncerTraefikPlugin\" |= \"crowdsecQuery:unreachable\" [$__range])) or vector(0)",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "title": "Bouncer LAPI Errors",
       "type": "stat"
     },
     {
@@ -292,7 +467,9 @@
         "x": 0,
         "y": 5
       },
-      "title": "Banned IPs",
+      "id": 8,
+      "panels": [],
+      "title": "Blocked IPs",
       "type": "row"
     },
     {
@@ -300,24 +477,45 @@
         "type": "loki",
         "uid": "${lokiDatasource}"
       },
+      "description": "Client IPs whose requests the bouncer refused on the public hosts, from the Traefik access log. ClientHost is the real address: Caddy on the edge sets X-Forwarded-For.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          },
+          "mappings": [],
+          "noValue": "None"
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 8,
-        "w": 24,
+        "h": 9,
+        "w": 12,
         "x": 0,
         "y": 6
       },
-      "id": 10,
+      "id": 9,
       "options": {
-        "dedupStrategy": "exact",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": true
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ],
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "fields": ""
+        }
       },
-      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
@@ -325,37 +523,84 @@
             "uid": "${lokiDatasource}"
           },
           "editorMode": "code",
-          "expr": "{namespace=\"crowdsec\", filename=~\".+\"} |~ \"ban on Ip\"",
-          "queryType": "range",
-          "refId": "A"
+          "expr": "sum by (ClientHost, RequestHost) (count_over_time({namespace=\"traefik\", container=\"traefik\"} |= \"\\\"DownstreamStatus\\\":403,\" |= \"\\\"OriginStatus\\\":0,\" | json ClientHost, RequestHost | RequestHost !~ `.+\\.lab\\.jackhumes\\.com` [$__range]))",
+          "refId": "A",
+          "queryType": "instant"
         }
       ],
-      "title": "Recent Ban Decisions",
-      "type": "logs"
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "ClientHost": "IP",
+              "RequestHost": "Host",
+              "Value": "Requests"
+            },
+            "indexByName": {}
+          }
+        }
+      ],
+      "title": "Blocked IPs (rejected by the bouncer)",
+      "type": "table"
     },
     {
       "datasource": {
         "type": "loki",
         "uid": "${lokiDatasource}"
       },
+      "description": "IPs CrowdSec banned itself over the selected range, one row per IP and scenario.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          },
+          "mappings": [],
+          "noValue": "None"
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 14
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 6
       },
-      "id": 11,
+      "id": 10,
       "options": {
-        "dedupStrategy": "exact",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": true
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Bans"
+          }
+        ],
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "fields": ""
+        }
       },
-      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
@@ -363,13 +608,166 @@
             "uid": "${lokiDatasource}"
           },
           "editorMode": "code",
-          "expr": "{namespace=\"crowdsec\", filename=~\".+\"} |~ \"performed.*(http|brute)\"",
-          "queryType": "range",
-          "refId": "A"
+          "expr": "sum by (ip, scenario, country) (count_over_time({namespace=\"crowdsec\", container=\"crowdsec\"} |= \"ban on Ip\" | regexp `\\) (?P<scenario>\\S+) by ip (?P<ip>\\S+) \\((?P<country>[^/]*)/` [$__range]))",
+          "refId": "A",
+          "queryType": "instant"
         }
       ],
-      "title": "Brute Force Detections",
-      "type": "logs"
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "ip": "IP",
+              "scenario": "Scenario",
+              "country": "Country",
+              "Value": "Bans"
+            },
+            "indexByName": {}
+          }
+        }
+      ],
+      "title": "Local Ban Decisions",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "description": "Active bans by origin and reason.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "none",
+          "decimals": 0,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "id": 11,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sort_desc(sum by (origin, reason) (cs_active_decisions{action=\"ban\"}))",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{origin}} {{reason}}"
+        }
+      ],
+      "title": "Active Bans by Reason",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "description": "Active bans by origin.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "insertNulls": false
+          },
+          "unit": "none",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (origin) (cs_active_decisions{action=\"ban\"})",
+          "refId": "A",
+          "range": true,
+          "legendFormat": "{{origin}}"
+        }
+      ],
+      "title": "Active Bans Over Time",
+      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -377,8 +775,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 23
       },
+      "id": 13,
+      "panels": [],
       "title": "Blocked Requests Over Time",
       "type": "row"
     },
@@ -387,79 +787,38 @@
         "type": "loki",
         "uid": "${lokiDatasource}"
       },
+      "description": "Bouncer 403s on the public hosts per client IP. Red annotations mark bouncer LAPI errors, when the bouncer was refusing everyone.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Requests",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "bars",
             "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "insertNulls": false
           },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
+          "unit": "none",
+          "min": 0
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Blocked Requests"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 24
       },
-      "id": 7,
+      "id": 14,
       "interval": "1m",
       "options": {
         "legend": {
@@ -475,7 +834,6 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
@@ -483,13 +841,13 @@
             "uid": "${lokiDatasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (count_over_time({namespace=\"traefik\"} | json | DownstreamStatus = `403` [$__auto]))",
-          "legendFormat": "Blocked Requests",
+          "expr": "sum by (ClientHost) (count_over_time({namespace=\"traefik\", container=\"traefik\"} |= \"\\\"DownstreamStatus\\\":403,\" |= \"\\\"OriginStatus\\\":0,\" | json ClientHost, RequestHost | RequestHost !~ `.+\\.lab\\.jackhumes\\.com` [$__auto]))",
+          "refId": "A",
           "queryType": "range",
-          "refId": "A"
+          "legendFormat": "{{ClientHost}}"
         }
       ],
-      "title": "Blocked Requests Over Time (403 responses)",
+      "title": "Blocked Requests by IP",
       "type": "timeseries"
     },
     {
@@ -498,9 +856,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 32
       },
-      "title": "CrowdSec Logs",
+      "id": 15,
+      "panels": [],
+      "title": "Detection",
       "type": "row"
     },
     {
@@ -508,24 +868,53 @@
         "type": "loki",
         "uid": "${lokiDatasource}"
       },
+      "description": "Scenario overflows by name. Each one usually becomes a ban unless the IP is whitelisted.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "insertNulls": false
+          },
+          "unit": "none",
+          "min": 0
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 10,
-        "w": 24,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 32
+        "y": 33
       },
-      "id": 5,
+      "id": 16,
+      "interval": "1m",
       "options": {
-        "dedupStrategy": "exact",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": true,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": true
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
@@ -533,37 +922,117 @@
             "uid": "${lokiDatasource}"
           },
           "editorMode": "code",
-          "expr": "{namespace=\"crowdsec\", filename=~\".+\"}",
+          "expr": "sum by (scenario) (count_over_time({namespace=\"crowdsec\", container=\"crowdsec\"} |= \"performed '\" | regexp `performed '(?P<scenario>[^']+)'` [$__auto]))",
+          "refId": "A",
           "queryType": "range",
-          "refId": "A"
+          "legendFormat": "{{scenario}}"
         }
       ],
-      "title": "CrowdSec Logs",
-      "type": "logs"
+      "title": "Scenario Triggers",
+      "type": "timeseries"
     },
     {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 42
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
       },
-      "title": "Traefik Bouncer Logs",
-      "type": "row"
+      "description": "Lines CrowdSec read from Loki and how many its parsers understood, per acquisition type. A non-zero unparsed rate means the Traefik access-log format no longer matches crowdsecurity/traefik-logs.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "insertNulls": false
+          },
+          "unit": "cps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (acquis_type) (rate(cs_lokisource_hits_total[$__rate_interval]))",
+          "refId": "A",
+          "range": true,
+          "legendFormat": "read {{acquis_type}}"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (acquis_type) (rate(cs_parser_hits_ok_total[$__rate_interval]))",
+          "refId": "B",
+          "range": true,
+          "legendFormat": "parsed {{acquis_type}}"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (acquis_type) (rate(cs_parser_hits_ko_total[$__rate_interval]))",
+          "refId": "C",
+          "range": true,
+          "legendFormat": "unparsed {{acquis_type}}"
+        }
+      ],
+      "title": "Log Acquisition",
+      "type": "timeseries"
     },
     {
       "datasource": {
         "type": "loki",
         "uid": "${lokiDatasource}"
       },
+      "description": "Every ban CrowdSec issued.",
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 41
       },
-      "id": 6,
+      "id": 18,
       "options": {
         "dedupStrategy": "exact",
         "enableLogDetails": true,
@@ -574,7 +1043,6 @@
         "sortOrder": "Descending",
         "wrapLogMessage": true
       },
-      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
@@ -582,12 +1050,139 @@
             "uid": "${lokiDatasource}"
           },
           "editorMode": "code",
-          "expr": "{namespace=\"traefik\"} |~ \"(bouncer|crowdsec|blocked|banned)\"",
-          "queryType": "range",
-          "refId": "A"
+          "expr": "{namespace=\"crowdsec\", container=\"crowdsec\"} |= \"ban on Ip\"",
+          "refId": "A",
+          "queryType": "range"
         }
       ],
-      "title": "Traefik Bouncer Activity",
+      "title": "Ban Decisions",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "Scenario overflows, with the event count and window that triggered them.",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 19,
+      "options": {
+        "dedupStrategy": "exact",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"crowdsec\", container=\"crowdsec\"} |= \"performed '\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "title": "Scenario Detections",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 57
+      },
+      "id": 20,
+      "panels": [],
+      "title": "Logs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "CrowdSec agent and LAPI logs, minus probe, bouncer-poll and heartbeat access lines.",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "id": 21,
+      "options": {
+        "dedupStrategy": "exact",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"crowdsec\", container=\"crowdsec\"} != \"GET /health\" != \"/v1/decisions/stream\" != \"/v1/usage-metrics\" != \"/v1/heartbeat\" != \"/v1/watchers/login\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "title": "CrowdSec Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "Errors and notices from the CrowdSec bouncer plugin inside Traefik.",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 68
+      },
+      "id": 22,
+      "options": {
+        "dedupStrategy": "exact",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"traefik\", container=\"traefik\"} |= \"CrowdsecBouncerTraefikPlugin\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "title": "Traefik Bouncer Logs",
       "type": "logs"
     }
   ],
@@ -600,6 +1195,17 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {
+          "text": "Prometheus",
+          "value": "prometheus"
+        },
+        "label": "Prometheus",
+        "multi": false,
+        "name": "promDatasource",
+        "query": "prometheus",
+        "type": "datasource"
+      },
       {
         "current": {
           "text": "Loki",

@@ -10,13 +10,35 @@ data:
   config.yaml.local: |
     crowdsec_service:
       acquisition_dir: /etc/crowdsec/acquis-loki
-  # Pocket ID acquisition from Loki (using generic JSON log parsing)
-  pocket-id.yaml: |
+  # Traefik access logs for the public hosts (FRP -> Caddy -> Traefik). Caddy sets
+  # X-Forwarded-For, so ClientHost is the real client IP that crowdsecurity/traefik-logs
+  # takes as source_ip. *.lab.jackhumes.com traffic is dropped at query time: it only ever
+  # comes from private addresses, which crowdsecurity/whitelists discards anyway. Match on
+  # RequestHost, not the raw line: Pocket ID /authorize paths carry lab redirect_uris.
+  traefik.yaml: |
     source: loki
     url: http://loki.loki.svc.cluster.local:3100
     query: |
-      {namespace="pocket-id"}
+      {namespace="traefik", container="traefik"} |= "DownstreamStatus" | json RequestHost | RequestHost !~ `.+\.lab\.jackhumes\.com`
     labels:
-      type: syslog
+      type: traefik
     log_level: info
+---
+# Never ban the home WAN IP. LAN clients resolving the public hostnames hairpin out
+# through the edge and come back from this address, so normal use of Pocket ID and
+# Dawarich would otherwise trip the crawl/probing scenarios. Same address as
+# terraform/aws-edge/variables.tf; update both if the ISP changes it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crowdsec-whitelist
+  namespace: crowdsec
+data:
+  home-wan-whitelist.yaml: |
+    name: home-ops/home-wan-whitelist
+    description: "Whitelist the home WAN IP"
+    whitelist:
+      reason: "home WAN IP (LAN hairpin through the public edge)"
+      ip:
+        - "143.58.248.115"
 

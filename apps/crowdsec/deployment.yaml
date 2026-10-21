@@ -1,6 +1,6 @@
 ---
 # CrowdSec LAPI + Agent - decision engine with log parsing
-# Reads logs from Loki for brute-force detection
+# Reads Traefik access logs from Loki for HTTP scanning/brute-force detection
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,6 +17,12 @@ spec:
     metadata:
       labels:
         app: crowdsec
+      annotations:
+        # Picked up by the kubernetes-pods job; cs_active_decisions etc. feed the
+        # CrowdSec Security dashboard.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6060"
+        prometheus.io/path: /metrics
     spec:
       serviceAccountName: crowdsec
       containers:
@@ -36,6 +42,9 @@ spec:
             - name: lapi
               containerPort: 8080
               protocol: TCP
+            - name: metrics
+              containerPort: 6060
+              protocol: TCP
           resources:
             requests:
               memory: 128Mi
@@ -52,6 +61,10 @@ spec:
             - name: acquis-config
               mountPath: /etc/crowdsec/config.yaml.local
               subPath: config.yaml.local
+              readOnly: true
+            - name: whitelist
+              mountPath: /etc/crowdsec/parsers/s02-enrich/home-wan-whitelist.yaml
+              subPath: home-wan-whitelist.yaml
               readOnly: true
           livenessProbe:
             httpGet:
@@ -71,3 +84,6 @@ spec:
         - name: acquis-config
           configMap:
             name: crowdsec-acquis
+        - name: whitelist
+          configMap:
+            name: crowdsec-whitelist

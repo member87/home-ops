@@ -1,4 +1,22 @@
 ---
+# Chunks, boltdb-shipper index, WAL and compactor state all live under /loki.
+# ~0.2-0.33GB/day of compressed chunks x 744h retention is ~10GB; 20Gi leaves headroom.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable;
+    # a server-side apply that later omits spec.volumeName would try to clear it.
+  name: loki-storage
+  namespace: loki
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,6 +48,10 @@ spec:
                     operator: NotIn
                     values:
                       - talos-t8o-8d5
+      # The image runs as UID 10001; a fresh Longhorn ext4 volume is root-owned.
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: loki
           image: grafana/loki:3.7.9
@@ -69,5 +91,5 @@ spec:
           configMap:
             name: loki-config
         - name: storage
-          emptyDir:
-            sizeLimit: 25Gi
+          persistentVolumeClaim:
+            claimName: loki-storage

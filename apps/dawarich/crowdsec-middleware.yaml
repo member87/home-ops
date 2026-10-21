@@ -14,6 +14,8 @@ spec:
 
       # Stream mode - pulls decision deltas from LAPI every 10s into a local cache and
       # checks requests against that cache only (defaultDecisionSeconds is live-mode only)
+      # Stream settings only apply after a Traefik restart: bump checksum/bouncer-stream
+      # in infrastructure/traefik/install.yaml when changing them.
       crowdsecMode: stream
       updateIntervalSeconds: 10
       defaultDecisionSeconds: 10

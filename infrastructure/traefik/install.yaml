@@ -127,6 +127,12 @@ spec:
     metadata:
       labels:
         app: traefik
+      annotations:
+        # The bouncer plugin starts its LAPI stream ticker once per process, bound to
+        # the first crowdsec-bouncer Middleware it builds; later Middleware edits do not
+        # reach it (e.g. updateMaxFailure). Bump this when changing stream settings
+        # (crowdsecMode, updateIntervalSeconds, updateMaxFailure, LAPI host/key).
+        checksum/bouncer-stream: "update-max-failure-60"
     spec:
       serviceAccountName: traefik
       # Covers requestAcceptGraceTimeout (10s) + the default graceTimeOut (10s).

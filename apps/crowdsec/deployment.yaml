@@ -23,6 +23,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "6060"
         prometheus.io/path: /metrics
+        # Acquisition is only read at startup and crowdsec-acquis is a plain ConfigMap;
+        # bump this when it changes so the pod rolls.
+        checksum/acquis: "loki-no-giveup-v1"
     spec:
       serviceAccountName: crowdsec
       containers:

@@ -1,82 +1,104 @@
+# Vendored from upstream sealed-secrets v0.40.0 controller.yaml (all objects
+# except the CRD, which lives in crds.yaml):
+#   https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.40.0/controller.yaml
+# Renovate is disabled for this file (infrastructure/**/install.yaml rule).
+# Upgrade by re-vendoring the whole manifest, never by bumping the image alone.
+#
+# Local deviations from upstream:
+# - namespace kube-system -> sealed-secrets
+# - Deployment selector stays app.kubernetes.io/name=sealed-secrets-controller
+#   (immutable, matches the existing Deployment); pods carry both labels
+# - ClusterRole secrets-unsealer is named sealed-secrets-controller because the
+#   existing ClusterRoleBinding's roleRef (immutable) points at that name
 ---
-# Sealed Secrets Controller Installation
-# This controller decrypts SealedSecrets and creates regular Kubernetes Secrets
-# The private key stays in the cluster and never leaves
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller
   name: sealed-secrets-controller
   namespace: sealed-secrets
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: sealed-secrets-controller
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - bitnami.com
-  resources:
-  - sealedsecrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - bitnami.com
-  resources:
-  - sealedsecrets/status
-  verbs:
-  - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: sealed-secrets-controller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: sealed-secrets-controller
-subjects:
-- kind: ServiceAccount
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller
   name: sealed-secrets-controller
   namespace: sealed-secrets
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: sealed-secrets-key-admin
-  namespace: sealed-secrets
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - list
-  - get
-  - update
+spec:
+  minReadySeconds: 30
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sealed-secrets-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        name: sealed-secrets-controller
+        app.kubernetes.io/name: sealed-secrets-controller
+    spec:
+      containers:
+        - args: []
+          command:
+            - controller
+          env: []
+          image: docker.io/bitnami/sealed-secrets-controller:0.40.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          name: sealed-secrets-controller
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8081
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          stdin: false
+          tty: false
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      imagePullSecrets: []
+      initContainers: []
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: sealed-secrets-controller
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - emptyDir: {}
+          name: tmp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller
   name: sealed-secrets-controller
   namespace: sealed-secrets
 roleRef:
@@ -84,63 +106,164 @@ roleRef:
   kind: Role
   name: sealed-secrets-key-admin
 subjects:
-- kind: ServiceAccount
-  name: sealed-secrets-controller
+  - kind: ServiceAccount
+    name: sealed-secrets-controller
+    namespace: sealed-secrets
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-key-admin
+  name: sealed-secrets-key-admin
   namespace: sealed-secrets
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller
+  name: sealed-secrets-controller
+rules:
+  - apiGroups:
+      - bitnami.com
+    resources:
+      - sealedsecrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - bitnami.com
+    resources:
+      - sealedsecrets/status
+    verbs:
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller
   name: sealed-secrets-controller
   namespace: sealed-secrets
 spec:
   ports:
-  - port: 8080
-    targetPort: 8080
-    name: http
+    - port: 8080
+      targetPort: 8080
   selector:
-    app.kubernetes.io/name: sealed-secrets-controller
+    name: sealed-secrets-controller
   type: ClusterIP
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
-  name: sealed-secrets-controller
+  annotations: {}
+  labels:
+    name: sealed-secrets-service-proxier
+  name: sealed-secrets-service-proxier
+  namespace: sealed-secrets
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sealed-secrets-service-proxier
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-service-proxier
+  name: sealed-secrets-service-proxier
+  namespace: sealed-secrets
+rules:
+  - apiGroups:
+      - ""
+    resourceNames:
+      - sealed-secrets-controller
+    resources:
+      - services
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resourceNames:
+      - 'http:sealed-secrets-controller:'
+      - http:sealed-secrets-controller:http
+      - sealed-secrets-controller
+    resources:
+      - services/proxy
+    verbs:
+      - create
+      - get
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller-metrics
+  name: sealed-secrets-controller-metrics
   namespace: sealed-secrets
 spec:
-  replicas: 1
+  ports:
+    - port: 8081
+      targetPort: 8081
   selector:
-    matchLabels:
-      app.kubernetes.io/name: sealed-secrets-controller
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: sealed-secrets-controller
-    spec:
-      serviceAccountName: sealed-secrets-controller
-      containers:
-      - name: sealed-secrets-controller
-        image: bitnami/sealed-secrets-controller:0.40.0
-        command:
-        - controller
-        ports:
-        - containerPort: 8080
-          name: http
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: http
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: http
-        securityContext:
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 1001
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-      volumes:
-      - name: tmp
-        emptyDir: {}
+    name: sealed-secrets-controller
+  type: ClusterIP
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    name: sealed-secrets-controller
+  name: sealed-secrets-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sealed-secrets-controller
+subjects:
+  - kind: ServiceAccount
+    name: sealed-secrets-controller
+    namespace: sealed-secrets

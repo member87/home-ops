@@ -25,47 +25,55 @@ spec:
               app: tinyauth
       containers:
         - name: tinyauth
-          image: ghcr.io/steveiliop56/tinyauth:v4.1.0
+          image: ghcr.io/tinyauthapp/tinyauth:v5.2.0
           ports:
             - containerPort: 3000
               name: http
               protocol: TCP
+          # Tinyauth v5 config: TINYAUTH_<SECTION>_<KEY>. Tinyauth refuses to
+          # start on unknown TINYAUTH_* variables.
           env:
             # General configuration
-            - name: APP_URL
+            - name: TINYAUTH_APPURL
               value: "https://tinyauth.lab.jackhumes.com"
-            - name: SECURE_COOKIE
+            # ACLs are not configured via Kubernetes annotations; skip the
+            # Kubernetes label provider (it needs RBAC on Ingresses).
+            - name: TINYAUTH_LABELPROVIDER
+              value: "none"
+            - name: TINYAUTH_AUTH_SECURECOOKIE
               value: "true"
-            - name: SESSION_EXPIRY
+            - name: TINYAUTH_AUTH_SESSIONEXPIRY
               value: "86400"
-            # Users list is empty - we only use OAuth
-            - name: USERS
-              value: ""
+            # Traefik runs in the pod network; trust its X-Forwarded-For so
+            # client IPs are the real clients (v4 trusted every proxy).
+            - name: TINYAUTH_AUTH_TRUSTEDPROXIES
+              value: "10.244.0.0/16"
+            # No local users - we only use OAuth
             # OAuth provider configuration - Pocket ID
-            - name: PROVIDERS_POCKETID_NAME
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_NAME
               value: "Pocket ID"
-            - name: PROVIDERS_POCKETID_AUTH_URL
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_AUTHURL
               value: "https://auth.jackhumes.com/authorize"
-            - name: PROVIDERS_POCKETID_TOKEN_URL
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_TOKENURL
               value: "https://auth.jackhumes.com/api/oidc/token"
-            - name: PROVIDERS_POCKETID_USER_INFO_URL
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_USERINFOURL
               value: "https://auth.jackhumes.com/api/oidc/userinfo"
-            - name: PROVIDERS_POCKETID_SCOPES
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_SCOPES
               value: "openid,profile,email"
-            - name: PROVIDERS_POCKETID_REDIRECT_URL
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_REDIRECTURL
               value: "https://tinyauth.lab.jackhumes.com/api/oauth/callback/pocketid"
-            - name: PROVIDERS_POCKETID_CLIENT_ID
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTID
               value: "bc64c2f1-968f-4db5-aa26-2ef3a5d521e5"
-            - name: PROVIDERS_POCKETID_CLIENT_SECRET
+            - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTSECRET
               valueFrom:
                 secretKeyRef:
                   name: tinyauth-secrets
                   key: POCKETID_CLIENT_SECRET
             # Auto-redirect to Pocket ID (skip local login page)
-            - name: OAUTH_AUTO_REDIRECT
+            - name: TINYAUTH_OAUTH_AUTOREDIRECT
               value: "pocketid"
             # Custom background image from CDN
-            - name: BACKGROUND_IMAGE
+            - name: TINYAUTH_UI_BACKGROUNDIMAGE
               value: "https://cdn.lab.jackhumes.com/images/london-5297395.jpg"
           livenessProbe:
             tcpSocket:

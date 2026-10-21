@@ -26,7 +26,7 @@
         "/^talos/worker\\.yaml$/"
       ],
       "matchStrings": [
-        "image: factory\\.talos\\.dev/(?:metal-)?installer/[0-9a-f]{64}:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: factory\\.talos\\.dev/(?:metal-)?installer/[0-9a-f]{64}:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "siderolabs/talos",
       "datasourceTemplate": "github-releases",
@@ -39,7 +39,7 @@
         "/^talos/worker\\.yaml$/"
       ],
       "matchStrings": [
-        "image: ghcr\\.io/siderolabs/kubelet:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: ghcr\\.io/siderolabs/kubelet:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases",
@@ -51,7 +51,7 @@
         "/^talos/controlplane\\.yaml$/"
       ],
       "matchStrings": [
-        "image: registry\\.k8s\\.io/kube-apiserver:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: registry\\.k8s\\.io/kube-apiserver:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases",
@@ -63,7 +63,7 @@
         "/^talos/controlplane\\.yaml$/"
       ],
       "matchStrings": [
-        "image: registry\\.k8s\\.io/kube-controller-manager:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: registry\\.k8s\\.io/kube-controller-manager:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases",
@@ -75,7 +75,7 @@
         "/^talos/controlplane\\.yaml$/"
       ],
       "matchStrings": [
-        "image: registry\\.k8s\\.io/kube-scheduler:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: registry\\.k8s\\.io/kube-scheduler:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases",
@@ -87,7 +87,7 @@
         "/^talos/controlplane\\.yaml$/"
       ],
       "matchStrings": [
-        "image: registry\\.k8s\\.io/kube-proxy:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: registry\\.k8s\\.io/kube-proxy:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases",
@@ -100,7 +100,7 @@
         "/^talos/worker\\.yaml$/"
       ],
       "matchStrings": [
-        "image: registry\\.k8s\\.io/coredns/coredns:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: registry\\.k8s\\.io/coredns/coredns:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "coredns/coredns",
       "datasourceTemplate": "github-releases",
@@ -113,7 +113,7 @@
         "/^talos/worker\\.yaml$/"
       ],
       "matchStrings": [
-        "image: gcr\\.io/etcd-development/etcd:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+        "(?:^|\\n)[ \\t]*image: gcr\\.io/etcd-development/etcd:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "etcd-io/etcd",
       "datasourceTemplate": "github-releases",
@@ -156,8 +156,9 @@
       "automerge": false
     },
     {
+      "description": "Talos-owned images: the installer and kubelet versions are tracked through siderolabs/talos and kubernetes/kubernetes (github-releases). factory.talos.dev is not a registry Renovate can list tags from, which showed up as a lookup failure on the dashboard.",
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["/^ghcr\\.io\\/siderolabs\\//"],
+      "matchPackageNames": ["/^ghcr\\.io\\/siderolabs\\//", "/^factory\\.talos\\.dev\\//"],
       "enabled": false
     },
     {

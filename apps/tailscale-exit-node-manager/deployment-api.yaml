@@ -23,13 +23,18 @@ spec:
         - name: tailscale-exit-node-manager-ghcr-pull
       containers:
         - name: api
-          image: ghcr.io/member87/tailscale-exit-node-manager-api:36192a37b7c58a745ca3fa65f69292996e4ee8a2
+          image: ghcr.io/member87/tailscale-exit-node-manager-api:9b6380e4034580abdbefd420d308c7ac40ff009c
           ports:
             - containerPort: 8080
               name: http
               protocol: TCP
           env:
+            # REST calls go straight to the Service: through Traefik, a replica
+            # serving 404 or a restart flipped running exit nodes into "error".
             - name: HEADSCALE_API_URL
+              value: "http://headscale.headscale.svc.cluster.local:8080"
+            # What the exit-node pods register with (pinned to HEADSCALE_LB_IP).
+            - name: HEADSCALE_LOGIN_URL
               value: "https://headscale.lab.jackhumes.com"
             - name: HEADSCALE_API_KEY
               valueFrom:

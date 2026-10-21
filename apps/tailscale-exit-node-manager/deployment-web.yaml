@@ -20,7 +20,7 @@ spec:
         - name: tailscale-exit-node-manager-ghcr-pull
       containers:
         - name: web
-          image: ghcr.io/member87/tailscale-exit-node-manager-web:36192a37b7c58a745ca3fa65f69292996e4ee8a2
+          image: ghcr.io/member87/tailscale-exit-node-manager-web:9b6380e4034580abdbefd420d308c7ac40ff009c
           ports:
             - containerPort: 3000
               name: http
@@ -28,15 +28,18 @@ spec:
           env:
             - name: INTERNAL_API_URL
               value: "http://tailscale-exit-node-manager-api.tailscale-exit-node-manager.svc.cluster.local:8080"
+          # /api/healthz answers without calling the backend; probing "/" made
+          # the web pod's liveness depend on Headscale through SSR and it was
+          # restarted whenever the API was slow.
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/healthz
               port: http
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/healthz
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10

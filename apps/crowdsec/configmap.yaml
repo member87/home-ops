@@ -23,6 +23,13 @@ data:
     labels:
       type: traefik
     log_level: info
+    # Never give up on Loki. The agent and LAPI share this process, and a datasource
+    # error is fatal to it: with the defaults (30s retry, 10s startup /ready wait) a
+    # Loki restart killed LAPI and the fail-closed bouncers 403'd Pocket ID. Retrying
+    # keeps LAPI serving decisions; the query resumes from the last seen timestamp, so
+    # lines Loki ingests during the outage are still parsed once it is back.
+    no_ready_check: true
+    max_failure_duration: 8760h
 ---
 # Never ban the home WAN IP. LAN clients resolving the public hostnames hairpin out
 # through the edge and come back from this address, so normal use of Pocket ID and

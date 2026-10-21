@@ -12,10 +12,18 @@ spec:
       enabled: true
       logLevel: INFO
       
-      # Stream mode - fetches all decisions every 10s
+      # Stream mode - pulls decision deltas from LAPI every 10s into a local cache and
+      # checks requests against that cache only (defaultDecisionSeconds is live-mode only)
       crowdsecMode: stream
       updateIntervalSeconds: 10
       defaultDecisionSeconds: 10
+      # Pulls that may fail in a row before the plugin blocks every request. The default
+      # (0) fails closed on the first missed pull, so any CrowdSec restart 403'd Pocket
+      # ID. Until the limit, cached bans are still enforced and unknown IPs pass; only
+      # decisions made during the outage are missed, and LAPI cannot make any while it
+      # is down. 60 x 10s covers a pod restart or a node-loss reschedule; a longer
+      # outage fails closed again.
+      updateMaxFailure: 60
       
       # LAPI connection
       crowdsecLapiScheme: http

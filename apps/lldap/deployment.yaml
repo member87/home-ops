@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: lldap
-        image: lldap/lldap:stable
+        image: lldap/lldap:v0.6.3
         ports:
         - containerPort: 3890
           name: ldap

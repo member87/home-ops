@@ -18,6 +18,21 @@ spec:
       labels:
         app: headscale
     spec:
+      # Keep the tailnet control plane off talos-t8o-8d5 (8GiB, ~80% of memory
+      # requested). When the other nodes drained for a reboot its MemAvailable fell
+      # to ~5%: global reclaim evicted headscale's pages (100+ major faults/s in this
+      # container, at ~35MiB of its 256Mi limit), the process stalled for minutes
+      # and the liveness probe restarted it 4 times, dropping every client's map
+      # stream. Either 39GiB node can take it; the Longhorn volume attaches anywhere.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - talos-t8o-8d5
       containers:
         - name: headscale
           image: headscale/headscale:v0.29.5
@@ -42,18 +57,31 @@ spec:
             - name: oidc-secret
               mountPath: /etc/headscale/secrets
               readOnly: true
+          # /health pings SQLite with its own 1s timeout, so 5s lets a slow ping
+          # answer 500 instead of timing the probe out. Readiness takes the pod out
+          # of the Service after 15s of failures; liveness only restarts after ~60s,
+          # since a restart drops every node's long-poll and cannot fix a stall.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 5
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m

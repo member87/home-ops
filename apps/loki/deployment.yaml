@@ -19,6 +19,17 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3100"
     spec:
+      # talos-t8o-8d5 has 8GB RAM and runs overcommitted; under its memory/IO pressure
+      # Loki stalls for tens of seconds, /ready times out and the liveness probe kills it.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - talos-t8o-8d5
       containers:
         - name: loki
           image: grafana/loki:3.7.9
@@ -49,7 +60,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 1000m
               memory: 1Gi

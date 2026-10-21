@@ -10,11 +10,10 @@ pages:
             location: London, United Kingdom
             units: metric
 
-          # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
-          # - type: change-detection
-          #   instance-url: https://changes.lab.jackhumes.com
-          #   token: ${CHANGE_DETECTION_TOKEN}
-          #   collapse-after: 5
+          - type: change-detection
+            instance-url: https://changes.lab.jackhumes.com
+            token: ${CHANGE_DETECTION_TOKEN}
+            collapse-after: 5
 
       - size: full
         widgets:
@@ -47,10 +46,9 @@ pages:
               - title: Podinfo
                 url: https://podinfo.lab.jackhumes.com
                 icon: sh:kubernetes
-              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
-              # - title: Docs
-              #   url: https://docs.lab.jackhumes.com
-              #   icon: sh:book-open
+              - title: Docs
+                url: https://docs.lab.jackhumes.com
+                icon: sh:book-open
               - title: K9s
                 url: https://k9s.lab.jackhumes.com
                 icon: sh:kubernetes
@@ -91,18 +89,16 @@ pages:
               - title: Terrakube
                 url: https://terrakube.lab.jackhumes.com
                 icon: sh:opentofu
-              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
-              # - title: Dawarich
-              #   url: https://dawarich.jackhumes.com
-              #   icon: sh:dawarich
-              #   alt-status-codes:
-              #     - 401
-              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
-              # - title: Change Detection
-              #   url: https://changes.lab.jackhumes.com
-              #   icon: sh:changedetection
-              #   alt-status-codes:
-              #     - 401
+              - title: Dawarich
+                url: https://dawarich.jackhumes.com
+                icon: sh:dawarich
+                alt-status-codes:
+                  - 401
+              - title: Change Detection
+                url: https://changes.lab.jackhumes.com
+                icon: sh:changedetection
+                alt-status-codes:
+                  - 401
               # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
               # - title: Trek
               #   url: https://trek.lab.jackhumes.com
@@ -117,6 +113,9 @@ pages:
               - title: Jellyseerr
                 url: https://jellyseerr.lab.jackhumes.com
                 icon: sh:jellyseerr
+              - title: Immich
+                url: https://immich.lab.jackhumes.com
+                icon: sh:immich
               - title: Audiobookshelf
                 url: https://audiobookshelf.lab.jackhumes.com
                 icon: sh:audiobookshelf

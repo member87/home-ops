@@ -7,8 +7,7 @@ metadata:
   labels:
     app: dawarich-postgis
 spec:
-  # Scaled to 0 with the rest of dawarich; the PVC keeps the database.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:

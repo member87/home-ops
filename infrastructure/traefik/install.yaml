@@ -51,7 +51,6 @@ rules:
       - update
   - apiGroups:
       - traefik.io
-      - traefik.containo.us
     resources:
       - ingressroutes
       - ingressroutetcps
@@ -112,6 +111,15 @@ metadata:
     app: traefik
 spec:
   replicas: 2
+  # Never drop below 2 serving replicas: surge one new pod, wait until it is
+  # Ready (routes loaded, see readinessProbe) plus minReadySeconds so kube-proxy
+  # has programmed its endpoint, and only then terminate an old pod.
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: traefik
@@ -121,11 +129,15 @@ spec:
         app: traefik
     spec:
       serviceAccountName: traefik
+      # Covers requestAcceptGraceTimeout (10s) + the default graceTimeOut (10s).
+      terminationGracePeriodSeconds: 40
       containers:
         - name: traefik
           image: traefik:v3.7.16
           args:
             - --api.insecure=true
+            # /ping on the internal traefik entrypoint (:8080, not in the Service).
+            - --ping=true
             - --providers.kubernetesingress
             - --providers.kubernetescrd
             - --providers.kubernetescrd.allowCrossNamespace=true
@@ -133,6 +145,10 @@ spec:
             - --entrypoints.websecure.address=:443
             - --entrypoints.websecure.transport.respondingTimeouts.readTimeout=600s
             - --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=600s
+            # On SIGTERM keep accepting requests while the pod is removed from the
+            # Service endpoints, then drain in-flight requests (graceTimeOut).
+            - --entrypoints.web.transport.lifeCycle.requestAcceptGraceTimeout=10s
+            - --entrypoints.websecure.transport.lifeCycle.requestAcceptGraceTimeout=10s
             # Trust forwarded headers from any source (for real client IP)
             - --entrypoints.web.forwardedHeaders.insecure=true
             - --entrypoints.websecure.forwardedHeaders.insecure=true
@@ -150,6 +166,37 @@ spec:
               containerPort: 443
             - name: admin
               containerPort: 8080
+          # Plugin download happens before /ping is served; allow up to 2 minutes.
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: admin
+            periodSeconds: 2
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: admin
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # /ping only says the process is up and not terminating: it is served by
+          # the internal provider and returns 200 before the Kubernetes CRD provider
+          # has delivered any routes. The CRD provider sends its first configuration
+          # only after its informer caches have synced, so the presence of any
+          # @kubernetescrd router means the full route set is loaded.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - >-
+                  wget -qO /dev/null http://127.0.0.1:8080/ping &&
+                  wget -qO- 'http://127.0.0.1:8080/api/http/routers?search=%40kubernetescrd&per_page=1'
+                  | grep -q '"provider":"kubernetescrd"'
+            periodSeconds: 2
+            timeoutSeconds: 3
+            failureThreshold: 2
           volumeMounts:
             - name: traefik-data
               mountPath: /data

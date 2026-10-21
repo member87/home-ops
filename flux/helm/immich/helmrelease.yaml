@@ -91,9 +91,14 @@ spec:
               main:
                 env:
                   IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
+                # v3 runs API and microservices in one container; working through a job
+                # backlog it went past 1.27Gi and was OOM-killed at the old 1536Mi limit.
+                # The request makes the scheduler count it, which it did not before.
                 resources:
+                  requests:
+                    memory: 1Gi
                   limits:
-                    memory: 1536Mi
+                    memory: 3Gi
         persistence:
           immich-config:
             enabled: true

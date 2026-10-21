@@ -12,6 +12,8 @@ metadata:
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
   interval: 10m0s
+  # Server start runs the database migrations; a large jump (v2 -> v3) outlasts the 5m default.
+  timeout: 15m0s
   releaseName: immich
   targetNamespace: immich
   install:
@@ -19,8 +21,10 @@ spec:
     remediation:
       retries: 3
   upgrade:
+    # No rollback: migrations are one-way, and rolling back after one has run starts the old
+    # server against a newer schema. A failed upgrade stays failed and is fixed forward.
     remediation:
-      retries: 3
+      retries: 0
   chart:
     spec:
       chart: apps/immich
@@ -39,7 +43,9 @@ spec:
           containers:
             main:
               image:
-                tag: v2.6.1
+                # Shared by server and machine-learning, which must run the same version.
+                # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
+                tag: v3.3.4
               env:
                 DB_URL:
                   valueFrom:

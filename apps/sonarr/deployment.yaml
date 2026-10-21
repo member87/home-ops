@@ -167,9 +167,10 @@ spec:
             - name: SONARR__LOG__DBENABLED
               value: "true"
             
-            # Update Configuration (Docker-managed)
+            # Update Configuration (Docker-managed). v5 is published on the develop branch
+            # (the image tracks it); "main" makes Sonarr raise a beta health warning.
             - name: SONARR__UPDATE__BRANCH
-              value: "main"
+              value: "develop"
             - name: SONARR__UPDATE__MECHANISM
               value: "Docker"
             

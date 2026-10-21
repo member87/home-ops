@@ -25,7 +25,6 @@ metadata:
   name: audiobookshelf
   namespace: flux-system
 spec:
-  suspend: true
   interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s
@@ -606,7 +605,6 @@ metadata:
   name: shelfmark
   namespace: flux-system
 spec:
-  suspend: true
   interval: 15m0s
   retryInterval: 2m0s
   timeout: 5m0s

@@ -13,6 +13,8 @@ metadata:
 spec:
   suspend: false
   interval: 10m0s
+  # Upgrades run pre-upgrade checks and replace every manager/instance-manager; 5m is tight.
+  timeout: 15m0s
   releaseName: longhorn
   targetNamespace: longhorn-system
   install:
@@ -20,8 +22,10 @@ spec:
     remediation:
       retries: 3
   upgrade:
+    # No rollback: Longhorn does not support downgrades, so rolling back a half-applied
+    # upgrade would run older managers against already-upgraded CRDs/engines. Fix forward.
     remediation:
-      retries: 3
+      retries: 0
   chart:
     spec:
       chart: infrastructure/longhorn

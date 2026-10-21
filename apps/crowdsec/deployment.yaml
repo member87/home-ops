@@ -10,6 +10,10 @@ metadata:
     app: crowdsec
 spec:
   replicas: 1
+  # Single replica on an RWO volume: a RollingUpdate deadlocks on Multi-Attach when the
+  # replacement pod schedules on another node. Recreate releases the volume first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: crowdsec
@@ -58,6 +62,13 @@ spec:
           volumeMounts:
             - name: crowdsec-data
               mountPath: /var/lib/crowdsec/data
+              subPath: data
+            # The image seeds missing files from /staging/etc/crowdsec on every start
+            # (rsync --ignore-existing), so an empty volume bootstraps itself and a
+            # populated one keeps its CAPI credentials and local machine registration.
+            - name: crowdsec-data
+              mountPath: /etc/crowdsec
+              subPath: config
             - name: acquis-config
               mountPath: /etc/crowdsec/acquis-loki/
               readOnly: true
@@ -83,7 +94,8 @@ spec:
             periodSeconds: 5
       volumes:
         - name: crowdsec-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: crowdsec-data
         - name: acquis-config
           configMap:
             name: crowdsec-acquis

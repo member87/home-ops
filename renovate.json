@@ -128,6 +128,14 @@
         "image:\\s+(?<depName>ghcr\\.io/[\\w\\-\\./]+):(?<currentValue>[\\w\\-\\.]+)"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Image tags inside HelmRelease spec.values are invisible to every built-in manager: flux only reads the chart reference, and values carry a bare tag: with the repository left to the chart default. Annotate the tag with a '# renovate: datasource=... depName=...' line directly above it.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^flux/helm/.+\\.yaml$/"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*tag:\\s*[\"']?(?<currentValue>[^\\s\"']+)"
+      ]
     }
   ],
   "packageRules": [

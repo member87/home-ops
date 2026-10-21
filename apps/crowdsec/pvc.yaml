@@ -1,0 +1,19 @@
+---
+# Holds the SQLite database (local bans, community blocklist, registered machines and
+# bouncers) under data/, and /etc/crowdsec under config/: the Central API credentials
+# and hub state. Without it every new pod registers as a brand-new CAPI machine and
+# starts with an empty blocklist.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable
+  name: crowdsec-data
+  namespace: crowdsec
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

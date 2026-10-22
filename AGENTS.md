@@ -307,6 +307,13 @@ just talos-sync     # break-glass: upgrade nodes by hand when tuppr cannot
 - Diagnose: from a privileged `hostNetwork` pod on the node, `iptables-nft -L -n` shows filter `INPUT`/`OUTPUT`/`FORWARD` policy `DROP` with a gluetun allowlist: `lo`, `ESTABLISHED`, LAN/pod/service CIDRs, ProtonVPN endpoints on `udp/51820`, and a `-o tun0` rule for an interface that does not exist on the host.
 - Fix: set the three policies back to `ACCEPT` and delete only the leaked gluetun rules; keep the `KUBE-FIREWALL` and `FLANNEL-FWD` jumps intact.
 - Prevent: exit-node pods must never use `hostNetwork` — gluetun's kill switch then writes into the host netns and survives pod deletion. The `exit-node-manager-deny-hostnetwork` ValidatingAdmissionPolicy enforces this in the `tailscale-exit-node-manager` namespace; gluetun's firewall inside its own pod netns is correct and stays on.
+### Longhorn Upgrade Stalls: New Instance Manager `OutOfcpu`
+
+- Symptom: after a Longhorn chart upgrade, attached volumes stay on the old engine image (`kubectl -n longhorn-system get engineimages.longhorn.io` refCount never drains), replicas on one node log `invalid instance manager ..., state error`, and the node's new `instance-manager-*` pod is recreated every ~2 minutes with `OutOfcpu` events. Seen on the 1.12.1 -> 1.13.0 upgrade on lox.
+- Cause: during an upgrade each node runs the old and the new instance manager side by side, each requesting `guaranteed-instance-manager-cpu` (12% = 714m). The instance-manager pod is bound to its node directly, so kubelet admission rejects it when the node's CPU *requests* are full (lox was at 93%); the scheduler never gets a chance to place it elsewhere.
+- Fix: free ~350m of requests on that node. Cordon it and t8o (8GB), delete a few stateless, PVC-less pods (Grafana, the idle Terrakube executor, Flux image-automation/notification controllers) so they land on tug, uncordon once the instance manager is `running`. The engine upgrade then completes on its own within minutes.
+- After a live engine upgrade the old instance managers keep running the engine processes (and keep their CPU request) until each volume next detaches; the next node drain (tuppr Talos upgrade) retires them. Check `kubectl describe node` CPU requests before merging a Longhorn upgrade.
+- The upgrade's first Helm attempt can also fail with `failed calling webhook "mutator.longhorn.io" ... connection refused` while the managers restart. Upgrades are never rolled back (`upgrade.remediation.retries: 0`); once the managers are Ready, `flux reconcile helmrelease longhorn -n flux-system --force` finishes it.
 ## Commit Style
 
 Use concise conventional commits:

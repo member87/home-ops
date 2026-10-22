@@ -135,6 +135,15 @@ spec:
         checksum/bouncer-stream: "update-max-failure-60"
     spec:
       serviceAccountName: traefik
+      # One replica per node, so a single node loss never takes out both. The surge
+      # pod lands on the third node during a rollout.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: traefik
+              topologyKey: kubernetes.io/hostname
       # Covers requestAcceptGraceTimeout (10s) + the default graceTimeOut (10s).
       terminationGracePeriodSeconds: 40
       containers:

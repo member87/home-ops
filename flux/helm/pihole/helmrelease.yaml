@@ -36,7 +36,9 @@ spec:
       # Scale to 3 replicas for high availability
       replicaCount: 3
       strategyType: RollingUpdate
-      maxSurge: 1
+      # Strict anti-affinity puts exactly one replica per node on 3 nodes, so a surge
+      # pod would have nowhere to schedule; replace pods one at a time instead.
+      maxSurge: 0
       maxUnavailable: 1
       # Admin password disabled - protected by Tinyauth/Pocket ID
       # Use empty password secret to disable Pi-hole authentication
@@ -48,11 +50,12 @@ spec:
       # PVC with ReadWriteOnce would prevent scheduling multiple replicas.
       persistentVolumeClaim:
         enabled: false
-      # Anti-affinity to spread Pi-hole pods across nodes
+      # Required anti-affinity: one Pi-hole per node, so losing a node costs one replica.
+      # Preferred (strict: false) let the scheduler stack two on the same node.
       antiaff:
         enabled: true
         avoidRelease: pihole
-        strict: false
+        strict: true
       # Topology spread for even distribution across nodes
       topologySpreadConstraints:
         - maxSkew: 1

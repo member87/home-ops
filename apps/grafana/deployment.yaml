@@ -24,6 +24,15 @@ spec:
         runAsUser: 472
         runAsGroup: 472
         fsGroup: 472
+      # One replica per node, so a single node loss never takes out both. The surge
+      # pod lands on the third node during a rollout.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: grafana
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: grafana
           image: grafana/grafana:13.2.4

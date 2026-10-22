@@ -41,7 +41,7 @@ spec:
         - name: profilarr
           # v2 ships only to GHCR (tags without a `v` prefix); Docker Hub
           # santiagosayshey/profilarr stays on the v1 line.
-          image: ghcr.io/dictionarry-hub/profilarr:2.3.0
+          image: ghcr.io/dictionarry-hub/profilarr:2.3.1
           ports:
             - containerPort: 6868
               name: http

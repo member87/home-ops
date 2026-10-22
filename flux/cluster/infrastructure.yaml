@@ -187,3 +187,25 @@ spec:
     kind: GitRepository
     name: home-ops
     namespace: flux-system
+---
+# The Flux controllers themselves, installed and upgraded by Flux Operator. prune: false as
+# a second guard on top of the FluxInstance's own prune-disabled annotation: deleting the
+# FluxInstance uninstalls Flux.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-instance
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 10m0s
+  path: ./infrastructure/flux-instance
+  prune: false
+  wait: true
+  dependsOn:
+    - name: helm-flux-operator
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system

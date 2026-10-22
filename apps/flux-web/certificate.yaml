@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: flux-web-cert
+  namespace: flux-system
+spec:
+  secretName: flux-web-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - flux.lab.jackhumes.com

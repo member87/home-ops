@@ -31,6 +31,20 @@ spec:
         name: skyhook
         namespace: flux-system
       interval: 10m0s
+  # Parked: the Flux Web UI (flux.lab.jackhumes.com) replaced it. Its Pocket ID client now
+  # serves the Flux UI too (radar's callback URL kept) and the PVC keeps the timeline, so
+  # restoring Radar is deleting this postRenderer. The chart's values schema rejects
+  # replicaCount: 0, hence a patch on the rendered Deployment instead.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: radar
+            patch: |
+              - op: replace
+                path: /spec/replicas
+                value: 0
   values:
     auth:
       mode: oidc

@@ -132,7 +132,7 @@
     {
       "description": "Versions Renovate cannot see on its own: image tags inside HelmRelease spec.values (flux only reads the chart reference, and values carry a bare tag: with the repository left to the chart default) and the tuppr TalosUpgrade/KubernetesUpgrade versions. Annotate the field with a '# renovate: datasource=... depName=...' line directly above it.",
       "customType": "regex",
-      "managerFilePatterns": ["/^flux/helm/.+\\.yaml$/", "/^infrastructure/tuppr/.+\\.yaml$/"],
+      "managerFilePatterns": ["/^flux/helm/.+\\.yaml$/", "/^infrastructure/tuppr/.+\\.yaml$/", "/^infrastructure/flux-instance/.+\\.yaml$/"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*(?:tag|version):\\s*[\"']?(?<currentValue>[^\\s\"']+)"
       ]

@@ -230,7 +230,8 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Platform: Talos Linux, version in `infrastructure/tuppr/talos/talosupgrade.yaml` (Renovate keeps `talos/*.yaml` equal; `just talos-drift` to compare). Nodes are Lenovo ThinkCentre (10T8), legacy BIOS/GRUB, one 256GB SATA SSD shared by etcd and Longhorn (a large Longhorn rebuild can stall etcd; rebuilds run one per node). RAM: lox and tug ~39GiB, t8o 8GiB.
 - Base domain: `lab.jackhumes.com`.
 - Auth server: `auth.jackhumes.com` externally and `auth.lab.jackhumes.com` internally.
-- Flux namespace: `flux-system`.
+- Flux namespace: `flux-system`. Flux itself is installed and upgraded by Flux Operator (`flux/helm/flux-operator`) from the `FluxInstance` in `infrastructure/flux-instance`; Renovate bumps its `distribution.version`. Do not run `flux install` against the cluster any more, it would fight the operator. Deleting the FluxInstance uninstalls Flux, so it carries `prune: disabled` and its Kustomization is `prune: false`.
+- Flux Web UI: `https://flux.lab.jackhumes.com`, served by the operator, OIDC login via Pocket ID (admin group only). Pocket ID groups are impersonated as `pocketid:<group>`; `pocketid:admin` is bound to `flux-web-admin` in `apps/flux-web/rbac.yaml`. Never bind bare Pocket ID group names in RBAC: `admin` is already cluster-admin via `apps/radar/rbac.yaml`.
 - Sealed Secrets namespace: `sealed-secrets`.
 - Longhorn is the default replicated storage class.
 - Direct NFS is used for media/download storage from NAS `10.0.0.9`.

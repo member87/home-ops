@@ -43,6 +43,13 @@ if ! command -v flux >/dev/null 2>&1; then
     exit 1
 fi
 
+for tool in helm yq; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        print_error "$tool is not installed or not in PATH"
+        exit 1
+    fi
+done
+
 if ! kubectl cluster-info >/dev/null 2>&1; then
     print_error "Cannot connect to Kubernetes cluster"
     exit 1
@@ -50,8 +57,16 @@ fi
 print_success "kubectl and flux are configured"
 echo ""
 
-print_info "Installing Flux controllers (idempotent)..."
-flux install
+print_info "Installing Flux Operator and the Flux controllers (idempotent)..."
+# Flux Operator installs Flux from infrastructure/flux-instance. Installed here with plain Helm
+# at the chart version Git pins; once Flux runs, the flux-operator HelmRelease adopts this
+# release and adds the Web UI settings (they need the sealed OIDC secret, which does not exist
+# until Sealed Secrets is up).
+FLUX_OPERATOR_VERSION=$(yq '.spec.ref.tag' flux/helm/flux-operator/ocirepository.yaml)
+helm upgrade --install flux-operator oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
+    --namespace flux-system --create-namespace --version "${FLUX_OPERATOR_VERSION}" --wait
+kubectl apply -f infrastructure/flux-instance/fluxinstance.yaml
+kubectl -n flux-system wait fluxinstance/flux --for=condition=Ready --timeout=10m
 print_success "Flux controllers are installed"
 echo ""
 

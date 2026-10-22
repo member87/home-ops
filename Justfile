@@ -53,8 +53,10 @@ talos-bootstrap:
 talos-drift:
     scripts/talos-sync.sh plan {{UPGRADE_ORDER}}
 
-# One node and one minor at a time, guarded by health and Longhorn replica checks; see the script
-# Upgrade every node to the Talos/Kubernetes versions in Git, then apply talos/patches
+# Break-glass only: upgrades normally run through tuppr (infrastructure/tuppr) when the Renovate
+# "Talos and Kubernetes" PR merges. One node and one minor at a time, guarded by health and
+# Longhorn replica checks; see the script. Upgrades every node to the versions in Git, then
+# applies talos/patches.
 talos-sync:
     scripts/talos-sync.sh apply {{UPGRADE_ORDER}}
 

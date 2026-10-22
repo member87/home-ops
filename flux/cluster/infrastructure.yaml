@@ -94,7 +94,10 @@ spec:
 # The kube-system/coredns ConfigMap (Corefile forwarding to Pi-hole, which serves the
 # *.lab.jackhumes.com wildcard). Talos also renders this object and `talosctl upgrade-k8s`
 # re-applies the Talos default (`forward . /etc/resolv.conf`) with forced ownership, so Flux
-# re-asserts it here; `just talos-sync` also re-applies it right after each upgrade-k8s step.
+# re-asserts it here. Kubernetes upgrades now run unattended through tuppr
+# (infrastructure/tuppr), so the 5m interval bounds how long the Talos default can survive
+# after one; a dependsOn on tuppr-kubernetes would stop this restore whenever an upgrade
+# fails, which is exactly when the Corefile may have been overwritten.
 # prune: false: Talos owns the object too, and pruning it would take cluster DNS down.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -102,7 +105,7 @@ metadata:
   name: coredns
   namespace: flux-system
 spec:
-  interval: 15m0s
+  interval: 5m0s
   retryInterval: 2m0s
   timeout: 5m0s
   path: ./infrastructure/coredns
@@ -128,6 +131,58 @@ spec:
   path: ./flux/system
   prune: false
   wait: false
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+# Talos and Kubernetes upgrades, executed by tuppr (flux/helm/tuppr). tuppr-talos is Ready
+# only once the TalosUpgrade has Completed for its current spec; while a rollout runs it
+# reports the health check as in progress and retries. tuppr-kubernetes depends on it, so a
+# KubernetesUpgrade change is applied only after every node runs the new Talos.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tuppr-talos
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 5m0s
+  timeout: 10m0s
+  path: ./infrastructure/tuppr/talos
+  prune: true
+  wait: true
+  dependsOn:
+    - name: helm-tuppr
+  healthCheckExprs:
+    - apiVersion: tuppr.home-operations.com/v1alpha1
+      kind: TalosUpgrade
+      current: status.observedGeneration == metadata.generation && status.phase == "Completed"
+      failed: status.phase == "Failed"
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tuppr-kubernetes
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 5m0s
+  timeout: 10m0s
+  path: ./infrastructure/tuppr/kubernetes
+  prune: true
+  wait: true
+  dependsOn:
+    - name: tuppr-talos
+  healthCheckExprs:
+    - apiVersion: tuppr.home-operations.com/v1alpha1
+      kind: KubernetesUpgrade
+      current: status.observedGeneration == metadata.generation && status.phase == "Completed"
+      failed: status.phase == "Failed"
   sourceRef:
     kind: GitRepository
     name: home-ops

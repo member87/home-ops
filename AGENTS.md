@@ -19,8 +19,17 @@ Keep this file short. Prefer discovering current details from the repo over stor
 
 - Never commit plaintext secrets.
 - Use Sealed Secrets for Kubernetes app secrets.
-- Use SOPS with age for Talos configs in `talos/`. The Talos version, factory schematic and Kubernetes version pinned in `talos/controlplane.yaml` are what the nodes should run: `just talos-drift` shows the gap (exit 2 when behind) and `just talos-sync` closes it. It goes one node and one minor at a time, checks every step against the Talos support matrix, and refuses a Kubernetes pin the pinned Talos cannot run. Bump Talos before Kubernetes. Renovate opens PRs for both but never automerges `talos/**`; run `just talos-sync` after merging one. Do not `just talos-apply` the full file for a small change; put plaintext, secret-free documents in `talos/patches/`, written for the pinned Talos version. `talos-sync` applies each one before a node's upgrade to that version if the running version accepts it (server-side dry-run), otherwise right after. `just talos-patch <node-ip> <file>` applies one alone (`--dry-run` first).
-- Before `just talos-sync`:
+- Use SOPS with age for Talos configs in `talos/`.
+- Talos and Kubernetes upgrades run through tuppr (`flux/helm/tuppr`, CRs in `infrastructure/tuppr`): `TalosUpgrade cluster` and `KubernetesUpgrade kubernetes` hold the versions the nodes run, and merging a change to them upgrades the cluster. Renovate opens one "Talos and Kubernetes" PR (branch `renovate/talos-and-kubernetes`) that bumps both CRs plus the installer and Kubernetes images in `talos/*.yaml`, never automerged. Watch a rollout with `kubectl get talosupgrade,kubernetesupgrade -w` and `kubectl describe talosupgrade cluster`.
+  - **Ordering:** Flux applies the KubernetesUpgrade only after `tuppr-talos` is Ready, i.e. the TalosUpgrade Completed, so Talos always finishes first.
+  - **Steps:** Talos must go through every minor and `upgrade-k8s` one Kubernetes minor at a time, and tuppr does not enforce either. Renovate proposes the lowest safe step (latest patch of the current minor, then the next minor; `separateMultipleMinor` on one fixed branch). Kubernetes is capped by `allowedVersions` in `renovate.json` at what the running Talos minor supports (Talos 1.14: Kubernetes 1.33-1.37); raise it in the same PR as the Talos minor that supports more, and keep `K8S_RANGE` in `scripts/talos-sync.sh` in step.
+  - **Gates:** before each node, every node Ready and every attached Longhorn volume healthy with at least 2 replicas (a node holding an attached volume's only replica cannot drain). tuppr drains, waits for CSI detach, and fails the run without rebooting if the drain exceeds 15m.
+  - **Image:** tuppr version-swaps each node's live `machine.install.image`, so that must stay `factory.talos.dev/metal-installer/<schematic>:...` with the schematic the node runs, or tuppr refuses the node. Talos upgrades do not update it themselves.
+  - **Talos API access:** `talos/patches/tuppr-api-access.yaml` grants `system-upgrade` `os:admin`; it must be on every node, including any new one.
+  - **Not covered by tuppr, check before merging a Talos minor:** patches a new Talos needs *before* its first boot (like `talos/patches/time-sync.yaml` for 1.14) must be applied first with `just talos-patch <node-ip> <file>` on every node. tuppr has no system-disk latency gate (etcd shares the disk with Longhorn); the Longhorn healthy check covers the rebuild load that caused it.
+  - `upgrade-k8s` overwrites the CoreDNS Corefile; the `coredns` Kustomization re-applies `infrastructure/coredns` every 5m.
+- `just talos-drift` (read-only) compares nodes with `talos/controlplane.yaml`. `just talos-sync` is the manual break-glass path when tuppr cannot run; it does the same job with stricter pre-flight checks. Do not `just talos-apply` the full file for a small change; put plaintext, secret-free documents in `talos/patches/`, written for the running Talos version, and apply them with `just talos-patch <node-ip> <file>` (`--dry-run` first).
+- Before `just talos-sync` (manual path only):
   - **Network path:** reach `10.0.0.0/24` over the LAN (`tailscale set --accept-routes=false` on the workstation), not through the in-cluster Tailscale subnet router. That router is pinned to lox, so draining lox cuts the session mid-upgrade.
   - **Kubeconfig:** point it at the control-plane VIP `https://10.0.0.15:6443`, not one node.
   - **Reasons for the script's other steps:** Talos 1.14 cold boots hang until time syncs, and IPv6 NTP gets no answer here, so `talos/patches/time-sync.yaml` must be on a node before it first boots 1.14; the script applies accepted patches early. `upgrade-k8s` overwrites the CoreDNS Corefile, and the script re-applies `infrastructure/coredns`. A zero-disruption PDB blocks drains; the pre-flight names it.
@@ -218,7 +227,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 
 ## Cluster Facts
 
-- Platform: Talos Linux, version pinned in `talos/controlplane.yaml` (`just talos-drift` to compare). Nodes are Lenovo ThinkCentre (10T8), legacy BIOS/GRUB, 8GiB RAM, one 256GB SATA SSD shared by etcd and Longhorn (a large Longhorn rebuild can stall etcd; rebuilds run one per node).
+- Platform: Talos Linux, version in `infrastructure/tuppr/talos/talosupgrade.yaml` (Renovate keeps `talos/*.yaml` equal; `just talos-drift` to compare). Nodes are Lenovo ThinkCentre (10T8), legacy BIOS/GRUB, one 256GB SATA SSD shared by etcd and Longhorn (a large Longhorn rebuild can stall etcd; rebuilds run one per node). RAM: lox and tug ~39GiB, t8o 8GiB.
 - Base domain: `lab.jackhumes.com`.
 - Auth server: `auth.jackhumes.com` externally and `auth.lab.jackhumes.com` internally.
 - Flux namespace: `flux-system`.
@@ -259,8 +268,9 @@ kubectl describe pod -n <namespace> <pod-name>
 kubectl port-forward -n <namespace> svc/<service> <local-port>:<remote-port>
 just help
 just talos-status
+kubectl get talosupgrade,kubernetesupgrade   # tuppr: target vs progress of Talos/Kubernetes upgrades
 just talos-drift    # nodes vs the Talos/Kubernetes versions in Git
-just talos-sync     # upgrade nodes to them
+just talos-sync     # break-glass: upgrade nodes by hand when tuppr cannot
 ```
 
 ## Troubleshooting Pointers

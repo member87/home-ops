@@ -1,0 +1,20 @@
+---
+# Kubernetes version for the cluster (talosctl upgrade-k8s, no reboots). Exactly one of
+# these may exist. Its Flux Kustomization (tuppr-kubernetes) depends on tuppr-talos, which
+# only turns Ready once the TalosUpgrade has Completed, so when a single Renovate PR bumps
+# both, Talos always finishes first - a newer Kubernetes minor can need the newer Talos.
+# renovate.json caps the Kubernetes minor at what the current Talos minor supports.
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: KubernetesUpgrade
+metadata:
+  name: kubernetes
+spec:
+  kubernetes:
+    # renovate: datasource=github-releases depName=kubernetes/kubernetes
+    version: v1.37.1
+  healthChecks:
+    - description: every node Ready
+      apiVersion: v1
+      kind: Node
+      expr: status.conditions.exists(c, c.type == "Ready" && c.status == "True")
+      timeout: 15m

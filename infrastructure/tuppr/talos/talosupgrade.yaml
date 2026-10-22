@@ -1,0 +1,40 @@
+---
+# Talos version for every node. Merging a change here upgrades the cluster: tuppr drains,
+# upgrades and reboots one node at a time, and the health checks below gate each node.
+# Bumped by Renovate in the single "Talos and Kubernetes" PR together with the installer
+# image in talos/*.yaml. Talos only supports stepping through each minor in turn and tuppr
+# does not enforce it: never skip a minor (see renovate.json, separateMultipleMinor).
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: TalosUpgrade
+metadata:
+  name: cluster
+spec:
+  talos:
+    # renovate: datasource=github-releases depName=siderolabs/talos
+    version: v1.14.4
+  policy:
+    # The CRD defaults this to true (v0.5.9), despite the docs.
+    debug: false
+    # Longhorn releases its instance-manager PDB only as the drain detaches volumes; a node
+    # running many replicas needs longer than talosctl's 5m default.
+    drainTimeout: 15m
+    # Drain and wait for CSI (Longhorn) volumes to detach before rebooting, so a fast
+    # reboot cannot orphan a mount and pin the volume to the node (Multi-Attach errors).
+    waitForVolumeDetach: true
+    timeout: 45m
+  healthChecks:
+    - description: every node Ready
+      apiVersion: v1
+      kind: Node
+      expr: status.conditions.exists(c, c.type == "Ready" && c.status == "True")
+      timeout: 15m
+    # A reboot takes one replica of every volume down. Wait until the previous node's
+    # replicas have resynced (rebuilds are limited to one per node, so this can take
+    # ~20m), and refuse to drain a node that would take an attached volume's only
+    # replica with it - Longhorn's drain policy would block that drain anyway.
+    - description: every attached Longhorn volume healthy with at least 2 replicas
+      apiVersion: longhorn.io/v1beta2
+      kind: Volume
+      namespace: longhorn-system
+      expr: status.state != "attached" || (status.robustness == "healthy" && spec.numberOfReplicas >= 2)
+      timeout: 2h

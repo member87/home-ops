@@ -130,11 +130,11 @@
       "datasourceTemplate": "docker"
     },
     {
-      "description": "Image tags inside HelmRelease spec.values are invisible to every built-in manager: flux only reads the chart reference, and values carry a bare tag: with the repository left to the chart default. Annotate the tag with a '# renovate: datasource=... depName=...' line directly above it.",
+      "description": "Versions Renovate cannot see on its own: image tags inside HelmRelease spec.values (flux only reads the chart reference, and values carry a bare tag: with the repository left to the chart default) and the tuppr TalosUpgrade/KubernetesUpgrade versions. Annotate the field with a '# renovate: datasource=... depName=...' line directly above it.",
       "customType": "regex",
-      "managerFilePatterns": ["/^flux/helm/.+\\.yaml$/"],
+      "managerFilePatterns": ["/^flux/helm/.+\\.yaml$/", "/^infrastructure/tuppr/.+\\.yaml$/"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*tag:\\s*[\"']?(?<currentValue>[^\\s\"']+)"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*(?:tag|version):\\s*[\"']?(?<currentValue>[^\\s\"']+)"
       ]
     }
   ],
@@ -173,24 +173,41 @@
       "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?(?:\\.\\d+)?(?:ubu\\d{4}|-r\\d+|-[0-9a-f]{9})?-ls(?<build>\\d+)$"
     },
     {
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["siderolabs/talos"],
-      "groupName": "Talos",
-      "commitMessageTopic": "Talos",
+      "description": "Talos and Kubernetes move in one PR: the tuppr TalosUpgrade/KubernetesUpgrade versions (merging is what upgrades the cluster), the installer image and the control-plane/kubelet images in talos/*.yaml (used for new installs) all change together. The Kubernetes images are found twice (docker datasource by the kubernetes manager, github-releases by the Talos custom managers), so both names are listed to keep them in this group. group.branchTopic is fixed because separateMultipleMinor (below) would otherwise put every minor stream on its own branch (minor-1.14-..., minor-1.37-...) and split Talos and Kubernetes into separate PRs; on one branch Renovate keeps the lowest step per dependency when several minors are pending (latest patch of the current minor, then the next minor), never a skip. A plain branchTopic or groupSlug still gets the per-minor prefix.",
+      "matchPackageNames": [
+        "siderolabs/talos",
+        "kubernetes/kubernetes",
+        "/^(?:ghcr\\.io\\/siderolabs\\/kubelet|registry\\.k8s\\.io\\/kube-(?:apiserver|controller-manager|proxy|scheduler))$/"
+      ],
+      "groupName": "Talos and Kubernetes",
+      "group": {
+        "branchTopic": "talos-and-kubernetes"
+      },
+      "commitMessageTopic": "Talos and Kubernetes",
       "semanticCommitType": "chore",
-      "semanticCommitScope": "talos"
+      "semanticCommitScope": "talos",
+      "automerge": false,
+      "prBodyNotes": [
+        "Merging this upgrades the cluster: tuppr rolls Talos node by node (health-gated on Ready nodes and healthy Longhorn volumes), then Kubernetes. Watch with `kubectl get talosupgrade,kubernetesupgrade -w`.",
+        "Talos must step through every minor and Kubernetes must stay inside the support matrix of the running Talos minor. If this PR moves the Talos minor, check https://docs.siderolabs.com/talos/latest/getting-started/support-matrix and raise the Kubernetes allowedVersions cap in renovate.json in the same PR if the new Talos supports a newer Kubernetes."
+      ]
     },
     {
-      "description": "Keep every Kubernetes control-plane and kubelet image on the same non-major release; Kubernetes detects image references with the docker datasource, while the Talos custom manager uses github-releases",
+      "description": "Talos supports upgrading through each minor in turn, and talosctl upgrade-k8s moves Kubernetes one minor at a time; tuppr upgrades to exactly the version it is given. With two minors available Renovate must propose the next minor, not jump to the newest.",
+      "matchPackageNames": [
+        "siderolabs/talos",
+        "kubernetes/kubernetes",
+        "/^(?:ghcr\\.io\\/siderolabs\\/kubelet|registry\\.k8s\\.io\\/kube-(?:apiserver|controller-manager|proxy|scheduler))$/"
+      ],
+      "separateMultipleMinor": true
+    },
+    {
+      "description": "Kubernetes may not outrun the Talos support matrix (Talos v1.14 supports Kubernetes 1.33-1.37). Raise this cap together with the Talos minor that supports the next Kubernetes minor.",
       "matchPackageNames": [
         "kubernetes/kubernetes",
         "/^(?:ghcr\\.io\\/siderolabs\\/kubelet|registry\\.k8s\\.io\\/kube-(?:apiserver|controller-manager|proxy|scheduler))$/"
       ],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Kubernetes",
-      "commitMessageTopic": "Kubernetes",
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "k8s"
+      "allowedVersions": "/^v?1\\.(?:[0-2]?\\d|3[0-7])\\./"
     },
     {
       "matchDatasources": ["github-releases"],

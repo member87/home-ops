@@ -1,0 +1,17 @@
+---
+# The Flux Web UI impersonates the signed-in user. Pocket ID groups arrive prefixed with
+# "pocketid:" (see flux/helm/flux-operator/helmrelease.yaml), so this binding is the only
+# thing a Pocket ID admin gets through the UI: read everything, plus Flux actions
+# (reconcile/suspend/resume) and workload restarts. flux-web-admin ships with the chart.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-web-pocketid-admin
+subjects:
+  - kind: Group
+    name: pocketid:admin
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: flux-web-admin
+  apiGroup: rbac.authorization.k8s.io

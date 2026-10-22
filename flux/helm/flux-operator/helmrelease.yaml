@@ -1,0 +1,71 @@
+---
+# Flux Operator: installs and upgrades the Flux controllers from the FluxInstance in
+# infrastructure/flux-instance, and serves the Flux Web UI (flux.lab.jackhumes.com, routed by
+# apps/flux-web). It lives in flux-system next to the controllers it manages. Flux applies
+# this release, the operator then manages Flux itself: if a bad change takes Flux down, fix
+# it with `helm -n flux-system upgrade flux-operator` / `kubectl apply`, not by waiting on Git.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flux-operator
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  interval: 10m0s
+  releaseName: flux-operator
+  targetNamespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: flux-operator
+    namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    web:
+      config:
+        baseURL: https://flux.lab.jackhumes.com
+        authentication:
+          type: OAuth2
+          oauth2:
+            provider: OIDC
+            # Pocket ID client "Flux Web UI (ex-Radar)", restricted to the admin group.
+            # clientID and clientSecret come from the flux-web-client Secret (valuesFrom).
+            issuerURL: https://auth.jackhumes.com
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+            autoLogin: true
+            validations:
+              - expression: "'groups' in claims && 'admin' in claims.groups"
+                message: "only members of the Pocket ID admin group may use the Flux UI"
+            impersonation:
+              username: "claims.email"
+              # Prefixed so Pocket ID groups cannot collide with in-cluster RBAC subjects:
+              # apps/radar/rbac.yaml binds the bare group "admin" to cluster-admin.
+              # apps/flux-web/rbac.yaml binds pocketid:admin to flux-web-admin only.
+              groups: "claims.groups.map(g, 'pocketid:' + g)"
+        # No metrics-server in this cluster; the Metrics API does not exist.
+        metrics:
+          disabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+  valuesFrom:
+    - kind: Secret
+      name: flux-web-client
+      valuesKey: client-id
+      targetPath: web.config.authentication.oauth2.clientID
+    - kind: Secret
+      name: flux-web-client
+      valuesKey: client-secret
+      targetPath: web.config.authentication.oauth2.clientSecret

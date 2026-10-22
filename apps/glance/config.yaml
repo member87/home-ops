@@ -78,11 +78,15 @@ pages:
                 icon: sh:grafana
                 alt-status-codes:
                   - 401
-              - title: Radar
-                url: https://radar.lab.jackhumes.com
-                icon: sh:kubernetes
-                alt-status-codes:
-                  - 401
+              - title: Flux
+                url: https://flux.lab.jackhumes.com
+                icon: di:flux-cd
+              # Parked at replicas: 0, replaced by the Flux Web UI - re-enable with the app.
+              # - title: Radar
+              #   url: https://radar.lab.jackhumes.com
+              #   icon: sh:kubernetes
+              #   alt-status-codes:
+              #     - 401
               - title: Longhorn
                 url: https://longhorn.lab.jackhumes.com
                 icon: sh:rancher-longhorn

@@ -1,0 +1,19 @@
+---
+# Flux Web UI, served by the flux-operator Deployment on port 9080 (http-web). Internal only.
+# Authentication is the UI's own OIDC login against Pocket ID, so no ForwardAuth here.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: flux-web
+  namespace: flux-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`flux.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: flux-operator
+          port: 9080
+  tls:
+    secretName: flux-web-tls

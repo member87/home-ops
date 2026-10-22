@@ -751,3 +751,22 @@ spec:
     kind: GitRepository
     name: home-ops
     namespace: flux-system
+---
+# Routing, RBAC and OIDC client Secret for the Flux Web UI. Applied before helm-flux-operator,
+# whose HelmRelease reads the client Secret through valuesFrom.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-web
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/flux-web
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system

@@ -1,0 +1,41 @@
+---
+# tuppr: in-cluster controller that rolls Talos and Kubernetes to the versions declared in
+# infrastructure/tuppr (TalosUpgrade / KubernetesUpgrade). Needs the os:admin Talos API
+# access granted to this namespace by talos/patches/tuppr-api-access.yaml on every node.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tuppr
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  interval: 10m0s
+  releaseName: tuppr
+  # Must match allowedKubernetesNamespaces in talos/patches/tuppr-api-access.yaml.
+  targetNamespace: system-upgrade
+  chartRef:
+    kind: OCIRepository
+    name: tuppr
+    namespace: flux-system
+  install:
+    createNamespace: true
+    crds: Create
+    remediation:
+      retries: 3
+  upgrade:
+    # Helm never upgrades CRDs from crds/ on its own; without this a chart bump that
+    # changes the TalosUpgrade/KubernetesUpgrade schema would leave the old CRDs behind.
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "8081"
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

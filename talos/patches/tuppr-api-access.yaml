@@ -1,0 +1,16 @@
+# Talos API access for tuppr (flux/helm/tuppr), which drives Talos and Kubernetes upgrades
+# from inside the cluster. Plaintext on purpose - it holds no secrets. Valid on 1.13 and 1.14.
+#
+# Talos issues an os:admin client certificate to the talos.dev ServiceAccount the chart
+# creates in system-upgrade, which tuppr mounts to run talosctl upgrade / upgrade-k8s. The
+# namespace must match the HelmRelease targetNamespace exactly, or every upgrade job fails
+# to authenticate at the first node. Applies without a reboot:
+# `just talos-patch <node-ip> tuppr-api-access.yaml` on every node.
+machine:
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:admin
+      allowedKubernetesNamespaces:
+        - system-upgrade

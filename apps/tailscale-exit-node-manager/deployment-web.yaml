@@ -20,7 +20,7 @@ spec:
         - name: tailscale-exit-node-manager-ghcr-pull
       containers:
         - name: web
-          image: ghcr.io/member87/tailscale-exit-node-manager-web:081a6e56f53640b4f0b96686ea5c7b0ade5ba939
+          image: ghcr.io/member87/tailscale-exit-node-manager-web:337dce9f90066bded867c555cbfc68e451b97835
           ports:
             - containerPort: 3000
               name: http

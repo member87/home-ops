@@ -17,6 +17,7 @@ variable "folders" {
     kubernetes     = "Kubernetes"
     infrastructure = "Infrastructure"
     logs           = "Logs"
+    media          = "Media"
     network        = "Network"
     security       = "Security"
     unifi          = "UniFi"

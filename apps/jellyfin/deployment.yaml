@@ -91,9 +91,45 @@ spec:
     metadata:
       labels:
         app: jellyfin
+      annotations:
+        # Jellyfin serves Prometheus metrics on its HTTP port once EnableMetrics is on
+        # (see the enable-metrics init container). Scraped by Prometheus'
+        # kubernetes-pods job for the Jellyfin dashboard.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8096"
+        prometheus.io/path: /metrics
     spec:
       nodeSelector:
         kubernetes.io/hostname: talos-lox-1n1
+      initContainers:
+        # EnableMetrics lives only in system.xml (no env or CLI override), so flip it
+        # before Jellyfin starts. Jellyfin writes the in-memory value back on every
+        # settings save, so the edit sticks. A fresh volume has no system.xml yet:
+        # Jellyfin creates it with the default (false) and the next restart enables it.
+        - name: enable-metrics
+          image: busybox:1.38
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              config=/config/system.xml
+              if [ ! -f "${config}" ]; then
+                echo "${config} not created yet; metrics enabled on next start"
+              elif grep -q '<EnableMetrics>false</EnableMetrics>' "${config}"; then
+                sed -i 's|<EnableMetrics>false</EnableMetrics>|<EnableMetrics>true</EnableMetrics>|' "${config}"
+                echo "enabled metrics in ${config}"
+              fi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
       containers:
         - name: jellyfin
           image: lscr.io/linuxserver/jellyfin:12.3ubu2604-ls56

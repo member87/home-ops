@@ -90,7 +90,7 @@ spec:
             periodSeconds: 5
         # Never ban the home WAN IP. LAN clients resolving the public hostnames hairpin
         # out through the edge and come back from this address, so normal use of Pocket
-        # ID and Dawarich would otherwise trip the crawl/probing scenarios. The ISP
+        # ID would otherwise trip the crawl/probing scenarios. The ISP
         # changes the address daily, and it must not live in Git, so this keeps the LAPI
         # allowlist `home-wan` (stored in the database) pointed at the cluster's own
         # egress IP. Two independent lookups must agree before anything is allowlisted,

@@ -141,7 +141,6 @@ Tunnel map:
 |---|---|---|
 |`auth.jackhumes.com`|`8081`|Traefik -> Pocket ID|
 |`headscale.jackhumes.com`|`8082`|Headscale (direct)|
-|`dawarich.jackhumes.com`|`8083`|Traefik -> Dawarich|
 |`terrakube-hook.jackhumes.com`|`8084`|Traefik -> Terrakube webhook gatekeeper|
 |Edge-local metrics receiver|`9091`|Prometheus remote-write API; bound to loopback and closed by the Lightsail firewall|
 
@@ -240,8 +239,8 @@ The private key exists only in the Terrakube database and wherever it was backed
 - NAS paths: `/volume1/kubernetes/media`, `/volume1/kubernetes/downloads`, and Longhorn backups at `/volume1/kubernetes/longhorn-backups`.
 - MetalLB address pool is `10.0.0.200-10.0.0.250`.
 - External access uses FRP through the AWS Lightsail edge (`18.171.34.111`); see Public Access & AWS Lightsail Edge (FRP) for the full chain, tunnel map, and SSH steps.
-- Public traffic for `auth.jackhumes.com` and `dawarich.jackhumes.com` must route through Traefik so CrowdSec can block banned IPs.
-- FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Dawarich `8083` (via Traefik), Terrakube webhook gate `8084` (via Traefik).
+- Public traffic for `auth.jackhumes.com` must route through Traefik so CrowdSec can block banned IPs.
+- FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Terrakube webhook gate `8084` (via Traefik).
 - Headscale public URL is `https://headscale.jackhumes.com`.
 - Headscale internal URL is `https://headscale.lab.jackhumes.com`.
 - Home Assistant runs Home Assistant, OTBR, and Matter Server together and uses `hostNetwork`; preserve the Thread dataset because losing it requires factory-resetting Thread devices.

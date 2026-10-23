@@ -1,0 +1,1908 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Jellyfin media server: playback, streaming, HTTP API, runtime resources and logs. HTTP and .NET metrics come from Jellyfin's /metrics endpoint; playback counts come from its logs in Loki.",
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "description": "Whether Prometheus can scrape Jellyfin's /metrics endpoint.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "max(up{kubernetes_namespace=\"jellyfin\"}) or vector(0)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "Status",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "time() - max(process_start_time_seconds{kubernetes_namespace=\"jellyfin\"})",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "Playback sessions started in the selected time range, from Jellyfin's SessionManager log.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |= \"started playback of\" [$__range])) or vector(0)",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "title": "Playback Starts",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "description": "FFmpeg transcode/remux jobs launched for playback in the selected range (trickplay and image extraction are not counted).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |= \"TranscodeManager: /usr/lib/jellyfin-ffmpeg/ffmpeg\" [$__range])) or vector(0)",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "title": "Transcodes Started",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "description": "Share of HTTP requests answered with a 5xx in the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          },
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "(sum(increase(http_requests_received_total{kubernetes_namespace=\"jellyfin\", code=~\"5..\"}[$__range])) or vector(0)) / sum(increase(http_requests_received_total{kubernetes_namespace=\"jellyfin\"}[$__range]))",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "5xx Ratio",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "description": "Container restarts in the selected range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"jellyfin\", container=\"jellyfin\"}[$__range])) or vector(0)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "Restarts",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 8,
+      "panels": [],
+      "title": "Playback & Streaming",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "reqps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (action) (rate(http_requests_received_total{kubernetes_namespace=\"jellyfin\", controller=~\"Videos|Audio|UniversalAudio|DynamicHls|HlsSegment\"}[$__rate_interval]))",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{action}}"
+        }
+      ],
+      "title": "Streaming Requests",
+      "type": "timeseries",
+      "description": "Media delivery requests. GetVideoStream/GetAudioStream are direct plays and remuxes served whole; GetHlsVideoSegment is one request per few seconds of an HLS (usually transcoded) stream."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (action) (http_requests_in_progress{kubernetes_namespace=\"jellyfin\", controller=~\"Videos|Audio|UniversalAudio|DynamicHls|HlsSegment\"})",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{action}}"
+        }
+      ],
+      "title": "Open Streaming Responses",
+      "type": "timeseries",
+      "description": "Streaming responses still being written. A direct-play stream stays open while the client buffers, so this tracks concurrent direct streams; HLS segments finish quickly and rarely show here."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "bps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"jellyfin\", pod=~\"jellyfin-.*\", interface=\"eth0\"}[$__rate_interval])) * 8",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "sent"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"jellyfin\", pod=~\"jellyfin-.*\", interface=\"eth0\"}[$__rate_interval])) * 8",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "legendFormat": "received"
+        }
+      ],
+      "title": "Network Throughput",
+      "type": "timeseries",
+      "description": "Pod network traffic. Sent is mostly media streamed to clients. Reads from the NAS are not included: NFS is mounted by the node, outside the pod's network namespace."
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "transcode failed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |= \"started playback of\" [$__auto]))",
+          "refId": "A",
+          "queryType": "range",
+          "legendFormat": "started"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |= \"stopped playback of\" [$__auto]))",
+          "refId": "B",
+          "queryType": "range",
+          "legendFormat": "stopped"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |= \"TranscodeManager: /usr/lib/jellyfin-ffmpeg/ffmpeg\" [$__auto]))",
+          "refId": "C",
+          "queryType": "range",
+          "legendFormat": "transcode started"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |~ \"TranscodeManager: FFmpeg exited with code [1-9]\" [$__auto]))",
+          "refId": "D",
+          "queryType": "range",
+          "legendFormat": "transcode failed"
+        }
+      ],
+      "title": "Playback Events",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          },
+          "noValue": "None"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Plays"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (user, title, client) (count_over_time({namespace=\"jellyfin\", container=\"jellyfin\"} |= \"started playback of\" | regexp `User (?P<user>\\S+) started playback of '(?P<title>.*)' \\((?P<client>.*)\\)$` [$__range]))",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "title": "Plays by User and Title",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "user": "User",
+              "title": "Title",
+              "client": "Client",
+              "Value #A": "Plays"
+            },
+            "indexByName": {
+              "user": 0,
+              "title": 1,
+              "client": 2,
+              "Value #A": 3
+            }
+          }
+        }
+      ],
+      "description": "Playback starts in the selected range, from the SessionManager log."
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 14,
+      "panels": [],
+      "title": "HTTP API",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "reqps",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (status) (label_replace(rate(http_requests_received_total{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]), \"status\", \"${1}xx\", \"code\", \"(.)..\"))",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "title": "Requests by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_request_duration_seconds_bucket{kubernetes_namespace=\"jellyfin\", controller!~\"|Videos|Audio|UniversalAudio|DynamicHls|HlsSegment\"}[$__rate_interval])))",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{kubernetes_namespace=\"jellyfin\", controller!~\"|Videos|Audio|UniversalAudio|DynamicHls|HlsSegment\"}[$__rate_interval])))",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{kubernetes_namespace=\"jellyfin\", controller!~\"|Videos|Audio|UniversalAudio|DynamicHls|HlsSegment\"}[$__rate_interval])))",
+          "refId": "C",
+          "instant": false,
+          "range": true,
+          "legendFormat": "p99"
+        }
+      ],
+      "title": "API Latency",
+      "type": "timeseries",
+      "description": "API request duration. Streaming endpoints (whose duration is the length of the download) and middleware-only paths such as /health and the WebSocket are excluded."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short",
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 17,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "topk(10, sum by (controller, action) (increase(http_requests_received_total{kubernetes_namespace=\"jellyfin\", controller!=\"\"}[$__range])))",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{controller}} / {{action}}"
+        }
+      ],
+      "title": "Busiest Endpoints",
+      "type": "bargauge",
+      "description": "Request count per API action in the selected range."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 18,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "topk(10, histogram_quantile(0.95, sum by (le, controller, action) (rate(http_request_duration_seconds_bucket{kubernetes_namespace=\"jellyfin\", controller!~\"|Videos|Audio|UniversalAudio|DynamicHls|HlsSegment\"}[$__range]))))",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{controller}} / {{action}}"
+        }
+      ],
+      "title": "Slowest Endpoints (p95)",
+      "type": "bargauge",
+      "description": "95th percentile duration per API action over the selected range, streaming endpoints excluded."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          },
+          "noValue": "None"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 19,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Requests"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (code, method, controller, action) (increase(http_requests_received_total{kubernetes_namespace=\"jellyfin\", code=~\"4..|5..\"}[$__range])) > 0.5",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "title": "Failed Requests",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "code": "Status",
+              "method": "Method",
+              "controller": "Controller",
+              "action": "Action",
+              "Value": "Requests"
+            },
+            "indexByName": {
+              "code": 0,
+              "method": 1,
+              "controller": 2,
+              "action": 3,
+              "Value": 4
+            }
+          }
+        }
+      ],
+      "description": "4xx and 5xx responses per API action in the selected range. An empty controller means the request matched no route."
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 57
+      },
+      "id": 20,
+      "panels": [],
+      "title": "Resources",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "limit"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 58
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"jellyfin\", container=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "container (server + ffmpeg)"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(process_cpu_seconds_total{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "legendFormat": "Jellyfin server process"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "max(kube_pod_container_resource_limits{namespace=\"jellyfin\", container=\"jellyfin\", resource=\"cpu\"})",
+          "refId": "C",
+          "instant": false,
+          "range": true,
+          "legendFormat": "limit"
+        }
+      ],
+      "title": "CPU",
+      "type": "timeseries",
+      "description": "Cores used. The gap between the container and the server process is FFmpeg: transcodes, trickplay and image extraction run as child processes in the same container."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "limit"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 58
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"jellyfin\", container=\"jellyfin\"})",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "container working set"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(process_working_set_bytes{kubernetes_namespace=\"jellyfin\"})",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "legendFormat": "server process working set"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(dotnet_total_memory_bytes{kubernetes_namespace=\"jellyfin\"})",
+          "refId": "C",
+          "instant": false,
+          "range": true,
+          "legendFormat": ".NET managed heap"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "max(kube_pod_container_resource_limits{namespace=\"jellyfin\", container=\"jellyfin\", resource=\"memory\"})",
+          "refId": "D",
+          "instant": false,
+          "range": true,
+          "legendFormat": "limit"
+        }
+      ],
+      "title": "Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 66
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (gc_generation) (rate(dotnet_gc_collection_count_total{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "gen {{gc_generation}}"
+        }
+      ],
+      "title": "Garbage Collection",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "exceptions/s"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "ops"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 66
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(dotnet_threadpool_num_threads{kubernetes_namespace=\"jellyfin\"})",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "thread pool threads"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(dotnet_exceptions_total{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "legendFormat": "exceptions/s"
+        }
+      ],
+      "title": "Thread Pool & Exceptions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "operation failures/s"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 66
+      },
+      "id": 25,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(microsoft_entityframeworkcore_microsoft_entityframeworkcore_queries{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "legendFormat": "queries/s"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(microsoft_entityframeworkcore_microsoft_entityframeworkcore_savechanges{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "legendFormat": "saves/s"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(microsoft_entityframeworkcore_microsoft_entityframeworkcore_execution_strategy_operation_failures{kubernetes_namespace=\"jellyfin\"}[$__rate_interval]))",
+          "refId": "C",
+          "instant": false,
+          "range": true,
+          "legendFormat": "operation failures/s"
+        }
+      ],
+      "title": "Database",
+      "type": "timeseries",
+      "description": "Entity Framework Core activity against Jellyfin's SQLite library database."
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 74
+      },
+      "id": 26,
+      "panels": [],
+      "title": "Logs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 75
+      },
+      "id": 27,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"jellyfin\", container=\"jellyfin\"} |~ \"started playback of|stopped playback of|TranscodeManager: /usr/lib/jellyfin-ffmpeg/ffmpeg|FFmpeg exited with code\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "title": "Playback and Transcoding",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 75
+      },
+      "id": 28,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"jellyfin\", container=\"jellyfin\"} |~ \"^\\\\[[^]]+\\\\] \\\\[(ERR|FTL)\\\\]\"",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "title": "Errors",
+      "type": "logs",
+      "description": "Jellyfin log lines at error or fatal level."
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 40,
+  "tags": [
+    "media",
+    "jellyfin"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "Prometheus",
+          "value": "prometheus"
+        },
+        "label": "Prometheus",
+        "multi": false,
+        "name": "promDatasource",
+        "query": "prometheus",
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "Loki",
+          "value": "loki"
+        },
+        "label": "Loki",
+        "multi": false,
+        "name": "lokiDatasource",
+        "query": "loki",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Jellyfin",
+  "uid": "jellyfin"
+}

@@ -39,7 +39,7 @@ variable "admin_ssh_public_keys" {
 variable "admin_cidrs" {
   description = "CIDRs allowed to reach SSH (22/tcp). Lightsail browser SSH remains available as a fallback if your home IP changes."
   type        = list(string)
-  default     = ["143.58.248.115/32"] # home broadband (2026-09)
+  default     = ["143.58.248.49/32"] # home broadband (2026-10)
 }
 
 variable "frps_auth_token" {

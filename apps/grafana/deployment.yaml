@@ -95,13 +95,17 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
+          # Idle Grafana sits at 300-450Mi; loading a large dashboard pushed it past the
+          # old 512Mi limit (OOMKilled), and CPU throttling at 500m made /api/health miss
+          # the liveness timeout, so both replicas restarted at once and the site 502'd.
+          # Request what it actually uses; leave headroom for dashboard query bursts.
           resources:
             requests:
               cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
               memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
       volumes:
         - name: config
           configMap:

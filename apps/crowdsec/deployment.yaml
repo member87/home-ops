@@ -76,10 +76,6 @@ spec:
               mountPath: /etc/crowdsec/config.yaml.local
               subPath: config.yaml.local
               readOnly: true
-            - name: whitelist
-              mountPath: /etc/crowdsec/parsers/s02-enrich/home-wan-whitelist.yaml
-              subPath: home-wan-whitelist.yaml
-              readOnly: true
           livenessProbe:
             httpGet:
               path: /health
@@ -92,6 +88,53 @@ spec:
               port: lapi
             initialDelaySeconds: 45
             periodSeconds: 5
+        # Never ban the home WAN IP. LAN clients resolving the public hostnames hairpin
+        # out through the edge and come back from this address, so normal use of Pocket
+        # ID and Dawarich would otherwise trip the crawl/probing scenarios. The ISP
+        # changes the address daily, and it must not live in Git, so this keeps the LAPI
+        # allowlist `home-wan` (stored in the database) pointed at the cluster's own
+        # egress IP. Two independent lookups must agree before anything is allowlisted,
+        # so one lying echo service cannot exempt an arbitrary address. `add` does not
+        # refresh an existing value, so the list is rebuilt only when the IP changes,
+        # and any ban already placed on the new address is lifted.
+        - name: wan-allowlist
+          image: crowdsecurity/crowdsec:v1.8.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              current=""
+              while true; do
+                a=$(wget -qO- -T 10 https://ifconfig.me/ip 2>/dev/null)
+                b=$(wget -qO- -T 10 https://api.ipify.org 2>/dev/null)
+                if [ -n "$a" ] && [ "$a" = "$b" ] && echo "$a" | grep -Eqx '([0-9]{1,3}\.){3}[0-9]{1,3}'; then
+                  if [ "$a" != "$current" ]; then
+                    cscli allowlists delete home-wan >/dev/null 2>&1
+                    if cscli allowlists create home-wan -d "home WAN IP, kept current by the wan-allowlist sidecar" \
+                      && cscli allowlists add home-wan "$a" -d "home WAN" \
+                      && cscli decisions delete --ip "$a"; then
+                      current=$a
+                      echo "home-wan allowlist updated"
+                    fi
+                  fi
+                else
+                  echo "WAN IP lookups failed or disagree; allowlist left unchanged"
+                fi
+                if [ -n "$current" ]; then sleep 300; else sleep 30; fi
+              done
+          resources:
+            requests:
+              memory: 16Mi
+              cpu: 5m
+            limits:
+              memory: 64Mi
+              cpu: 100m
+          volumeMounts:
+            - name: crowdsec-data
+              mountPath: /var/lib/crowdsec/data
+              subPath: data
+            - name: crowdsec-data
+              mountPath: /etc/crowdsec
+              subPath: config
       volumes:
         - name: crowdsec-data
           persistentVolumeClaim:
@@ -99,6 +142,3 @@ spec:
         - name: acquis-config
           configMap:
             name: crowdsec-acquis
-        - name: whitelist
-          configMap:
-            name: crowdsec-whitelist

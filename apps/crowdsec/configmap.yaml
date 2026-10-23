@@ -30,22 +30,3 @@ data:
     # lines Loki ingests during the outage are still parsed once it is back.
     no_ready_check: true
     max_failure_duration: 8760h
----
-# Never ban the home WAN IP. LAN clients resolving the public hostnames hairpin out
-# through the edge and come back from this address, so normal use of Pocket ID and
-# Dawarich would otherwise trip the crawl/probing scenarios. Same address as
-# terraform/aws-edge/variables.tf; update both if the ISP changes it.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: crowdsec-whitelist
-  namespace: crowdsec
-data:
-  home-wan-whitelist.yaml: |
-    name: home-ops/home-wan-whitelist
-    description: "Whitelist the home WAN IP"
-    whitelist:
-      reason: "home WAN IP (LAN hairpin through the public edge)"
-      ip:
-        - "143.58.248.115"
-

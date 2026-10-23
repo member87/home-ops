@@ -93,11 +93,6 @@ pages:
               - title: Terrakube
                 url: https://terrakube.lab.jackhumes.com
                 icon: sh:opentofu
-              - title: Dawarich
-                url: https://dawarich.jackhumes.com
-                icon: sh:dawarich
-                alt-status-codes:
-                  - 401
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection

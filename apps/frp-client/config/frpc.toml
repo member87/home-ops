@@ -27,14 +27,6 @@ remotePort = 8082
 # (18.171.34.111:3478/udp) where it sees clients' real source IPs. A
 # proxied STUN reports the frpc pod IP, useless for direct paths.
 
-# Dawarich tunnel - routes through Traefik for CrowdSec protection
-[[proxies]]
-name = "dawarich"
-type = "tcp"
-localIP = "traefik.traefik.svc.cluster.local"
-localPort = 80
-remotePort = 8083
-
 # Edge metrics reach Prometheus only through the FRP tunnel. The Lightsail
 # firewall does not expose this remote port publicly.
 [[proxies]]

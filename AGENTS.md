@@ -147,8 +147,10 @@ Tunnel map:
 ### SSH to the edge
 
 ```bash
-ssh ubuntu@18.171.34.111        # key-based; prefix system/docker commands with sudo
+ssh ubuntu@100.64.0.21          # tailnet address; reachable from tailnet clients and the 10.0.0.0/24 LAN, not 192.168.1.0/24. Key-based; prefix system/docker commands with sudo
 ```
+
+Public 22/tcp is open only to Lightsail browser SSH (`lightsail-connect`), the break-glass path if tailscale on the box is down. Terrakube's provisioner also SSHes over the tailnet (`edge_tailnet_ip`), so the home WAN IP, which changes daily, never goes in git. Rebuilding the instance registers a new Headscale node with a new address: update `edge_tailnet_ip` from `headscale nodes list`.
 
 Caddy, FRP, node-exporter, and the Prometheus agent are managed by the `terraform_data.edge_config` resource from files under `terraform/aws-edge/config/`. Terrakube validates and deploys those files over SSH, then recreates the Compose services. Manual edits under `/opt/frp-tunnel` are overwritten by the next applicable Terraform run.
 

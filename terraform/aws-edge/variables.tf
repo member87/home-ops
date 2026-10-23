@@ -36,10 +36,10 @@ variable "admin_ssh_public_keys" {
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKB5yZ34+4OSm/TIe0WEbvHRy8HR5QH22Im5K1UG4f84",
   ]
 }
-variable "admin_cidrs" {
-  description = "CIDRs allowed to reach SSH (22/tcp). Lightsail browser SSH remains available as a fallback if your home IP changes."
-  type        = list(string)
-  default     = ["143.58.248.49/32"] # home broadband (2026-10)
+variable "edge_tailnet_ip" {
+  description = "The edge's Headscale address. Terraform and operators SSH here; public 22/tcp is open only to Lightsail browser SSH. Rebuilding the instance registers a new tailnet node with a new address: read it from `headscale nodes list` and update this."
+  type        = string
+  default     = "100.64.0.21"
 }
 
 variable "frps_auth_token" {
@@ -55,7 +55,7 @@ variable "frps_dashboard_password" {
 }
 
 variable "tailscale_authkey" {
-  description = "Headscale preauth key so the edge joins the tailnet as a remote probe node. Enables E2E direct-path verification: tailscale ping from this public vantage to k8s-subnet-router must go direct, not via DERP. Generate a FRESH key per instance recreation. Empty string skips the join."
+  description = "Headscale preauth key the launch script uses to join the tailnet. Required: edge_config deploys over SSH to edge_tailnet_ip, so without the join only Lightsail browser SSH can reach the box. Also lets tailscale ping from this public vantage to k8s-subnet-router check for a direct path rather than DERP. Generate a FRESH key per instance recreation."
   type        = string
   sensitive   = true
   default     = ""

@@ -1,0 +1,22 @@
+# UDP GRO forwarding on the uplink, as Tailscale recommends for subnet routers and exit nodes
+# (https://tailscale.com/docs/reference/best-practices/performance). EthernetConfig exists in
+# 1.13 and 1.14; `just talos-sync` applies it with the rest, and
+# `just talos-patch <node-ip> udp-gro-forwarding.yaml` applies it alone (needs talosctl 1.14:
+# 1.13 cannot decode the nodes' FilesystemTrimConfig). Both are software GRO flags; applying
+# them with --mode=no-reboot did not drop eno1.
+#
+# Every node forwards UDP from eno1 into pods: ProtonVPN's WireGuard into the exit-node pods,
+# and the hostNetwork subnet router's tailnet traffic. With rx-udp-gro-forwarding off the
+# kernel forwards each datagram on its own; on, it coalesces a flow into one GSO packet per
+# burst before the forward, cutting per-packet work on the receive path. tailscaled warned
+# "UDP GRO forwarding is suboptimally configured on eno1" (subnet router) until this was set.
+# rx-gro-list stays off, as the same guidance requires.
+#
+# All three nodes uplink on eno1 (talosctl get links); a node with another NIC name needs its
+# own document.
+apiVersion: v1alpha1
+kind: EthernetConfig
+name: eno1
+features:
+  rx-udp-gro-forwarding: true
+  rx-gro-list: false

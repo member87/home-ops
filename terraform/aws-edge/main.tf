@@ -108,11 +108,14 @@ resource "aws_lightsail_instance_public_ports" "edge" {
     replace_triggered_by = [aws_lightsail_instance.edge]
   }
 
+  # SSH only from Lightsail browser SSH (the break-glass path). Terraform and
+  # operators reach sshd over the tailnet (var.edge_tailnet_ip), so no home IP,
+  # which the ISP changes daily, has to live in this list.
   port_info {
-    protocol  = "tcp"
-    from_port = 22
-    to_port   = 22
-    cidrs     = var.admin_cidrs
+    protocol          = "tcp"
+    from_port         = 22
+    to_port           = 22
+    cidr_list_aliases = ["lightsail-connect"]
   }
 
   port_info {
@@ -180,7 +183,7 @@ resource "terraform_data" "edge_config" {
 
   connection {
     type        = "ssh"
-    host        = aws_lightsail_static_ip.edge.ip_address
+    host        = var.edge_tailnet_ip
     user        = "ubuntu"
     private_key = tls_private_key.edge.private_key_openssh
     host_key    = tls_private_key.edge_host.public_key_openssh
@@ -262,5 +265,5 @@ output "static_ip" {
 }
 
 output "ssh_command" {
-  value = "ssh ubuntu@${aws_lightsail_static_ip.edge.ip_address}"
+  value = "ssh ubuntu@${var.edge_tailnet_ip}"
 }

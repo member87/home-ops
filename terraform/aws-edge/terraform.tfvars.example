@@ -8,7 +8,7 @@
 # Terrakube state; no SSH key variable is required.
 
 # Reuse the existing token so the in-cluster frpc authenticates unchanged:
-#   ssh ubuntu@<edge-ip> 'grep -A2 "auth.token" ~/frp-tunnel/frps.toml'
+#   ssh ubuntu@<edge-tailnet-ip> 'grep -A2 "auth.token" ~/frp-tunnel/frps.toml'
 # frps_auth_token          = "..."
 # frps_dashboard_password  = "..."
 # tailscale_authkey is rendered into user_data: never run the launch script with
@@ -18,4 +18,4 @@
 # Optional overrides:
 # region             = "eu-west-2"
 # bundle_id          = "micro_3_0"   # 1GB RAM
-# admin_cidrs        = ["<your-ip>/32"]
+# edge_tailnet_ip    = "100.64.0.21"   # after a rebuild: headscale nodes list

@@ -133,8 +133,6 @@ spec:
       containers:
         - name: jellyfin
           image: lscr.io/linuxserver/jellyfin:12.3ubu2604-ls56
-          securityContext:
-            privileged: true
           ports:
             - containerPort: 8096
               name: http
@@ -190,8 +188,6 @@ spec:
               mountPath: /cache
             - name: media
               mountPath: /data
-            - name: dri
-              mountPath: /dev/dri
           livenessProbe:
             httpGet:
               path: /health
@@ -211,6 +207,8 @@ spec:
             limits:
               memory: "4Gi"
               cpu: "4000m"
+              # iGPU from infrastructure/intel-gpu-plugin, used for QSV transcoding.
+              gpu.intel.com/i915: 1
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -222,7 +220,3 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: jellyfin-media
-        - name: dri
-          hostPath:
-            path: /dev/dri
-            type: Directory

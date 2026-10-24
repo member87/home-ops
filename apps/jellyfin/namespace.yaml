@@ -5,6 +5,9 @@ metadata:
   name: jellyfin
   labels:
     app.kubernetes.io/name: jellyfin
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
+    # Set explicitly rather than dropped: the old privileged values may be owned by
+    # another field manager, which Flux would not remove. GPU access comes from
+    # gpu.intel.com/i915, so nothing here needs hostPath or privileged any more.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline

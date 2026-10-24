@@ -234,7 +234,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Flux namespace: `flux-system`. Flux itself is installed and upgraded by Flux Operator (`flux/helm/flux-operator`) from the `FluxInstance` in `infrastructure/flux-instance`; Renovate bumps its `distribution.version`. Do not run `flux install` against the cluster any more, it would fight the operator. Deleting the FluxInstance uninstalls Flux, so it carries `prune: disabled` and its Kustomization is `prune: false`.
 - Flux Web UI: `https://flux.lab.jackhumes.com`, served by the operator, OIDC login via Pocket ID (admin group only). Pocket ID groups are impersonated as `pocketid:<group>`; `pocketid:admin` is bound to `flux-web-admin` in `apps/flux-web/rbac.yaml`. Never bind bare Pocket ID group names in RBAC: `admin` is already cluster-admin via `apps/radar/rbac.yaml`.
 - Sealed Secrets namespace: `sealed-secrets`.
-- Every node has an Intel UHD 630 iGPU (i915 extension in the schematic). `infrastructure/intel-gpu-plugin` exposes it as `gpu.intel.com/i915` (4 pods per GPU); request that instead of mounting `/dev/dri` privileged. Immich uses it for VAAPI transcoding; Jellyfin still uses the older privileged hostPath mount.
+- Every node has an Intel UHD 630 iGPU (i915 extension in the schematic). `infrastructure/intel-gpu-plugin` exposes it as `gpu.intel.com/i915` (4 pods per GPU); request that instead of mounting `/dev/dri` privileged. Immich transcodes with VAAPI and Jellyfin with QSV (set in its `encoding.xml`), both unprivileged.
 - Longhorn is the default replicated storage class.
 - Direct NFS is used for media/download storage from NAS `10.0.0.9`.
 - Use `longhorn` for app config, databases, and monitoring data.

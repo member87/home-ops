@@ -286,6 +286,10 @@ spec:
   path: ./apps/jellyfin
   prune: true
   wait: true
+  # The Jellyfin pod requests gpu.intel.com/i915 and stays Pending until the plugin
+  # has registered it on a node.
+  dependsOn:
+    - name: intel-gpu-plugin
   sourceRef:
     kind: GitRepository
     name: home-ops

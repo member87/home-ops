@@ -13,6 +13,9 @@ spec:
     metadata:
       labels:
         app: grafana
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
     spec:
       # Grafana runs as uid 472 and installs its datasource plugins into
       # /var/lib/grafana/plugins at startup. fsGroup makes the emptyDir group-owned by

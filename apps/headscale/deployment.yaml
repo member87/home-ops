@@ -17,6 +17,9 @@ spec:
     metadata:
       labels:
         app: headscale
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"   # metrics_listen_addr in config/config.yaml
     spec:
       # Keep the tailnet control plane off talos-t8o-8d5 (8GiB, ~80% of memory
       # requested). When the other nodes drained for a reboot its MemAvailable fell

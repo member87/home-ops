@@ -128,3 +128,110 @@ data:
         static_configs:
           - targets: ['pocket-id.pocket-id.svc.cluster.local:9464']
         metrics_path: /metrics
+
+      # Components whose pod templates come from upstream (Helm charts, Talos, vendored
+      # manifests), so they cannot carry prometheus.io annotations. Each job selects
+      # the pods by namespace and named container port.
+      - job_name: 'longhorn'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [longhorn-system]
+        relabel_configs:
+          # One longhorn-manager per node; each reports the volumes, replicas and
+          # disks of its own node.
+          - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: longhorn-manager;manager
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+      - job_name: 'coredns'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [kube-system]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_k8s_app, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: kube-dns;metrics
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+      - job_name: 'sealed-secrets'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [sealed-secrets]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: metrics
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+      # Terrakube's MinIO holds the Terraform state. MinIO serves these without a
+      # bearer token in this install (MINIO_PROMETHEUS_AUTH_TYPE=public).
+      - job_name: 'terrakube-minio'
+        metrics_path: /minio/v2/metrics/cluster
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [terrakube]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: minio;api
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+      - job_name: 'terrakube-dex'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [terrakube]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: dex;telemetry
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+      # Immich serves two OTEL metrics endpoints from the server container
+      # (IMMICH_TELEMETRY_INCLUDE=all in flux/helm/immich): 8081 for the API worker and
+      # 8082 for the microservices (job) worker. The chart's own metrics switch would
+      # also create ServiceMonitors, whose CRD this cluster does not have, so the ports
+      # are not declared on the pod and these jobs rewrite the address instead.
+      - job_name: 'immich-api'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [immich]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: server;http
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: $1:8081
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+      - job_name: 'immich-microservices'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [immich]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: server;http
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: $1:8082
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name

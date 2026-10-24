@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: alloy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "12345"
     spec:
       serviceAccountName: alloy
       containers:

@@ -56,13 +56,15 @@ spec:
             initialDelaySeconds: 45
             timeoutSeconds: 5
             periodSeconds: 5
+          # ~290k head series already held it at 1.8-1.95Gi against the old 2Gi limit;
+          # the request now matches real usage so the scheduler counts it.
           resources:
             requests:
               cpu: 500m
-              memory: 384Mi
+              memory: 2Gi
             limits:
               cpu: 2000m
-              memory: 2Gi
+              memory: 3Gi
       volumes:
         - name: config
           configMap:

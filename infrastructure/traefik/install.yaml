@@ -133,6 +133,9 @@ spec:
         # reach it (e.g. updateMaxFailure). Bump this when changing stream settings
         # (crowdsecMode, updateIntervalSeconds, updateMaxFailure, LAPI host/key).
         checksum/bouncer-stream: "update-max-failure-60"
+        # /metrics on the internal traefik entrypoint (:8080, not in the Service).
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
     spec:
       serviceAccountName: traefik
       # One replica per node, so a single node loss never takes out both. The surge
@@ -171,6 +174,10 @@ spec:
             # Enable access logs for CrowdSec to parse
             - --accesslog=true
             - --accesslog.format=json
+            # Prometheus metrics on the traefik entrypoint. Router labels give the
+            # per-app request rate, status and latency for the Traefik dashboard.
+            - --metrics.prometheus=true
+            - --metrics.prometheus.addRoutersLabels=true
             # Enable CrowdSec bouncer plugin
             - --experimental.plugins.bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
             - --experimental.plugins.bouncer.version=v1.4.6

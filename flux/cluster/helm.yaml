@@ -30,6 +30,10 @@ spec:
   path: ./flux/helm/immich
   prune: true
   wait: true
+  # immich-server requests gpu.intel.com/i915 and stays Pending until the plugin
+  # has registered it on a node.
+  dependsOn:
+    - name: intel-gpu-plugin
   sourceRef:
     kind: GitRepository
     name: home-ops

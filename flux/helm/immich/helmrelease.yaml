@@ -105,6 +105,9 @@ spec:
                     memory: 2Gi
                   limits:
                     memory: 5Gi
+                    # iGPU from infrastructure/intel-gpu-plugin; ffmpeg.accel in the
+                    # immich-oidc-config file selects VAAPI to use it.
+                    gpu.intel.com/i915: 1
         persistence:
           immich-config:
             enabled: true

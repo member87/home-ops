@@ -91,6 +91,10 @@ spec:
               main:
                 env:
                   IMMICH_CONFIG_FILE: /immich-config/immich-config.yaml
+                  # Prometheus metrics on :8081 (API) and :8082 (microservices), scraped
+                  # by the immich-* jobs in apps/prometheus. Set here rather than through
+                  # immich.metrics.enabled, which also creates ServiceMonitors.
+                  IMMICH_TELEMETRY_INCLUDE: all
                 # v3 runs API and microservices in one container; working through a job
                 # backlog it went past 1.27Gi and was OOM-killed at the old 1536Mi limit.
                 # The request makes the scheduler count it, which it did not before.

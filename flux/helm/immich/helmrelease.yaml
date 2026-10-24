@@ -96,13 +96,15 @@ spec:
                   # immich.metrics.enabled, which also creates ServiceMonitors.
                   IMMICH_TELEMETRY_INCLUDE: all
                 # v3 runs API and microservices in one container; working through a job
-                # backlog it went past 1.27Gi and was OOM-killed at the old 1536Mi limit.
+                # backlog it went past 1.27Gi and was OOM-killed at the old 1536Mi limit,
+                # then again at 3Gi while software-transcoding videos alongside face
+                # detection (0.7Gi idle -> 2.9Gi in 15 minutes).
                 # The request makes the scheduler count it, which it did not before.
                 resources:
                   requests:
-                    memory: 1Gi
+                    memory: 2Gi
                   limits:
-                    memory: 3Gi
+                    memory: 5Gi
         persistence:
           immich-config:
             enabled: true

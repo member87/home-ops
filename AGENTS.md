@@ -246,7 +246,6 @@ The private key exists only in the Terrakube database and wherever it was backed
 - FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Terrakube webhook gate `8084` (via Traefik).
 - Headscale public URL is `https://headscale.jackhumes.com`.
 - Headscale internal URL is `https://headscale.lab.jackhumes.com`.
-- Direct tailnet paths from mobile networks depend on UniFi router forwards WAN UDP/41641 -> `10.0.0.21` (subnet router/exit node) and UDP/41642 -> `10.0.0.20` (`pihole-dns`). The `wan-endpoint` sidecar in each pod advertises `<WAN IP>:<port>` and owns the tailscaled config file (hostname, routes, auth key), so edit it there, not in `TS_*` env. See `docs/tailnet-vpn.md`.
 - Home Assistant runs Home Assistant, OTBR, and Matter Server together and uses `hostNetwork`; preserve the Thread dataset because losing it requires factory-resetting Thread devices.
 - Terrakube (`terrakube.lab.jackhumes.com`) runs the OpenTofu plan/apply pipeline for `terraform/`; see Terrakube IaC Pipeline.
 

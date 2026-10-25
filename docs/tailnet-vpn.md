@@ -93,37 +93,6 @@ Verify both paths with `tailscale ping 100.64.0.2` and
 `https://glance.lab.jackhumes.com`. A direct ping shows a peer IP:port;
 `DERP(headscale)` means traffic goes through the bandwidth-capped edge.
 
-## Router port forwards and static endpoints
-
-The UniFi Dream Router keeps one external port per socket for every
-destination, but picks that port at random and drops packets from any
-address/port the node has not sent to. Mobile carriers (O2: 82.132.0.0/16)
-hand out a new source port, often a new IP, for every destination. With both,
-hole punching fails and the phone falls back to the relay. It stays there for
-the whole session, which caps the exit node at the edge's bandwidth.
-
-The fix is a fixed inbound port per node. Both are configured on the router, not in Git:
-
-| WAN UDP port | Forward to | Node |
-|---|---|---|
-| 41641 | `10.0.0.21:41641` | `k8s-subnet-router` (lox, exit node + LAN routes) |
-| 41642 | `10.0.0.20:41642` | `pihole-dns` (tug) |
-
-STUN only reports the router's random mapping, never the forwarded port, and
-the ISP rotates the WAN IP. Each pod therefore runs a `wan-endpoint` sidecar.
-It writes the tailscaled config file (`TS_EXPERIMENTAL_VERSIONED_CONFIG_DIR`),
-reads the current WAN IPv4 from `tailscale netcheck` every minute, and on a
-change sets `StaticEndpoints` to `<wan>:<port>` and runs
-`tailscale debug reload-config`. That updates the advertised endpoint live,
-without restarting the node. Hostname, routes, exit node, login server and
-auth key live in that config file, so they are edited in the sidecar script,
-not in `TS_*` variables (containerboot rejects both together).
-
-Check it with `tailscale status --json | jq .Self.Addrs` inside either pod:
-the list must contain `<wan>:41641` (or `:41642`). The nodes and their
-forwards are pinned by `nodeSelector`; moving a pod to another node means
-moving its router forward too.
-
 ## Health checks that matter
 
 | Symptom | Meaning |

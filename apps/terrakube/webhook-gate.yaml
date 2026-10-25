@@ -17,6 +17,9 @@ spec:
         app: terrakube-webhook-gate
       annotations:
         checksum/script: "gate-py-v3-multisecret"
+        # GITHUB_WEBHOOK_SECRETS is read at startup; change this when the sealed secret
+        # gains or loses a workspace so the pod restarts with the new list.
+        checksum/secrets: "aws-edge,grafana,b2-backup"
     spec:
       securityContext:
         runAsNonRoot: true

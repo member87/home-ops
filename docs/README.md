@@ -58,7 +58,7 @@ flowchart LR
 | [`flux/`](../flux/) | Flux entrypoint, component Kustomizations, and Helm sources/releases |
 | [`charts/`](../charts/) | Wrapper charts for the small set of upstream Helm dependencies |
 | [`talos/`](../talos/) | SOPS-encrypted Talos machine configuration |
-| [`terraform/`](../terraform/) | OpenTofu for the AWS edge, edge DNS, and Grafana resources |
+| [`terraform/`](../terraform/) | OpenTofu for the AWS edge, edge DNS, Grafana resources, and the B2 backup bucket |
 | [`scripts/`](../scripts/) | Flux manifest validation and HelmRelease adoption helpers |
 | [`Justfile`](../Justfile) | Routine Talos, Flux, and maintenance commands |
 
@@ -131,6 +131,7 @@ under `terraform/aws-edge/config/`.
 | [Public access](public-access.md) | TLS termination and FRP request flow for public services |
 | [Tailnet VPN](tailnet-vpn.md) | Headscale connectivity, direct paths, and relay fallback |
 | [Media streaming](media-streaming.md) | Local and remote media paths plus bandwidth considerations |
+| [Immich backup](immich-backup.md) | What the nightly B2 backup covers, how deletions are retained, and how to restore |
 
 The detailed diagrams intentionally use example names and addresses. For current
 component names, domains, and deployment contracts, inspect the manifests and

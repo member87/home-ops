@@ -1,0 +1,7 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# The immich namespace and the immich-library PVC belong to the immich HelmRelease.
+resources:
+  - sealedsecret.yaml
+  - cronjob.yaml

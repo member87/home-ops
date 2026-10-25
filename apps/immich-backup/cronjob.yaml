@@ -1,0 +1,105 @@
+---
+# Nightly off-site copy of the Immich library to Backblaze B2 (bucket defined in
+# terraform/b2-backup). Runs after Immich's own 02:00 database dump lands in backups/.
+#
+# rclone sync on B2 hides removed files instead of deleting them (no --b2-hard-delete,
+# and the key has no deleteFiles anyway); the bucket lifecycle rules delete hidden and
+# superseded versions after 90 days (30 for db/). thumbs/ and encoded-video/ are left
+# out because Immich regenerates them. --max-delete stops a sync from hiding the backup
+# when the source looks wiped, e.g. an empty NFS mount.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: immich-backup
+  namespace: immich
+spec:
+  schedule: "0 4 * * *"
+  timeZone: Europe/London
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      # The first upload of ~180 GB takes hours; a run cut off here resumes where it
+      # stopped on the next schedule, because sync skips files already in the bucket.
+      activeDeadlineSeconds: 82800
+      template:
+        metadata:
+          labels:
+            app: immich-backup
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.75.2
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -u
+                  rc=0
+                  for pair in library:library upload:upload profile:profile backups:db; do
+                    src="${pair%%:*}"
+                    dst="${pair##*:}"
+                    echo "syncing /data/${src} -> b2:${BUCKET}/${dst}"
+                    rclone sync "/data/${src}" "b2:${BUCKET}/${dst}" \
+                      --fast-list \
+                      --transfers 4 \
+                      --checkers 16 \
+                      --b2-upload-concurrency 2 \
+                      --max-delete 200 \
+                      --stats 10m \
+                      --stats-one-line \
+                      --stats-log-level NOTICE || rc=1
+                  done
+                  exit "$rc"
+              env:
+                - name: BUCKET
+                  value: jackhumes-immich-backup
+                - name: RCLONE_CONFIG_B2_TYPE
+                  value: b2
+                - name: RCLONE_CONFIG_B2_HARD_DELETE
+                  value: "false"
+                - name: RCLONE_CONFIG_B2_ACCOUNT
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-backup-secret
+                      key: RCLONE_CONFIG_B2_ACCOUNT
+                - name: RCLONE_CONFIG_B2_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-backup-secret
+                      key: RCLONE_CONFIG_B2_KEY
+                - name: HOME
+                  value: /tmp
+              # Root, like immich-server: the NAS export denies other uids (a nobody
+              # pod cannot even list /data/library). No capabilities are needed.
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
+              # 4 transfers x 2 parts x 96Mi chunks buffer up to ~768Mi on large videos.
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  memory: 1536Mi
+              volumeMounts:
+                - name: library
+                  mountPath: /data
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: library
+              persistentVolumeClaim:
+                claimName: immich-library
+                readOnly: true
+            - name: tmp
+              emptyDir: {}

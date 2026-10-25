@@ -805,3 +805,50 @@ data:
               description: Temperature sensor {{ $labels.sensor }} on node {{ $labels.instance }} is above 75°C (current value {{ $value }}°C)
             labels:
               severity: warning
+
+          - uid: immich-backup-stale
+            title: Immich Backup Stale
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                # Falls back to the CronJob creation time so a backup that has never
+                # succeeded still alerts once it is two days old.
+                model:
+                  expr: time() - (kube_cronjob_status_last_successful_time{namespace="immich",cronjob="immich-backup"} or kube_cronjob_created{namespace="immich",cronjob="immich-backup"})
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 172800
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: Immich off-site backup has not succeeded for 48 hours
+              description: CronJob immich/immich-backup last succeeded {{ humanizeDuration $values.B.Value }} ago. Photos added since then exist only on the NAS; check the latest job's logs.
+            labels:
+              severity: critical

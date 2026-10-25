@@ -232,6 +232,12 @@
       "automerge": true
     },
     {
+      "description": "Chore Bore runs Renovate itself (apps/chore-bore). Renovate releases several times a day, so take its own bumps once a week; minor/patch still automerge through the apps/** rule, majors wait for review.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
+      "schedule": ["* 0-5 * * 1"]
+    },
+    {
       "description": "Cluster-wide blast radius (storage, networking, TLS, Flux, Talos) is never automerged",
       "matchFileNames": ["infrastructure/**", "charts/**", "flux/**", "talos/**"],
       "automerge": false

@@ -1,0 +1,86 @@
+---
+# Chore Bore: self-hosted Renovate, replacing the Mend-hosted app. Repository rules stay in
+# renovate.json at the repo root; config.json here holds only the self-hosted global options.
+# It authenticates as the "Chore Bore" GitHub App (commits show as chore-bore[bot]): each run
+# mints a one-hour installation token from the sealed App private key, then runs Renovate once.
+# Dashboard checkboxes take effect on the next run; trigger one now with
+#   kubectl -n chore-bore create job --from=cronjob/chore-bore chore-bore-manual
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: chore-bore
+  namespace: chore-bore
+spec:
+  schedule: "17 * * * *"
+  timeZone: Europe/London
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      # The installation token expires after an hour; a run still going then would fail
+      # half-way, so stop it first. The next run picks up where it left off.
+      activeDeadlineSeconds: 3300
+      template:
+        metadata:
+          labels:
+            app: chore-bore
+        spec:
+          restartPolicy: Never
+          # The image runs as uid 12021 with primary gid 0, which containerbase needs to write
+          # /opt/containerbase. fsGroup makes the 0440 App key readable to that uid.
+          securityContext:
+            runAsNonRoot: true
+            fsGroup: 12021
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: renovate
+              image: ghcr.io/renovatebot/renovate:44.181.6
+              imagePullPolicy: IfNotPresent
+              # The image entrypoint (containerbase) runs this command after loading its env.
+              # The root filesystem stays writable: containerbase installs any tool a manager
+              # needs into /opt/containerbase at runtime.
+              args:
+                - bash
+                - -c
+                - |
+                  set -euo pipefail
+                  RENOVATE_TOKEN="$(node /etc/chore-bore/config/mint-token.mjs)"
+                  export RENOVATE_TOKEN
+                  exec renovate
+              env:
+                - name: CHORE_BORE_APP_ID
+                  value: "5470088"
+                - name: CHORE_BORE_REPOSITORY
+                  value: member87/home-ops
+                - name: CHORE_BORE_PRIVATE_KEY_FILE
+                  value: /etc/chore-bore/secret/private-key.pem
+                - name: RENOVATE_CONFIG_FILE
+                  value: /etc/chore-bore/config/config.json
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  memory: 2Gi
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/chore-bore/config
+                  readOnly: true
+                - name: secret
+                  mountPath: /etc/chore-bore/secret
+                  readOnly: true
+          volumes:
+            - name: config
+              configMap:
+                name: chore-bore-config
+            - name: secret
+              secret:
+                secretName: chore-bore-secrets
+                defaultMode: 0440

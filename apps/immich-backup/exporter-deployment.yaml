@@ -1,0 +1,90 @@
+---
+# Bucket-side metrics for the Immich backup (exporter.py): stored bytes, file counts,
+# retained versions and newest upload per prefix, for the Immich Backup dashboard.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-backup-exporter
+  namespace: immich
+  labels:
+    app: immich-backup-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-backup-exporter
+  template:
+    metadata:
+      labels:
+        app: immich-backup-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9101"
+        prometheus.io/path: /metrics
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: exporter
+          image: python:3.15-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -u
+            - -B
+            - /scripts/exporter.py
+          ports:
+            - containerPort: 9101
+              name: metrics
+              protocol: TCP
+          env:
+            - name: B2_BUCKET
+              value: jackhumes-immich-backup
+            - name: B2_PREFIXES
+              value: db/,library/,profile/,upload/
+            - name: REFRESH_SECONDS
+              value: "900"
+            - name: B2_APPLICATION_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: immich-backup-exporter-secret
+                  key: B2_APPLICATION_KEY_ID
+            - name: B2_APPLICATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: immich-backup-exporter-secret
+                  key: B2_APPLICATION_KEY
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: immich-backup-exporter

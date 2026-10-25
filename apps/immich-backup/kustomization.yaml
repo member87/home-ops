@@ -5,3 +5,11 @@ kind: Kustomization
 resources:
   - sealedsecret.yaml
   - cronjob.yaml
+  - exporter-sealedsecret.yaml
+  - exporter-deployment.yaml
+# Generated so an exporter.py change gets a new name and rolls the Deployment.
+configMapGenerator:
+  - name: immich-backup-exporter
+    namespace: immich
+    files:
+      - exporter.py

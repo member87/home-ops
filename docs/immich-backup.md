@@ -27,6 +27,20 @@ two hours after Immich writes its own database dump. The bucket is defined in
 - Grafana alert `immich-backup-stale` fires when the CronJob has not succeeded for
   48 hours.
 
+## Monitoring
+
+The Grafana dashboard *Immich Backup* (Media folder) shows the backup's health and bucket usage.
+
+| Source | What it provides |
+|---|---|
+| kube-state-metrics | Last successful run, run duration, failed runs |
+| `immich-backup-exporter` | Lists the bucket every 15 minutes. Reports stored bytes, file counts, retained (hidden or superseded) versions and newest upload per prefix, plus an estimated monthly cost |
+| rclone `--metrics-addr :9250` on the job pod | Live speed and progress while a run is active |
+| Loki | Job and exporter logs |
+
+B2 itself exports no metrics, which is why the exporter exists. Its key
+(`immich-backup-exporter-secret`) is limited to `listBuckets` and `listFiles`.
+
 ## Restoring
 
 Use the backup key from the cluster. It can read, so it is enough for every restore
@@ -62,10 +76,14 @@ rclone copy --b2-version-at "2026-10-20 00:00:00" "$B/library/immich/2026/2026-1
    matching the Immich version in the dump's file name.
 3. Start Immich, then run the thumbnail and transcode jobs.
 
-## Rotating the key
+## Rotating the keys
 
 Create a replacement key in the B2 console with `listBuckets`, `listFiles`,
 `readFiles`, and `writeFiles`, restricted to `jackhumes-immich-backup`. Seal both
 values into `apps/immich-backup/sealedsecret.yaml`
 (`kubeseal --raw --namespace immich --name immich-backup-secret --scope strict`),
 merge the change, then delete the old key.
+
+Rotate the exporter key the same way: create a key with only `listBuckets` and
+`listFiles` on the bucket, then seal it into `apps/immich-backup/exporter-sealedsecret.yaml`
+as `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` (name `immich-backup-exporter-secret`).

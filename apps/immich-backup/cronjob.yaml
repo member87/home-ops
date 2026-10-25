@@ -28,6 +28,13 @@ spec:
         metadata:
           labels:
             app: immich-backup
+          # Live transfer progress for the dashboard. Each prefix is a separate rclone
+          # process, so counters restart per prefix; a short run can finish between
+          # scrapes, which is why stored totals come from immich-backup-exporter.
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9250"
+            prometheus.io/path: /metrics
         spec:
           restartPolicy: Never
           containers:
@@ -50,6 +57,7 @@ spec:
                       --checkers 16 \
                       --b2-upload-concurrency 2 \
                       --max-delete 200 \
+                      --metrics-addr :9250 \
                       --stats 10m \
                       --stats-one-line \
                       --stats-log-level NOTICE || rc=1

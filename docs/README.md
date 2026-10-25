@@ -44,8 +44,10 @@ flowchart LR
   the LAN or tailnet.
 - **Public services** use `*.jackhumes.com`. Caddy terminates TLS on the AWS
   edge, then forwards only declared hosts through FRP to the cluster.
-- **Home routers never need application port-forwards.** The in-cluster FRP
-  client establishes the connection to the edge.
+- **Public apps never need router port-forwards.** The in-cluster FRP client
+  establishes the connection to the edge. The only forwards are WireGuard
+  (UDP/41641, UDP/41642) for direct tailnet paths; see
+  [Tailnet VPN](tailnet-vpn.md#router-port-forwards-and-static-endpoints).
 - **Data stays local where practical.** Longhorn holds application state; NFS
   provides shared NAS-backed media and download storage.
 

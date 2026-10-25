@@ -3,6 +3,7 @@
   "extends": ["config:recommended"],
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
+  "timezone": "Europe/London",
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
   },
@@ -94,42 +95,6 @@
       "versioningTemplate": "semver"
     },
     {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^talos/controlplane\\.yaml$/",
-        "/^talos/worker\\.yaml$/"
-      ],
-      "matchStrings": [
-        "(?:^|\\n)[ \\t]*image: registry\\.k8s\\.io/coredns/coredns:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
-      ],
-      "depNameTemplate": "coredns/coredns",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^talos/controlplane\\.yaml$/",
-        "/^talos/worker\\.yaml$/"
-      ],
-      "matchStrings": [
-        "(?:^|\\n)[ \\t]*image: gcr\\.io/etcd-development/etcd:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
-      ],
-      "depNameTemplate": "etcd-io/etcd",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/\\.yaml$/"
-      ],
-      "matchStrings": [
-        "image:\\s+(?<depName>ghcr\\.io/[\\w\\-\\./]+):(?<currentValue>[\\w\\-\\.]+)"
-      ],
-      "datasourceTemplate": "docker"
-    },
-    {
       "description": "Versions Renovate cannot see on its own: image tags inside HelmRelease spec.values (flux only reads the chart reference, and values carry a bare tag: with the repository left to the chart default) and the tuppr TalosUpgrade/KubernetesUpgrade versions. Annotate the field with a '# renovate: datasource=... depName=...' line directly above it.",
       "customType": "regex",
       "managerFilePatterns": ["/^flux/helm/.+\\.yaml$/", "/^infrastructure/tuppr/.+\\.yaml$/", "/^infrastructure/flux-instance/.+\\.yaml$/"],
@@ -210,22 +175,6 @@
       "allowedVersions": "/^v?1\\.(?:[0-2]?\\d|3[0-7])\\./"
     },
     {
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["coredns/coredns"],
-      "groupName": "CoreDNS",
-      "commitMessageTopic": "CoreDNS",
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "coredns"
-    },
-    {
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["etcd-io/etcd"],
-      "groupName": "etcd",
-      "commitMessageTopic": "etcd",
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "etcd"
-    },
-    {
       "description": "App image bumps: one PR per app, so a single bad bump cannot ride in with nine unrelated ones",
       "matchFileNames": ["apps/**"],
       "matchUpdateTypes": ["minor", "patch"],
@@ -235,7 +184,7 @@
       "description": "Chore Bore runs Renovate itself (apps/chore-bore). Renovate releases several times a day, so take its own bumps once a week; minor/patch still automerge through the apps/** rule, majors wait for review.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
-      "schedule": ["* 0-5 * * 1"]
+      "schedule": ["* 8-11 * * 1"]
     },
     {
       "description": "Cluster-wide blast radius (storage, networking, TLS, Flux, Talos) is never automerged",
@@ -254,9 +203,23 @@
       "automerge": true
     },
     {
+      "description": "Guard on everything that automerges. Wait 3 days after a release, so a broken or pulled release is caught upstream before Flux rolls it out. Registries that publish no release timestamps (ghcr.io among them) would otherwise never pass the wait, so those merge without it. Renovate merges these itself on its hourly runs, 08:00-21:59 London, so nothing lands overnight; GitHub's native auto-merge would ignore the schedule.",
+      "matchFileNames": ["apps/**", "terraform/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days",
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "platformAutomerge": false,
+      "automergeSchedule": ["* 8-21 * * *"]
+    },
+    {
       "description": "Chart version changes re-render a whole Helm release: always reviewed by hand",
       "matchManagers": ["helmv3", "flux"],
       "automerge": false
+    },
+    {
+      "description": "Parked at replicas: 0 (epg, trek, radar). Remove the app's entry here when you scale it back up.",
+      "matchFileNames": ["apps/epg/**", "apps/trek/**", "flux/helm/radar/**"],
+      "enabled": false
     }
   ]
 }

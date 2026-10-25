@@ -25,6 +25,70 @@ spec:
       # A separate TUN-capable node avoids sharing the subnet router's host netns.
       nodeSelector:
         kubernetes.io/hostname: talos-tug-zp7
+      initContainers:
+        # Advertises <home WAN IPv4>:41642 as a static endpoint; the home router forwards WAN
+        # UDP/41642 to this node (10.0.0.20). Same mechanism and reasons as the subnet
+        # router's wan-endpoint sidecar; see docs/tailnet-vpn.md.
+        - name: wan-endpoint
+          image: tailscale/tailscale:v1.104.2
+          restartPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cfg=/etc/tailscaled/cap-148.hujson
+              sock=/var/run/tailscale/tailscaled.sock
+              port=41642
+              # acceptDNS false: do not consume MagicDNS ourselves (avoids a resolver loop).
+              # tailscaled 1.104 crashes at boot on an empty StaticEndpoints list, so the key is
+              # written only once an endpoint is known (hujson allows the trailing comma).
+              write_config() {
+                eps=""
+                if [ -n "${1:-}" ]; then eps="\"StaticEndpoints\": [\"$1\"],"; fi
+                cat > "$cfg.tmp" <<EOF
+              {
+                "version": "alpha0",
+                "ServerURL": "https://headscale.lab.jackhumes.com",
+                "AuthKey": "file:/etc/tailscale-auth/TS_AUTHKEY",
+                "Hostname": "pihole-dns",
+                "acceptDNS": false,
+                "acceptRoutes": false,
+                "NoStatefulFiltering": true,
+                $eps
+              }
+              EOF
+                mv "$cfg.tmp" "$cfg"
+              }
+              [ -f "$cfg" ] || write_config
+              advertised=""
+              while true; do
+                wan=$(tailscale --socket="$sock" netcheck --format=json-line 2>/dev/null \
+                  | sed -n 's/.*"GlobalV4":"\([0-9.]*\):[0-9]*".*/\1/p')
+                if [ -n "$wan" ] && [ "$wan" != "$advertised" ]; then
+                  write_config "$wan:$port"
+                  if tailscale --socket="$sock" debug reload-config; then
+                    advertised=$wan
+                    echo "advertising static endpoint $wan:$port"
+                  fi
+                fi
+                # Retry quickly until tailscaled is up and the first endpoint is advertised.
+                if [ -n "$advertised" ]; then sleep 60; else sleep 5; fi
+              done
+          startupProbe:
+            exec:
+              command: ["test", "-f", "/etc/tailscaled/cap-148.hujson"]
+            periodSeconds: 1
+          resources:
+            requests:
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: tailscaled-config
+              mountPath: /etc/tailscaled
+            - name: tailscaled-socket
+              mountPath: /var/run/tailscale
       containers:
         # No memory limit on purpose: remote access is infrastructure, so this pod sits in the
         # second Talos OOM tier with traefik instead of dying first with the apps
@@ -44,13 +108,12 @@ spec:
 
               exec /usr/local/bin/containerboot
           env:
-            - name: TS_AUTHKEY
-              valueFrom:
-                secretKeyRef:
-                  name: tailscale-auth
-                  key: TS_AUTHKEY
-            - name: TS_HOSTNAME
-              value: "pihole-dns"
+            # Hostname, login server and auth key live in the config file written by
+            # wan-endpoint; containerboot rejects the equivalent TS_* variables alongside it.
+            - name: TS_EXPERIMENTAL_VERSIONED_CONFIG_DIR
+              value: "/etc/tailscaled"
+            - name: TS_SOCKET
+              value: "/var/run/tailscale/tailscaled.sock"
             # DNAT all inbound tailnet traffic to the Pi-hole MetalLB DNS VIP.
             # This node's tailnet IP becomes a direct DNS front-end for Pi-hole,
             # bypassing the subnet-router SNAT + LAN-route path.
@@ -60,13 +123,8 @@ spec:
               value: "/var/lib/tailscale"
             - name: TS_USERSPACE
               value: "false"
-            # Do not consume MagicDNS ourselves (avoids a resolver loop).
-            - name: TS_ACCEPT_DNS
-              value: "false"
-            - name: TS_EXTRA_ARGS
-              value: "--login-server=https://headscale.lab.jackhumes.com"
-            # A fixed host-network UDP socket avoids Flannel's per-flow SNAT,
-            # which made the STUN-advertised port unreachable by peers.
+            # A fixed host-network UDP socket avoids Flannel's per-flow SNAT, which made the
+            # STUN-advertised port unreachable by peers. The home router forwards WAN UDP/41642 here.
             - name: TS_TAILSCALED_EXTRA_ARGS
               value: "--port=41642"
           securityContext:
@@ -76,12 +134,30 @@ spec:
           volumeMounts:
             - name: tailscale-state
               mountPath: /var/lib/tailscale
+            - name: tailscaled-config
+              mountPath: /etc/tailscaled
+              readOnly: true
+            - name: tailscaled-socket
+              mountPath: /var/run/tailscale
+            - name: tailscale-auth
+              mountPath: /etc/tailscale-auth
+              readOnly: true
             - name: dev-net-tun
               mountPath: /dev/net/tun
       volumes:
         - name: tailscale-state
           persistentVolumeClaim:
             claimName: tailscale-dns-state
+        - name: tailscaled-config
+          emptyDir: {}
+        - name: tailscaled-socket
+          emptyDir: {}
+        - name: tailscale-auth
+          secret:
+            secretName: tailscale-auth
+            items:
+              - key: TS_AUTHKEY
+                path: TS_AUTHKEY
         - name: dev-net-tun
           hostPath:
             path: /dev/net/tun

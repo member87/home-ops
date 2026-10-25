@@ -160,11 +160,12 @@ Keep the edge patched with `just update-vps` (optional reboot with `just update-
 
 Everything under `terraform/` is planned and applied by Terrakube in-cluster. There are no GitHub Actions: GitHub only delivers webhooks, and all execution happens in the `terrakube` namespace.
 
-- Organization `homeops`. Two workspaces, each with its own state, webhook and commit-status context:
+- Organization `homeops`. Three workspaces, each with its own state, webhook and commit-status context:
   - `aws-edge` -> `terraform/aws-edge`, the Lightsail edge box and its FRP/Caddy config.
   - `grafana` -> `terraform/grafana`, every Grafana dashboard and folder.
-- Both are OpenTofu with remote execution, so `iacType` must be `tofu`; setting it to `terraform` with an OpenTofu version fails the job with "Invalid Terraform version range". State lives in Terrakube (MinIO-backed), never in a local `terraform.tfstate`.
-- Each workspace registers its own GitHub webhook, and the v1 HMAC secret is `base64(workspaceId)`, so the gatekeeper takes a comma-separated `GITHUB_WEBHOOK_SECRETS` and accepts any of them. Adding a workspace means adding its secret there too.
+  - `b2-backup` -> `terraform/b2-backup`, the Backblaze B2 bucket for the Immich off-site backup. Provider credentials are the sensitive ENV variables `B2_APPLICATION_KEY_ID`/`B2_APPLICATION_KEY`.
+- All are OpenTofu with remote execution, so `iacType` must be `tofu`; setting it to `terraform` with an OpenTofu version fails the job with "Invalid Terraform version range". State lives in Terrakube (MinIO-backed), never in a local `terraform.tfstate`.
+- Each workspace registers its own GitHub webhook, and the v1 HMAC secret is `base64(workspaceId)`, so the gatekeeper takes a comma-separated `GITHUB_WEBHOOK_SECRETS` and accepts any of them. Adding a workspace means adding its secret there too, bumping `checksum/secrets` in `apps/terrakube/webhook-gate.yaml` so the gate restarts with it (plus the `apps/terrakube/Chart.yaml` version, or the change never deploys), and pointing the new GitHub hook at `https://terrakube-hook.jackhumes.com/webhook/v1/<webhookId>` (Terrakube registers it with the LAN-only API URL).
 - Pull request -> `Plan` template. Push to `main` -> `Plan and apply`. Both carry a file filter so only changes under the workspace's directory trigger a run.
 - Terrakube posts the plan as a pull request comment and sets a GitHub commit status (`pending` -> `success`/`failure`), which is what branch protection requires to block a pull request with a failing plan. `terrakube plan` re-runs a plan from a comment; apply-via-comment is deliberately off.
 - Secrets (`frps_auth_token`, `frps_dashboard_password`, `tailscale_authkey`, and AWS credentials) are sensitive workspace variables in Terrakube, not files in this repo. Terraform generates the edge deployment and host SSH identities into sensitive state; state access therefore grants edge SSH access. Additional operator public keys live in `admin_ssh_public_keys` without labels.
@@ -240,6 +241,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Use `longhorn` for app config, databases, and monitoring data.
 - Use `nfs-manual` or direct NFS PVs only for shared media/download data.
 - NAS paths: `/volume1/kubernetes/media`, `/volume1/kubernetes/downloads`, and Longhorn backups at `/volume1/kubernetes/longhorn-backups`.
+- Immich off-site backup: `apps/immich-backup` CronJob (04:00) runs `rclone sync` of `library/`, `upload/`, `profile/` and Immich's DB dumps (`backups/` -> `db/`) to B2 bucket `jackhumes-immich-backup`. The sealed key cannot delete; removed files are only hidden and B2 lifecycle rules purge them after 90 days (30 for `db/`). `thumbs/` and `encoded-video/` are skipped. `immich-backup-exporter` (list-only key) lists the bucket every 15 minutes for the *Immich Backup* dashboard (`terraform/grafana/dashboards/media/immich-backup.json`). Restore steps: `docs/immich-backup.md`.
 - MetalLB address pool is `10.0.0.200-10.0.0.250`.
 - External access uses FRP through the AWS Lightsail edge (`18.171.34.111`); see Public Access & AWS Lightsail Edge (FRP) for the full chain, tunnel map, and SSH steps.
 - Public traffic for `auth.jackhumes.com` must route through Traefik so CrowdSec can block banned IPs.

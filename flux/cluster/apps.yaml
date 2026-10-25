@@ -260,6 +260,27 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: immich-backup
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/immich-backup
+  prune: true
+  wait: true
+  # The CronJob runs in the immich namespace and mounts the immich-library PVC, both
+  # created by the immich HelmRelease.
+  dependsOn:
+    - name: helm-immich
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: ip-checker
   namespace: flux-system
 spec:

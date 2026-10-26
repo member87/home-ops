@@ -37,7 +37,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:44.181.6
+              image: ghcr.io/renovatebot/renovate:44.182.2
               imagePullPolicy: IfNotPresent
               # The image entrypoint (containerbase) runs this command after loading its env.
               # The root filesystem stays writable: containerbase installs any tool a manager

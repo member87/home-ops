@@ -6,6 +6,14 @@ metadata:
     kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable;
     # Flux inherited spec.volumeName from Helm's last-applied on some of these, and a
     # server-side apply that omits it then tries to clear it. Create-only avoids that.
+  # Metrics are not backed up. Volumes without recurring-job labels fall into Longhorn's
+  # default group (backup-daily + snapshot-cleanup-daily); the source label makes
+  # Longhorn copy these labels to the volume, so it keeps only the snapshot cleanup.
+  # Flux creates this PVC but never updates it (ssa: IfNotPresent above), so a label
+  # change here must also be applied with kubectl label.
+  labels:
+    recurring-job.longhorn.io/source: enabled
+    recurring-job.longhorn.io/snapshot-cleanup-daily: enabled
   name: prometheus-storage
   namespace: prometheus
 spec:

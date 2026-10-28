@@ -15,13 +15,19 @@ spec:
   policy:
     # The CRD defaults this to true (v0.5.9), despite the docs.
     debug: false
-    # Longhorn releases its instance-manager PDB only as the drain detaches volumes; a node
-    # running many replicas needs longer than talosctl's 5m default.
-    drainTimeout: 15m
-    # Drain and wait for CSI (Longhorn) volumes to detach before rebooting, so a fast
-    # reboot cannot orphan a mount and pin the volume to the node (Multi-Attach errors).
-    waitForVolumeDetach: true
-    timeout: 45m
+    # talosctl drains the node itself during the upgrade and retries an eviction a PDB
+    # refuses until drainTimeout. Longhorn releases a node's instance-manager PDB only once
+    # its volumes have detached, so the drain cannot finish (and the node cannot reboot)
+    # with a volume still attached there. 35m covers qbittorrent's 30m termination grace
+    # period, as in scripts/talos-sync.sh.
+    drainTimeout: 35m
+    # Not waitForVolumeDetach: it makes tuppr drain instead, and tuppr's drain (v0.5.10)
+    # gives up on the first eviction a PDB refuses. Pods are evicted in namespace order, so
+    # longhorn-system/instance-manager is refused before the app pods holding its volumes
+    # have moved, and the run loops in Draining without ever draining a node.
+    waitForVolumeDetach: false
+    # timeout covers the drain plus install, reboot and the node turning Ready again.
+    timeout: 60m
   healthChecks:
     - description: every node Ready
       apiVersion: v1
@@ -33,8 +39,8 @@ spec:
     # ~20m). tuppr's CEL only sees an object's status: a `spec.` reference fails
     # validation and parks the run in HealthChecking for good (seen with v1.14.5), so the
     # replica count is not checked here. A node holding an attached volume's only
-    # replica cannot drain: Longhorn's drain policy blocks it and tuppr fails the run
-    # after drainTimeout without rebooting.
+    # replica cannot drain: Longhorn's drain policy blocks it and talosctl fails the
+    # upgrade after drainTimeout without rebooting.
     - description: every attached Longhorn volume healthy
       apiVersion: longhorn.io/v1beta2
       kind: Volume

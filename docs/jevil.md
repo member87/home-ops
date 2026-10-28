@@ -57,7 +57,7 @@ targets (`dependency '...' is not ready`), so a fix can always merge.
 
 Like the Aviator merge queue:
 
-1. A login in `commanders` comments `/jevil merge` (optionally `--allow <checks>`). Jevil reacts 👍,
+1. A login in `commanders` comments `/jevil merge` (optionally `--allow <checks>`). Jevil reacts 🚀,
    adds `jevil:queued` and replies with the head commit it queued (within a minute: it polls every
    `pollSeconds`).
 2. Last readiness check, on a fresh read: the head is still that commit (a later push dequeues;
@@ -290,8 +290,13 @@ serves. One pull request per kind.
 
 **Weekly report** (issue "Jevil weekly report", `jevil:report`, edited in place): parked apps
 (every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over
-`cleanup.detachedDays` (size, app, whether the PVC still exists), open cleanup pull requests.
-Report only: Jevil never deletes apps, PVCs or volumes.
+`cleanup.detachedDays` (size, app, whether the PVC still exists), **resource use** (how many days
+of use Prometheus holds, and every container the right-sizing rules find clearly over or under
+its requests, with its open right-size pull request, or "not proposed yet" while it has under
+`minDays` of data), and open cleanup pull requests. The report itself opens nothing: right-sizing
+and cleanup are their own weekly jobs, run on the first poll after Jevil starts and every seven days
+after (right-sizing first, so the report links what it opened). Report only: Jevil never deletes
+apps, PVCs or volumes.
 
 **One-click fixes**: when the checks find a lint problem Jevil can fix on a line the pull request
 changes, it posts one review per head commit with GitHub suggestions (apply each, or batch them

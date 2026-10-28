@@ -188,5 +188,3 @@ Releasing Jevil: a push to `main` of `member87/jevil` builds `ghcr.io/member87/j
 in `apps/jevil/deployment.yaml`.
 
 Smoke test for Jevil checks (throwaway, never merged).
-
-token: ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

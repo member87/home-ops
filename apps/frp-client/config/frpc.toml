@@ -29,6 +29,7 @@ remotePort = 8082
 
 # Edge metrics reach Prometheus only through the FRP tunnel. The Lightsail
 # firewall does not expose this remote port publicly.
+# jevil:edge-local - no Caddy site or DNS record on purpose
 [[proxies]]
 name = "prometheus-remote-write"
 type = "tcp"

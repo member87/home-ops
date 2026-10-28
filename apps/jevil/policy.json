@@ -28,7 +28,14 @@
   "checks": {
     "schemaCache": "/tmp/kubeconform",
     "prometheusConfig": "apps/prometheus/configmap.yaml",
-    "glanceConfig": "apps/glance/config.yaml"
+    "glanceConfig": "apps/glance/config.yaml",
+    "edge": {
+      "frpc": "apps/frp-client/config/frpc.toml",
+      "caddyfile": "terraform/aws-edge/config/Caddyfile",
+      "dns": "terraform/aws-edge-dns/main.tf",
+      "domain": "jackhumes.com"
+    },
+    "talosPatches": "talos/patches"
   },
   "tuppr": {
     "talosUpgrade": "cluster",

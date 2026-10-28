@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "automerge": false,
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
   "timezone": "Europe/London",
@@ -117,8 +118,7 @@
       "groupName": "Longhorn",
       "commitMessageTopic": "Longhorn",
       "semanticCommitType": "chore",
-      "semanticCommitScope": "longhorn",
-      "automerge": false
+      "semanticCommitScope": "longhorn"
     },
     {
       "description": "Talos-owned images: the installer and kubelet versions are tracked through siderolabs/talos and kubernetes/kubernetes (github-releases). factory.talos.dev is not a registry Renovate can list tags from, which showed up as a lookup failure on the dashboard.",
@@ -151,7 +151,6 @@
       "commitMessageTopic": "Talos and Kubernetes",
       "semanticCommitType": "chore",
       "semanticCommitScope": "talos",
-      "automerge": false,
       "prBodyNotes": [
         "Merging this upgrades the cluster: tuppr rolls Talos node by node (health-gated on Ready nodes and healthy Longhorn volumes), then Kubernetes. Watch with `kubectl get talosupgrade,kubernetesupgrade -w`.",
         "Talos must step through every minor and Kubernetes must stay inside the support matrix of the running Talos minor. If this PR moves the Talos minor, check https://docs.siderolabs.com/talos/latest/getting-started/support-matrix and raise the Kubernetes allowedVersions cap in renovate.json in the same PR if the new Talos supports a newer Kubernetes."
@@ -175,21 +174,10 @@
       "allowedVersions": "/^v?1\\.(?:[0-2]?\\d|3[0-7])\\./"
     },
     {
-      "description": "App image bumps: one PR per app, so a single bad bump cannot ride in with nine unrelated ones",
-      "matchFileNames": ["apps/**"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
-    },
-    {
-      "description": "Chore Bore runs Renovate itself (apps/chore-bore). Renovate releases several times a day, so take its own bumps once a week; minor/patch still automerge through the apps/** rule, majors wait for review.",
+      "description": "Chore Bore runs Renovate itself (apps/chore-bore). Renovate releases several times a day, so take its own bumps once a week.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
       "schedule": ["* 8-11 * * 1"]
-    },
-    {
-      "description": "Cluster-wide blast radius (storage, networking, TLS, Flux, Talos) is never automerged",
-      "matchFileNames": ["infrastructure/**", "charts/**", "flux/**", "talos/**"],
-      "automerge": false
     },
     {
       "description": "install.yaml/crds.yaml under infrastructure/ are complete upstream manifests vendored whole. Bumping only the image tag leaves probes, RBAC and env vars at the old version - that is how MetalLB 0.16 broke the LoadBalancer (#298). Upgrade by re-vendoring the whole manifest.",
@@ -197,24 +185,12 @@
       "enabled": false
     },
     {
-      "description": "Terraform providers keep the automerge they had under the old catch-all group",
-      "matchFileNames": ["terraform/**"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
-    },
-    {
-      "description": "Guard on everything that automerges. Wait 3 days after a release, so a broken or pulled release is caught upstream before Flux rolls it out. Registries that publish no release timestamps (ghcr.io among them) would otherwise never pass the wait, so those merge without it. Renovate merges these itself on its hourly runs, 08:00-21:59 London, so nothing lands overnight; GitHub's native auto-merge would ignore the schedule.",
+      "description": "Renovate never merges: Jevil (apps/jevil) rules on these and merges what its policy passes. Wait 3 days after a release, so a broken or pulled release is caught upstream first; Jevil requires the renovate/stability-days status this sets. Registries that publish no release timestamps (ghcr.io among them) would otherwise never pass the wait, so those pass it, and Jevil applies the same age to the GitHub releases it reads. Rebase whenever main moves, because with automerge off Renovate would otherwise only rebase on conflicts and Jevil's checks would go stale.",
       "matchFileNames": ["apps/**", "terraform/**"],
       "matchUpdateTypes": ["minor", "patch"],
       "minimumReleaseAge": "3 days",
       "minimumReleaseAgeBehaviour": "timestamp-optional",
-      "platformAutomerge": false,
-      "automergeSchedule": ["* 8-21 * * *"]
-    },
-    {
-      "description": "Chart version changes re-render a whole Helm release: always reviewed by hand",
-      "matchManagers": ["helmv3", "flux"],
-      "automerge": false
+      "rebaseWhen": "behind-base-branch"
     },
     {
       "description": "Parked at replicas: 0 (epg, trek, radar). Remove the app's entry here when you scale it back up.",

@@ -852,3 +852,48 @@ data:
               description: CronJob immich/immich-backup last succeeded {{ humanizeDuration $values.B.Value }} ago. Photos added since then exist only on the NAS; check the latest job's logs.
             labels:
               severity: critical
+
+          - uid: jevil-merging-halted
+            title: Jevil Merging Halted
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: max(jevil_queue_halted)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 0m
+            annotations:
+              summary: Jevil merged an update whose deploy came up unhealthy
+              description: A pull request Jevil merged failed its deploy check and is labelled jevil:merged-unhealthy. Jevil opened a revert pull request (labelled jevil:revert) for you to review and merges nothing else until the label is removed. See docs/jevil.md.
+            labels:
+              severity: critical

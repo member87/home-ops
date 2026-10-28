@@ -1,0 +1,86 @@
+---
+# Jevil (github.com/member87/jevil): rules on Chore Bore pull requests with Jev, labels them and
+# merges what the policy passes, one at a time. Policy: policy.json here. Ops: docs/jevil.md.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jevil
+  namespace: jevil
+  labels:
+    app: jevil
+spec:
+  replicas: 1
+  # Never two at once: two pods could each merge a pull request before either checks a deploy.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jevil
+  template:
+    metadata:
+      labels:
+        app: jevil
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: jevil
+      imagePullSecrets:
+        - name: jevil-ghcr-pull
+      # SIGTERM lets the current poll finish, so a merge is not cut off before its labels.
+      terminationGracePeriodSeconds: 300
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: jevil
+          image: ghcr.io/member87/jevil:6ad669363e8c232b3081f16ea77b23cf1ce39d01
+          imagePullPolicy: IfNotPresent
+          args:
+            - -policy=/etc/jevil/config/policy.json
+            - -secrets=/etc/jevil/secret
+          ports:
+            - containerPort: 8080
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/jevil/config
+              readOnly: true
+            - name: secret
+              mountPath: /etc/jevil/secret
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: jevil-config
+        - name: secret
+          secret:
+            secretName: jevil-secrets
+            defaultMode: 0440

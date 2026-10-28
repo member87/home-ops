@@ -17,25 +17,60 @@ date as commits land. Each changed file is mapped onto what deploys it:
 | HelmRelease (Git chart) | under its chart directory (`apps/immich`, `charts/cert-manager`, ...) | only when `Chart.yaml` `version` changes; otherwise the comment says it deploys nothing |
 | Terrakube workspace | under `terraform/<workspace>` | yes, Terrakube applies on merge |
 | New app | under a new `apps/<app>` or `infrastructure/<x>` when the same pull request touches `flux/cluster` | yes, once Flux creates its Kustomization |
+| tuppr upgrade | a `version:` bump in `infrastructure/tuppr/talos` or `/kubernetes` | yes: tuppr upgrades the nodes one at a time |
 | Nothing | anything else (docs, scripts, `AGENTS.md`) | no |
 
-The comment lists each target with the files under it and counts what will deploy. The merge
-comment, the deploy check and the "now live" comment use the same targets.
+The comment lists each target with the files under it and counts what will deploy. Under each Flux
+target it shows the **object diff**: Jevil renders the Kustomization at the merge base and at the
+head (kustomize, like kustomize-controller) and lists the objects added, removed and changed, with
+the fields that change (`spec.template.spec.containers[name=grafana].image: 13.2.4 → 13.3.0`).
+Secret and SealedSecret values are never shown. The merge comment, the deploy check and the "now
+live" comment use the same targets.
+
+## Checks
+
+Every open pull request head gets the `jevil/checks` commit status and a **Checks** table in the
+same comment. ❌ findings block `/jevil merge`; ⚠️ findings are for you to read.
+
+| Check | Blocks on | Warns on |
+|---|---|---|
+| `secret` | a known token format on an added line (GitHub, OpenRouter/OpenAI/Anthropic, AWS, private keys, Slack, Discord webhooks, Tailscale, age, `user:pass@` URLs); a long random value whose key Jev judges a credential (≥ 0.7) | Jev 0.3-0.7; diffs too large to scan |
+| `validate` | a target that does not build; `flux/cluster` not building or pointing at a missing directory; a changed object failing its schema (kubeconform, Kubernetes and CRD catalog schemas) | schemas that could not be fetched |
+| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops |
+| `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization | |
+| `image` | a new image tag or digest the registry does not have | a registry that could not be asked |
+| `health` (at merge time) | | waits while a node is NotReady, an attached Longhorn volume is not healthy, a TalosUpgrade/KubernetesUpgrade is not Completed, or a Kustomization other than the pull request's own targets is failing |
+
+Only the changed objects are linted and validated, so an old problem elsewhere does not block an
+unrelated pull request. Jev never sees a candidate secret's value: only the file, the key and the
+value's shape (length, character classes, first three characters). Put `jevil:allow` in a comment
+on a line to silence the secret check for it.
+
+After reviewing a finding, accept it for one merge with `--allow`:
+`/jevil merge --allow destructive,image`. `--allow health` merges while the cluster is unhealthy.
+A pull request touching a failing Kustomization or the tuppr manifests is exempt from those health
+items, so a fix can always merge.
 
 ## Merging a pull request: `/jevil merge`
 
 Like the Aviator merge queue:
 
-1. A login in `commanders` comments `/jevil merge`. Jevil reacts 👍, adds `jevil:queued` and
-   replies with the head commit it queued (within a minute: it polls every `pollSeconds`).
+1. A login in `commanders` comments `/jevil merge` (optionally `--allow <checks>`). Jevil reacts 👍,
+   adds `jevil:queued` and replies with the head commit it queued (within a minute: it polls every
+   `pollSeconds`).
 2. Last readiness check, on a fresh read: the head is still that commit (a later push dequeues;
    comment again), not a draft, not on `jevil:hold`, into `main`, no merge conflict, no failing
-   commit status, and the required statuses (`Terrakube - homeops - aws-edge`, `- grafana`, plus
-   the workspace of any changed `terraform/<workspace>`) reported success. Pending checks keep it
-   queued; anything failing takes it out of the queue with a comment saying why.
+   commit status, the required statuses (`Terrakube - homeops - aws-edge`, `- grafana`, plus the
+   workspace of any changed `terraform/<workspace>`) reported success, no blocking check finding
+   outside `--allow`, and the cluster is healthy. Pending checks and an unhealthy cluster keep it
+   queued, with the reason added to the queue comment; anything failing takes it out of the queue
+   with a comment saying why.
 3. Jevil squash-merges it and comments with the merge commit and the targets that deploy it.
 4. When all of those have applied the merge (see [After a merge](#after-a-merge)), it comments
    that the change is live. A pull request nothing deploys (docs, scripts) is done at the merge.
+
+`/jevil revert` on a merged pull request opens a revert pull request (restoring each file and its
+mode) and queues it in one step; it still goes through every check above.
 
 One merge at a time: the queue waits while a deploy is being checked, oldest request first.
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
@@ -45,9 +80,16 @@ The block on manual merges is the `jevil-merges-only` repository ruleset: it res
 `main` and only the Jevil Bot App may bypass it. Break-glass when Jevil is down: an admin
 disables the ruleset under Settings → Rules, merges, and enables it again.
 
-Checks in code decide what a Chore Bore pull request may merge on its own. Jev, TypeSafe's
-decision model called through OpenRouter, reads the release notes and can only send an eligible
-pull request to review. Missing information never passes.
+Checks in code decide what a Chore Bore pull request may merge on its own (it must also pass the
+checks and the health gate). Jev, TypeSafe's decision model called through OpenRouter, reads the
+release notes and can only send an eligible pull request to review. Missing information never
+passes.
+
+For Talos and Longhorn upgrades, Jev also answers the `upgradeNotes` questions in the policy
+(machine-config changes before first boot, removed fields, upgrade path, Kubernetes support;
+Longhorn manual steps, resources, upgrade path, removed settings) over up to
+`upgradeNotesMaxBytes` of the upstream release notes. The answers are a section of the ruling
+comment, flagged items marked "check before merging"; they never change the ruling.
 
 Release notes come from Renovate's pull request body and from the upstream project: a
 LinuxServer.io image resolves to its `project_url` (`linuxserver/docker-<app>/readme-vars.yml`),
@@ -107,13 +149,15 @@ still pending; Jevil looks again next poll).
   asked again.
 
 Commands, from logins in `commanders`, acknowledged with a 👍 reaction (anyone else gets a 😕 and a
-refusal). They work on any open pull request:
+refusal). They work on any open pull request; `/jevil revert` on a merged one:
 
 | Comment | Effect |
 |---|---|
 | `/jevil merge` | Queue it for merge at its current head |
+| `/jevil merge --allow destructive,image` | Same, accepting the blocking findings of those checks (`secret`, `validate`, `lint`, `destructive`, `image`, `health`) |
 | `/jevil cancel` | Take it out of the queue |
-| `/jevil reclassify` | Ask Jev again even though nothing changed |
+| `/jevil revert` | On a merged pull request: open a revert pull request and queue it |
+| `/jevil reclassify` | Ask Jev again and rerun the checks even though nothing changed |
 | `/jevil hold` | Add `jevil:hold` (and dequeue): never merge this pull request |
 | `/jevil unhold` | Remove `jevil:hold` |
 
@@ -144,11 +188,15 @@ deploy settles:
   its Kustomization.
 - HelmRelease: a chart whose `Chart.yaml` version was bumped is Ready on that chart version.
 - Terraform: each touched workspace's Terrakube status on the merge commit is success.
+- tuppr: the TalosUpgrade (or KubernetesUpgrade) asks for the new version and reaches `Completed`.
+  Jevil keeps one **Upgrade in progress** comment updated with the phase, nodes done and current
+  node. Upgrades get `verify.upgradeTimeoutMinutes` (8h) instead of 30 minutes.
 - Nothing within 30 minutes is unhealthy.
 
 Healthy: a second comment saying the change is live (which Kustomization applied which commit, or
 the Terrakube apply) and `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
-**Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert`.
+**Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert` (not
+for a failed Talos/Kubernetes upgrade: rolling nodes back is a human decision).
 Jevil never merges a revert on its own: review it and comment `/jevil merge`; while merging is
 halted only reverts can merge. It skips the revert when `main` has changed the
 same files since; revert by hand then.

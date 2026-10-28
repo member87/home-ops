@@ -22,8 +22,71 @@
     "maxDestroy": 0
   },
   "flux": { "namespace": "flux-system" },
-  "verify": { "timeoutMinutes": 30 },
+  "verify": { "timeoutMinutes": 30, "upgradeTimeoutMinutes": 480 },
   "notes": { "minBytes": 40, "maxBytes": 20000 },
+  "upstreams": { "longhorn": "longhorn/longhorn" },
+  "checks": {
+    "schemaCache": "/tmp/kubeconform",
+    "prometheusConfig": "apps/prometheus/configmap.yaml",
+    "glanceConfig": "apps/glance/config.yaml"
+  },
+  "tuppr": {
+    "talosUpgrade": "cluster",
+    "kubernetesUpgrade": "kubernetes",
+    "talosPath": "infrastructure/tuppr/talos",
+    "kubernetesPath": "infrastructure/tuppr/kubernetes"
+  },
+  "upgradeNotesMaxBytes": 100000,
+  "upgradeNotes": {
+    "siderolabs/talos": [
+      {
+        "id": "pre_boot_config",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` say a machine configuration change must be applied before nodes first boot or upgrade to this Talos version?",
+        "criteria": {
+          "true": "A new required setting, a changed default that breaks booting, or a note that existing machine configs must be patched before or during the upgrade.",
+          "false": "New optional features, fixes and component updates that existing machine configs keep working with."
+        }
+      },
+      {
+        "id": "config_removed",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` remove, rename or deprecate machine configuration fields, kernel arguments or talosctl flags?"
+      },
+      {
+        "id": "upgrade_path",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` restrict the upgrade path, such as requiring a specific earlier Talos version first?"
+      },
+      {
+        "id": "kubernetes_support",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` change which Kubernetes versions this Talos version supports?"
+      }
+    ],
+    "longhorn/longhorn": [
+      {
+        "id": "manual_steps",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` require manual steps before or after upgrading Longhorn, such as pre-upgrade checks, an engine upgrade or a settings migration?"
+      },
+      {
+        "id": "resources",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` mention higher CPU or memory requirements for instance managers or other Longhorn components?"
+      },
+      {
+        "id": "upgrade_path",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` restrict which Longhorn versions can upgrade to this one?"
+      },
+      {
+        "id": "settings_removed",
+        "reviewAbove": 0.3,
+        "instructions": "Do the release notes in `release_notes` remove, rename or deprecate Longhorn settings or Helm values?"
+      }
+    ]
+  },
   "jev": {
     "baseUrl": "https://openrouter.ai/api/v1",
     "model": "typesafe/jev-1.14"

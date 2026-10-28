@@ -1,13 +1,46 @@
 # Jevil
 
-Renovate (Chore Bore) never merges. Jevil, `apps/jevil`, rules on every open Chore Bore pull
-request, labels it, and merges the ones its policy passes, one at a time, checking each deploy
-before the next. It acts on GitHub as `jevil-bot[bot]`. Source: `github.com/member87/jevil`
-(private), image `ghcr.io/member87/jevil:<sha>`.
+Jevil, `apps/jevil`, is the only thing that merges to `main`, for every pull request: a ruleset
+blocks the GitHub merge button and `gh pr merge`, and you comment `/jevil merge` instead. It also
+rules on every Chore Bore (Renovate) pull request, labels it, and on its own merges the ones its
+policy passes, one at a time, checking each deploy before the next. It acts on GitHub as
+`jevil-bot[bot]`. Source: `github.com/member87/jevil` (private), image `ghcr.io/member87/jevil:<sha>`.
 
-Checks in code decide what is eligible. Jev, TypeSafe's decision model called through OpenRouter,
-reads the release notes and can only send an eligible pull request to review. Missing information
-never passes.
+## Merging a pull request: `/jevil merge`
+
+Like the Aviator merge queue:
+
+1. A login in `commanders` comments `/jevil merge`. Jevil reacts 👍, adds `jevil:queued` and
+   replies with the head commit it queued (within a minute: it polls every `pollSeconds`).
+2. Last readiness check, on a fresh read: the head is still that commit (a later push dequeues;
+   comment again), not a draft, not on `jevil:hold`, into `main`, no merge conflict, no failing
+   commit status, and the required statuses (`Terrakube - homeops - aws-edge`, `- grafana`, plus
+   the workspace of any changed `terraform/<workspace>`) reported success. Pending checks keep it
+   queued; anything failing takes it out of the queue with a comment saying why.
+3. Jevil squash-merges it and comments with the merge commit and what deploys it: every Flux
+   Kustomization whose path contains a changed file, and every touched Terrakube workspace.
+4. When all of those have applied the merge (see [After a merge](#after-a-merge)), it comments
+   that the change is live. A pull request nothing deploys (docs, scripts) is done at the merge.
+
+One merge at a time: the queue waits while a deploy is being checked, oldest request first.
+Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
+human decision that ruling asks for). `/jevil cancel` takes a pull request out of the queue.
+
+The block on manual merges is the `jevil-merges-only` repository ruleset: it restricts updates to
+`main` and only the Jevil Bot App may bypass it. Break-glass when Jevil is down: an admin
+disables the ruleset under Settings → Rules, merges, and enables it again.
+
+Checks in code decide what a Chore Bore pull request may merge on its own. Jev, TypeSafe's
+decision model called through OpenRouter, reads the release notes and can only send an eligible
+pull request to review. Missing information never passes.
+
+Release notes come from Renovate's pull request body and from the upstream project: a
+LinuxServer.io image resolves to its `project_url` (`linuxserver/docker-<app>/readme-vars.yml`),
+a home-operations image to the `SOURCE` in `home-operations/containers/apps/<app>/docker-bake.hcl`,
+so Jev reads Jellyfin's or Radarr's releases and not only the image's. Image versions map onto the
+upstream's (`12.4ubu2604-ls57` → `12.4`, `2.7.0` matches `v2.7.0.5163`); a LinuxServer rebuild
+that only moves `-lsN` is recorded as such. `upstreams` in the policy maps any other package to a
+repository by hand. The comment lists which sources were read.
 
 ```mermaid
 flowchart LR
@@ -58,18 +91,21 @@ still pending; Jevil looks again next poll).
   answered, and the policy hash. It also caches Jev's answers, so an unchanged pull request is not
   asked again.
 
-Commands, from logins in `commanders`, acknowledged with a 👍 reaction:
+Commands, from logins in `commanders`, acknowledged with a 👍 reaction (anyone else gets a 😕 and a
+refusal). They work on any open pull request:
 
 | Comment | Effect |
 |---|---|
+| `/jevil merge` | Queue it for merge at its current head |
+| `/jevil cancel` | Take it out of the queue |
 | `/jevil reclassify` | Ask Jev again even though nothing changed |
-| `/jevil hold` | Add `jevil:hold`: never merge this pull request |
+| `/jevil hold` | Add `jevil:hold` (and dequeue): never merge this pull request |
 | `/jevil unhold` | Remove `jevil:hold` |
 
 ## Shadow mode and turning merging on
 
 `modes` in `apps/jevil/policy.json` is `shadow` or `merge` per scope. In shadow mode Jevil labels
-and comments but you merge. Both scopes start in shadow.
+and comments but you `/jevil merge`. Both scopes start in shadow.
 
 Switch a scope to `merge` once all of these hold:
 
@@ -88,18 +124,19 @@ Jevil adds `jevil:verifying` before merging (so a restart cannot lose the check)
 pull request with the merge commit and what it is waiting for, and merges nothing else until the
 deploy settles:
 
-- Apps: the Kustomization has applied the merge commit (or a later one) and is Ready. Ready False
-  is unhealthy immediately.
-- Terraform: the workspace's Terrakube status on the merge commit is success.
+- Flux: every Kustomization whose path contains a changed file has applied the merge commit (or a
+  later one) and is Ready. Ready False is unhealthy immediately.
+- Terraform: each touched workspace's Terrakube status on the merge commit is success.
 - Nothing within 30 minutes is unhealthy.
 
 Healthy: a second comment saying the change is live (which Kustomization applied which commit, or
 the Terrakube apply) and `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
-**Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert` and
-`jevil:hold`. Jevil never merges its own reverts. It skips the revert when `main` has changed the
+**Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert`.
+Jevil never merges a revert on its own: review it and comment `/jevil merge`; while merging is
+halted only reverts can merge. It skips the revert when `main` has changed the
 same files since; revert by hand then.
 
-To resume after fixing it: merge or close the revert, then remove `jevil:merged-unhealthy` from the
+To resume after fixing it: `/jevil merge` or close the revert, then remove `jevil:merged-unhealthy` from the
 original pull request.
 
 ## Operations

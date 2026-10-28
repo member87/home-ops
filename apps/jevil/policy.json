@@ -3,7 +3,7 @@
   "baseBranch": "main",
   "renovateLogin": "chore-bore[bot]",
   "commanders": ["member87"],
-  "pollSeconds": 300,
+  "pollSeconds": 60,
   "modes": {
     "app": "shadow",
     "terraform": "shadow"

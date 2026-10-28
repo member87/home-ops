@@ -154,6 +154,12 @@ still pending; Jevil looks again next poll).
 - One comment, edited in place: the reasons, Jev's probability per question, the model that
   answered, and the policy hash. It also caches Jev's answers, so an unchanged pull request is not
   asked again.
+- In that comment, a collapsed **📜 Changelog** per upstream project Jevil fetched itself: every
+  release between the two versions, newest first, so a missing Renovate changelog is not a trip
+  to GitHub. Renovate's own notes stay in the pull request description and are not repeated.
+  Capped at 12 KB a release and 45 KB a comment (cut at a line, with a link to the rest).
+  Mentions are broken and issue references and links go through `redirect.github.com`, so the
+  notes ping nobody and leave no cross-references on this repository's or upstream's issues.
 
 Commands are accepted from the logins in `commanders` only; the policy sets that to `member87`
 alone, and Jevil refuses to start with an empty list. Anyone else gets a 😕 and a refusal. Jevil

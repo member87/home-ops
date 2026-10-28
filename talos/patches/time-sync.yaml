@@ -1,6 +1,7 @@
 # Time sync over IPv4 by address. Valid on 1.13 and 1.14, and needed *before* a node first
 # boots 1.14: `just talos-sync` applies a patch ahead of the upgrade when the running version
 # accepts it.
+# jevil:before-boot v1.14
 #
 # Talos 1.14 defaults to NTS against time.cloudflare.com. The nodes have SLAAC IPv6 addresses
 # from the ISP prefix, so they resolve AAAA and query [2606:4700:f1::1]:123, but IPv6 UDP/123

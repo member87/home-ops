@@ -36,7 +36,7 @@ same comment. ❌ findings block `/jevil merge`; ⚠️ findings are for you to 
 |---|---|---|
 | `secret` | a known token format on an added line (GitHub, OpenRouter/OpenAI/Anthropic, AWS, private keys, Slack, Discord webhooks, Tailscale, age, `user:pass@` URLs); a long random value whose key Jev judges a credential (≥ 0.7) | Jev 0.3-0.7; diffs too large to scan |
 | `validate` | a target that does not build; `flux/cluster` not building or pointing at a missing directory; a changed object failing its schema (kubeconform: this cluster's own CRD schemas first, refreshed hourly, then Kubernetes schemas, then the community CRD catalog for kinds the cluster does not have) | schemas that could not be fetched |
-| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops |
+| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides; an frpc proxy, edge Caddy site and `public_hostnames` entry that disagree (only what the pull request introduces; `# jevil:edge-local` exempts a proxy only the edge uses); a new IngressRoute with a route that neither goes through a forwardAuth middleware nor only redirects to HTTPS, in an app with no OIDC configuration (`# jevil:auth <why>` exempts); a Talos minor bump to v1.N while `talos/patches` holds a patch marked `# jevil:before-boot v1.N` (apply it on every node, then `--allow lint`) | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops; a Talos minor bump with no patch marked for it (read the upgrade notes) |
 | `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization | |
 | `image` | a new image tag or digest the registry does not have | a registry that could not be asked |
 | `health` (at merge time) | | waits while a node is NotReady, an attached Longhorn volume is not healthy, a TalosUpgrade/KubernetesUpgrade is not Completed, or a Kustomization other than the pull request's own targets is failing |
@@ -85,6 +85,12 @@ Checks in code decide what a Chore Bore pull request may merge on its own (it mu
 checks and the health gate). Jev, TypeSafe's decision model called through OpenRouter, reads the
 release notes and can only send an eligible pull request to review. Missing information never
 passes.
+
+A major (any update type the policy does not let merge on its own) is always ruled `review`,
+but Jev still reads its release notes, Renovate's and the upstream project's, and answers the
+same questions. The comment presents the answers as advice for your `/jevil merge` decision and
+the reason labels (`jevil:breaking`, `jevil:migration`, ...) still apply. Release age does not
+hold advice back, and notes over `notes.maxBytes` are cut rather than refused.
 
 For Talos and Longhorn upgrades, Jev also answers the `upgradeNotes` questions in the policy
 (machine-config changes before first boot, removed fields, upgrade path, Kubernetes support;

@@ -78,6 +78,21 @@ One merge at a time: the queue waits while a deploy is being checked, oldest req
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
 human decision that ruling asks for). `/jevil cancel` takes a pull request out of the queue.
 
+Scheduling, on the same command (they combine, in any order after `merge`):
+
+- `at 03:00`: wait until the next 03:00 in the merge window's time zone (Europe/London), then
+  merge if every check above passes.
+- `after #570`: wait until #570 is merged and its deploy is live. If #570 is closed unmerged,
+  turns `jevil:merged-unhealthy`, or waits for this pull request in turn, this one leaves the
+  queue with a comment saying why.
+- `--batch`: once one batch entry merges, every other batch entry ready in that poll merges right
+  after it, and their deploys are checked together: one restart window instead of one each.
+  Entries without `--batch` wait for the batch to go live.
+
+`/jevil merge --batch at 03:00` on several pull requests merges all of them at 03:00. The schedule
+is stored in the queue comment, so it survives restarts; `/jevil status` and the dashboard's
+merge queue show it.
+
 The block on manual merges is the `jevil-merges-only` repository ruleset: it restricts updates to
 `main` and only the Jevil Bot App may bypass it. Break-glass when Jevil is down: an admin
 disables the ruleset under Settings → Rules, merges, and enables it again.
@@ -192,6 +207,7 @@ work on any open pull request; `/jevil revert` on a merged one:
 |---|---|
 | `/jevil merge` | Queue it for merge at its current head |
 | `/jevil merge --allow destructive,image` | Same, accepting the blocking findings of those checks (`secret`, `validate`, `lint`, `destructive`, `image`, `health`) |
+| `/jevil merge at 03:00` · `after #570` · `--batch` | Same, scheduled (see [Merging a pull request](#merging-a-pull-request-jevil-merge)) |
 | `/jevil cancel` | Take it out of the queue |
 | `/jevil revert` | On a merged pull request: open a revert pull request and queue it |
 | `/jevil reclassify` | Ask Jev again and rerun the checks even though nothing changed |
@@ -241,6 +257,48 @@ same files since; revert by hand then.
 
 To resume after fixing it: `/jevil merge` or close the revert, then remove `jevil:merged-unhealthy` from the
 original pull request.
+
+## Pull requests Jevil opens
+
+Jevil proposes changes as ordinary pull requests (label `jevil:proposal`). They get the same checks
+and need `/jevil merge`: Jevil never merges its own. Closing one is a "no": that branch is not
+proposed again for 30 days. While one is open, Jevil refreshes it only when its files would change.
+
+**Right-sizing** (`jevil:right-size`, weekly, `rightSizing` in the policy): from Prometheus, each
+container's p95 CPU and p95/max RSS over `lookbackDays` (14), needing `minDays` (5) of data,
+against the requests in the plain manifests under `apps/<app>/` (Helm chart dirs, `exclude`d apps,
+container names not unique in their namespace and workloads a kustomize patch changes are
+skipped). One pull request per app, changing only values that exist:
+
+- CPU request target p95 × 1.25 (rounded up to 10m); proposed at 3× over and 100m more, or 1.5×
+  under and 50m more.
+- Memory request target RSS p95 × 1.2 (rounded up to 16Mi); proposed at 2× over and 128Mi more, or
+  1.25× under and 64Mi more. Memory is sized from RSS, not the working set: the working set
+  includes page cache the kernel reclaims before an OOM kill (sonarr's working set sits at its 2Gi
+  limit with 365Mi RSS).
+- A memory limit is raised only after an OOM kill (to max(max RSS × 1.5, limit × 1.25)) or when max
+  RSS reaches 85% of it (to max RSS × 1.5); it is never lowered. CPU limits are never touched.
+
+Prometheus keeps about five days here (size-capped retention), so proposals start once five days
+of `container_memory_rss` are stored.
+
+**Cleanup** (`jevil:cleanup`, weekly, `cleanup` in the policy), only configuration that points at
+nothing: `renovate.json` `matchFileNames` paths that match no file (a rule goes only when all its
+paths are gone and it has no other matcher); a parked app's entry in a disabled Renovate rule
+once that app is scaled back up; Glance links under `lab.jackhumes.com` that no IngressRoute
+serves. One pull request per kind.
+
+**Weekly report** (issue "Jevil weekly report", `jevil:report`, edited in place): parked apps
+(every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over
+`cleanup.detachedDays` (size, app, whether the PVC still exists), open cleanup pull requests.
+Report only: Jevil never deletes apps, PVCs or volumes.
+
+**One-click fixes**: when the checks find a lint problem Jevil can fix on a line the pull request
+changes, it posts one review per head commit with GitHub suggestions (apply each, or batch them
+under *Files changed*): `metadata.namespace` for a namespaced object without one (the app's
+`Namespace`, else the directory name), a manifest missing from `kustomization.yaml` (when that
+file is in the pull request), and an unpinned or `:latest` image (pinned to the newest stable
+`X.Y.Z` tag its registry lists). Never on Chore Bore pull requests.
 
 ## Operations
 

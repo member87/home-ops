@@ -456,6 +456,211 @@
       "description": "Failed poll cycles plus pull requests Jevil could not rule on, last 24 hours. The log below names the cause."
     },
     {
+      "id": 31,
+      "type": "row",
+      "title": "Merge queue (/jevil merge)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Queued",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 4,
+        "x": 0,
+        "y": 6
+      },
+      "description": "Pull requests waiting for Jevil after /jevil merge: on a pending check, or behind a deploy that is being checked.",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "max(jevil_queue_length) or vector(0)",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 33,
+      "type": "timeseries",
+      "title": "Commands",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 4,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum by (command) (increase(jevil_commands_total[1h]))",
+          "legendFormat": "{{command}}",
+          "interval": "1h"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 34,
+      "type": "timeseries",
+      "title": "Merged and dequeued",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 14,
+        "y": 6
+      },
+      "description": "merged: by /jevil merge (command) or on Jevil's own ruling (renovate). dequeued: a readiness check failed; the pull request comment says which.",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum by (kind) (increase(jevil_merges_total[1h]))",
+          "legendFormat": "merged {{kind}}",
+          "interval": "1h"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum(increase(jevil_dequeues_total[1h]))",
+          "legendFormat": "dequeued",
+          "interval": "1h"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dequeued"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
       "id": 7,
       "type": "row",
       "title": "What it is doing",
@@ -464,7 +669,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 13
       },
       "panels": []
     },
@@ -480,7 +685,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 14
       },
       "targets": [
         {
@@ -535,7 +740,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 14
       },
       "targets": [
         {
@@ -588,7 +793,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 22
       },
       "targets": [
         {
@@ -597,8 +802,8 @@
             "type": "prometheus",
             "uid": "${promDatasource}"
           },
-          "expr": "sum by (scope) (increase(jevil_merges_total[1h]))",
-          "legendFormat": "merged {{scope}}",
+          "expr": "sum by (kind) (increase(jevil_merges_total[1h]))",
+          "legendFormat": "merged {{kind}}",
           "interval": "1h"
         },
         {
@@ -655,7 +860,7 @@
           "sort": "desc"
         }
       },
-      "description": "Pull requests Jevil merged, and the outcome of the deploy check after each merge (ok or unhealthy). Empty while every scope is in shadow mode."
+      "description": "Every merge Jevil made (command or renovate) and the outcome of the deploy check after it (ok or unhealthy)."
     },
     {
       "id": 11,
@@ -669,7 +874,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 22
       },
       "targets": [
         {
@@ -723,7 +928,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "targets": [
         {
@@ -781,7 +986,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 22
+        "y": 30
       },
       "targets": [
         {
@@ -835,7 +1040,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 22
+        "y": 30
       },
       "targets": [
         {
@@ -882,7 +1087,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 37
       },
       "panels": []
     },
@@ -898,7 +1103,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 30
+        "y": 38
       },
       "targets": [
         {
@@ -958,7 +1163,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 30
+        "y": 38
       },
       "targets": [
         {
@@ -1017,7 +1222,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 30
+        "y": 38
       },
       "targets": [
         {
@@ -1077,7 +1282,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 30
+        "y": 38
       },
       "targets": [
         {
@@ -1136,7 +1341,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 30
+        "y": 38
       },
       "targets": [
         {
@@ -1195,7 +1400,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 30
+        "y": 38
       },
       "targets": [
         {
@@ -1255,7 +1460,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 34
+        "y": 42
       },
       "targets": [
         {
@@ -1310,7 +1515,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 42
       },
       "targets": [
         {
@@ -1378,7 +1583,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 49
       },
       "panels": []
     },
@@ -1394,7 +1599,7 @@
         "h": 5,
         "w": 5,
         "x": 0,
-        "y": 42
+        "y": 50
       },
       "targets": [
         {
@@ -1457,7 +1662,7 @@
         "h": 5,
         "w": 5,
         "x": 5,
-        "y": 42
+        "y": 50
       },
       "targets": [
         {
@@ -1525,7 +1730,7 @@
         "h": 5,
         "w": 14,
         "x": 10,
-        "y": 42
+        "y": 50
       },
       "targets": [
         {
@@ -1583,7 +1788,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 55
       },
       "targets": [
         {
@@ -1661,7 +1866,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 63
       },
       "panels": []
     },
@@ -1677,7 +1882,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 56
+        "y": 64
       },
       "targets": [
         {
@@ -1686,7 +1891,7 @@
             "type": "loki",
             "uid": "${lokiDatasource}"
           },
-          "expr": "{namespace=\"jevil\"} | json | msg=~\"ruled|labels synced|jev answered|merged|merge skipped|merge failed|deploy ok|deploy unhealthy|command|cycle failed|ruling failed|starting|stopping\""
+          "expr": "{namespace=\"jevil\"} | json | msg=~\"ruled|command|dequeued|queue waiting|labels synced|jev answered|merged|merge skipped|merge failed|deploy ok|deploy unhealthy|command|cycle failed|ruling failed|starting|stopping\""
         }
       ],
       "fieldConfig": {

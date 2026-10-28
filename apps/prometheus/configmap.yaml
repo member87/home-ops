@@ -122,6 +122,7 @@ data:
               immich_jobs_.+_(success|failed|skipped)_total|\
               immich_queues_.+_active|\
               immich_users_total|\
+              jevil_.+|\
               kube_configmap_info|\
               kube_cronjob_created|\
               kube_cronjob_status_last_successful_time|\

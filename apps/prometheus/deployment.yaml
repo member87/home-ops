@@ -36,6 +36,10 @@ spec:
             - '--config.auto-reload'
             # Receives the edge-local Prometheus agent through the private FRP tunnel.
             - '--web.enable-remote-write-receiver'
+            # 30 days of history (right-sizing reads 14). With the keep-list the blocks grow
+            # ~0.25 GB a day, so 30 days is ~8 GB; the size cap stays as a backstop against
+            # an exporter flooding the 20Gi volume.
+            - '--storage.tsdb.retention.time=30d'
             - '--storage.tsdb.retention.size=14GB'
           ports:
             - containerPort: 9090

@@ -99,6 +99,10 @@ docker you will need to update the container image"), and Jev, seeing one releas
 as a step for this upgrade. The comment's notes line says how many were left out; the posted
 changelog stays verbatim.
 
+An update whose upstream target exists on GitHub only as prereleases (no stable release of that
+version) is not eligible to merge on its own and gets `jevil:prerelease`: home-operations images
+can track an application's develop channel, so a minor bump there can still be a test build.
+
 `jevil:security` comes from a `labelOnly` question: Jev thinks the release fixes a security
 vulnerability (≥ 0.5). It never sends an update to review; a ready one carrying it merges ahead of
 other Renovate updates, and the dashboard's open pull request table shows it under flags.
@@ -191,6 +195,8 @@ work on any open pull request; `/jevil revert` on a merged one:
 | `/jevil cancel` | Take it out of the queue |
 | `/jevil revert` | On a merged pull request: open a revert pull request and queue it |
 | `/jevil reclassify` | Ask Jev again and rerun the checks even though nothing changed |
+| `/jevil status` | Reply with the ruling and its reasons, the checks, the queue position and what it waits for, the health gate for this pull request's targets and what it deploys; on a merged one, whether the deploy is live |
+| `/jevil explain` | On a Chore Bore pull request: re-ask Jev with each part of the release notes left out (paragraphs, then down to one line inside the strongest) and reply with what drives each flagged answer. At most 40 Jev calls a pass, about $0.005 in all |
 | `/jevil hold` | Add `jevil:hold` (and dequeue): never merge this pull request |
 | `/jevil unhold` | Remove `jevil:hold` |
 

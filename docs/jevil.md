@@ -6,6 +6,22 @@ rules on every Chore Bore (Renovate) pull request, labels it, and on its own mer
 policy passes, one at a time, checking each deploy before the next. It acts on GitHub as
 `jevil-bot[bot]`. Source: `github.com/member87/jevil` (private), image `ghcr.io/member87/jevil:<sha>`.
 
+## What a pull request changes
+
+Every open pull request, from anyone, gets one Jevil comment **"what this changes"**, kept up to
+date as commits land. Each changed file is mapped onto what deploys it:
+
+| Target | When a file belongs to it | Deploys on merge |
+|---|---|---|
+| Flux Kustomization | under its `spec.path`; the most specific path wins (`infrastructure/metallb/config` over `infrastructure/metallb`) | yes |
+| HelmRelease (Git chart) | under its chart directory (`apps/immich`, `charts/cert-manager`, ...) | only when `Chart.yaml` `version` changes; otherwise the comment says it deploys nothing |
+| Terrakube workspace | under `terraform/<workspace>` | yes, Terrakube applies on merge |
+| New app | under a new `apps/<app>` or `infrastructure/<x>` when the same pull request touches `flux/cluster` | yes, once Flux creates its Kustomization |
+| Nothing | anything else (docs, scripts, `AGENTS.md`) | no |
+
+The comment lists each target with the files under it and counts what will deploy. The merge
+comment, the deploy check and the "now live" comment use the same targets.
+
 ## Merging a pull request: `/jevil merge`
 
 Like the Aviator merge queue:
@@ -17,8 +33,7 @@ Like the Aviator merge queue:
    commit status, and the required statuses (`Terrakube - homeops - aws-edge`, `- grafana`, plus
    the workspace of any changed `terraform/<workspace>`) reported success. Pending checks keep it
    queued; anything failing takes it out of the queue with a comment saying why.
-3. Jevil squash-merges it and comments with the merge commit and what deploys it: every Flux
-   Kustomization whose path contains a changed file, and every touched Terrakube workspace.
+3. Jevil squash-merges it and comments with the merge commit and the targets that deploy it.
 4. When all of those have applied the merge (see [After a merge](#after-a-merge)), it comments
    that the change is live. A pull request nothing deploys (docs, scripts) is done at the merge.
 
@@ -124,8 +139,10 @@ Jevil adds `jevil:verifying` before merging (so a restart cannot lose the check)
 pull request with the merge commit and what it is waiting for, and merges nothing else until the
 deploy settles:
 
-- Flux: every Kustomization whose path contains a changed file has applied the merge commit (or a
-  later one) and is Ready. Ready False is unhealthy immediately.
+- Flux: every Kustomization a changed file belongs to has applied the merge commit (or a later
+  one) and is Ready. Ready False is unhealthy immediately. A new app waits until Flux has created
+  its Kustomization.
+- HelmRelease: a chart whose `Chart.yaml` version was bumped is Ready on that chart version.
 - Terraform: each touched workspace's Terrakube status on the merge commit is success.
 - Nothing within 30 minutes is unhealthy.
 

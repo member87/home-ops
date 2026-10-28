@@ -5,27 +5,31 @@ metadata:
   name: jevil
   namespace: jevil
 ---
-# Read-only: Jevil checks a Kustomization is Ready before merging into it and Ready on the
-# merge commit afterwards. It never writes to the cluster; Flux deploys what it merges.
+# Read-only: Jevil maps changed files onto the Kustomizations and Git-sourced HelmReleases that
+# deploy them, and checks they are Ready on the merge commit afterwards. It never writes to the
+# cluster; Flux deploys what it merges.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: jevil-read-kustomizations
+  name: jevil-read-flux
   namespace: flux-system
 rules:
   - apiGroups: ["kustomize.toolkit.fluxcd.io"]
     resources: ["kustomizations"]
     verbs: ["get", "list"]
+  - apiGroups: ["helm.toolkit.fluxcd.io"]
+    resources: ["helmreleases"]
+    verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: jevil-read-kustomizations
+  name: jevil-read-flux
   namespace: flux-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: jevil-read-kustomizations
+  name: jevil-read-flux
 subjects:
   - kind: ServiceAccount
     name: jevil

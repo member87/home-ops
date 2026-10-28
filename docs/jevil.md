@@ -119,8 +119,8 @@ GITHUB_TOKEN=$(gh auth token) OPENROUTER_API_KEY=... KUBE_API_URL=http://127.0.0
 Secrets in `jevil-secrets`: `openrouter-api-key`, `app-id`, `private-key.pem` (the Jevil Bot
 GitHub App: Contents, Pull requests, Issues and Commit statuses write; Metadata read; webhook off).
 A leaked App key can merge to `main`; revoke it under the App's settings. The image pull secret
-`jevil-ghcr-pull` is the same credential as `tailscale-exit-node-manager-ghcr-pull`, resealed for
-this namespace.
+`jevil-ghcr-pull` holds a classic token with only `read:packages`, shared with
+`tailscale-exit-node-manager-ghcr-pull`.
 
 Releasing Jevil: a push to `main` of `member87/jevil` builds `ghcr.io/member87/jevil:<sha>`; pin it
 in `apps/jevil/deployment.yaml`.

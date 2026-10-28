@@ -40,6 +40,7 @@ same comment. ❌ findings block `/jevil merge`; ⚠️ findings are for you to 
 | `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization | |
 | `image` | a new image tag or digest the registry does not have | a registry that could not be asked |
 | `health` (at merge time) | | waits while a node is NotReady, an attached Longhorn volume is not healthy, a TalosUpgrade/KubernetesUpgrade is not Completed, or a Kustomization other than the pull request's own targets is failing |
+| `manual` | | a pull request touching `manualSteps.paths` (`infrastructure/`, `talos/`, `flux/`, the edge) that Jev, reading `AGENTS.md` and the diff, thinks needs a step by hand or a change elsewhere (≥ 0.5). Never asked when the secret check found anything, so a possible secret never leaves the cluster |
 
 Only the changed objects are linted and validated, so an old problem elsewhere does not block an
 unrelated pull request. Jev never sees a candidate secret's value: only the file, the key and the
@@ -92,6 +93,22 @@ same questions. The comment presents the answers as advice for your `/jevil merg
 the reason labels (`jevil:breaking`, `jevil:migration`, ...) still apply. Release age does not
 hold advice back, and notes over `notes.maxBytes` are cut rather than refused.
 
+Before Jev reads the notes, paragraphs that also appear verbatim in the release the deployment
+runs now are left out: projects repeat boilerplate in every release (Radarr's "If you are using
+docker you will need to update the container image"), and Jev, seeing one release, would read it
+as a step for this upgrade. The comment's notes line says how many were left out; the posted
+changelog stays verbatim.
+
+`jevil:security` comes from a `labelOnly` question: Jev thinks the release fixes a security
+vulnerability (≥ 0.5). It never sends an update to review; a ready one carrying it merges ahead of
+other Renovate updates, and the dashboard's open pull request table shows it under flags.
+
+Upstream issues: for every upstream project an update resolves to, Jevil searches the issues
+opened there since the target version's release (the newest `upstreamIssues.maxIssues`, again
+every `refreshMinutes`) and asks Jev whether any reports a regression in that version. A yes
+(≥ 0.5) adds `jevil:regression` and sends the update to review; that is what the release-age
+wait is for. A failed search makes the ruling wait. The comment lists the newest issues.
+
 For Talos and Longhorn upgrades, Jev also answers the `upgradeNotes` questions in the policy
 (machine-config changes before first boot, removed fields, upgrade path, Kubernetes support;
 Longhorn manual steps, resources, upgrade path, removed settings) over up to
@@ -139,6 +156,7 @@ All of these, checked in code:
   Releases fetched that way must be at least 72 hours old.
 - Jev answers each policy question inside its threshold: no breaking change, no manual upgrade
   step, no stored-data change, no text addressed to a bot, and a drop-in replacement.
+- Jev finds no regression report among the issues opened upstream since the release.
 
 Rulings are `pass`, `review` (a human decides) or `wait` (a status, release age or reconcile is
 still pending; Jevil looks again next poll).

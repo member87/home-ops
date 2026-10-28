@@ -164,21 +164,20 @@ work on any open pull request; `/jevil revert` on a merged one:
 | `/jevil hold` | Add `jevil:hold` (and dequeue): never merge this pull request |
 | `/jevil unhold` | Remove `jevil:hold` |
 
-## Shadow mode and turning merging on
+## Merge mode
 
-`modes` in `apps/jevil/policy.json` is `shadow` or `merge` per scope. In shadow mode Jevil labels
-and comments but you `/jevil merge`. Both scopes start in shadow.
+`modes` in `apps/jevil/policy.json` is `shadow` or `merge` per scope. Both scopes are in `merge`:
+a Chore Bore pull request Jevil rules `pass` (every check in [What passes](#what-passes), the
+pre-merge checks and the health gate) merges on its own, between 08:00 and 22:00 London, one at
+a time, after any `/jevil merge` requests. Anything else still waits for `/jevil merge`; a major
+update always goes to review. In `shadow` Jevil labels and comments only.
 
-Switch a scope to `merge` once all of these hold:
-
-- At least 4 weeks and 40 ruled pull requests in shadow, whichever is later.
-- At least 95% agreement with what you did by hand.
-- Not one pull request Jevil passed that you then closed unmerged or reverted. One resets the clock.
-- `apps` first; `terraform` after 2 more weeks without a `jevil:merged-unhealthy`.
-
-The counts are in Prometheus: `jevil_shadow_outcomes{ruling="pass|review",outcome="merged|closed"}`.
-`pass`/`closed` is the number that must stay 0. Tune the thresholds and wording in `policy.json`
-when a ruling is wrong; every policy change re-asks Jev on open pull requests.
+They were switched on 2026-10-28 by decision, before the shadow criteria this section used to
+set (4 weeks, 40 rulings, 95% agreement). Go back to `shadow` for a scope as soon as Jevil passes
+something you would have closed: that is `jevil_shadow_outcomes{ruling="pass",outcome="closed"}`
+(the **Passed but you closed it** panel) and any `jevil:merged-unhealthy`. Tune the thresholds and
+wording in `policy.json` when a ruling is wrong; every policy change re-asks Jev on open pull
+requests.
 
 ## After a merge
 
@@ -210,10 +209,22 @@ original pull request.
 ## Operations
 
 Grafana dashboard **Jevil** (Infrastructure folder, `terraform/grafana/dashboards/infrastructure/jevil.json`):
-last poll and halt state, mode per scope, open pull requests by ruling, rulings/labels/merges/deploy
-checks over time, Jev cost (24h, 30d, projected month, per call, cache hit rate), the shadow
-evidence for switching to merge mode, Jev's current answers per open pull request, and the
-activity log. Merges and unhealthy deploys show as annotations.
+
+- **Status**: last poll, halt state, mode per scope, open pull requests by ruling, errors.
+- **Now**, rebuilt every poll: the merge queue in merge order with each entry's status and what it
+  waits for; merged pull requests whose deploy Jevil is still watching (Flux, Terrakube, tuppr
+  upgrades, with the current phase); the cluster health gate's problems; and every open pull
+  request with author, ruling, checks summary and queue state. PR numbers link to GitHub.
+- **History** (Loki): merges with commit, reason and targets, then when each went live or turned
+  unhealthy; every comment Jevil posted or edited (kind and first line); every check run; one
+  line per poll (duration, what it saw, what it merged, the error); comments per hour by kind.
+- Rulings, labels, merges and deploy checks over time; Jev cost (24h, 30d, projected month, per
+  call, cache hit rate); ruling accuracy; Jev's answers per open pull request; the raw activity
+  log. Merges and unhealthy deploys show as annotations.
+
+The live tables come from `jevil_queue_entry`, `jevil_watching`, `jevil_health_problem` and
+`jevil_open_pull_request` (one series per row); the history from the `merged`, `deploy ok`,
+`deploy unhealthy`, `dequeued`, `comment`, `report` and `cycle` log events.
 
 ```bash
 kubectl -n jevil logs deploy/jevil                  # JSON log: rulings, merges, deploy checks

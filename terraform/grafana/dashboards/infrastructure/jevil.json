@@ -456,6 +456,761 @@
       "description": "Failed poll cycles plus pull requests Jevil could not rule on, last 24 hours. The log below names the cause."
     },
     {
+      "id": 40,
+      "type": "row",
+      "title": "Now",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "id": 41,
+      "type": "table",
+      "title": "Merge queue",
+      "description": "Pull requests queued with /jevil merge, in merge order, and what each is waiting for. Rebuilt every poll.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "max by (position, pr, title, by, status, reason, allow) (jevil_queue_entry) * 1000",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Queue empty",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pr"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PR"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open #${__value.raw} on GitHub",
+                    "url": "https://github.com/member87/home-ops/pull/${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queued"
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "position"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 40
+              },
+              {
+                "id": "displayName",
+                "value": "#"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "by"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "displayName",
+                "value": "Queued by"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "allow"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              },
+              {
+                "id": "displayName",
+                "value": "Accepting"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "title"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 320
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "#",
+            "desc": false
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "position": 0,
+              "pr": 1,
+              "title": 2,
+              "by": 3,
+              "Value": 4,
+              "status": 5,
+              "reason": 6,
+              "allow": 7
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "type": "table",
+      "title": "Watching after merge",
+      "description": "Merged pull requests whose deploy Jevil is still checking (Flux, HelmRelease, Terrakube, tuppr upgrades). Nothing else merges until these settle.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "max by (pr, title, targets, detail) (jevil_watching) * 1000",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Nothing merged is waiting to go live",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pr"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PR"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open #${__value.raw} on GitHub",
+                    "url": "https://github.com/member87/home-ops/pull/${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Merged"
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "title"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 320
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "targets"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 260
+              },
+              {
+                "id": "displayName",
+                "value": "Waiting for"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "detail"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Now"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "pr": 0,
+              "title": 1,
+              "Value": 2,
+              "targets": 3,
+              "detail": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "type": "table",
+      "title": "Cluster health gate",
+      "description": "What holds every merge right now: nodes NotReady, unhealthy attached Longhorn volumes, tuppr upgrades not Completed, failing Kustomizations. A pull request touching the failing thing itself is exempt.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "max by (problem) (jevil_health_problem)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Healthy: nothing holds merges",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true
+            },
+            "indexByName": {
+              "problem": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "type": "table",
+      "title": "Open pull requests",
+      "description": "Every open pull request: author, Jevil's ruling (Chore Bore pull requests only), the jevil/checks summary and queue state.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 16,
+        "x": 8,
+        "y": 17
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "max by (pr, title, author, ruling, checks, state) (jevil_open_pull_request)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No open pull requests",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pr"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PR"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open #${__value.raw} on GitHub",
+                    "url": "https://github.com/member87/home-ops/pull/${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "title"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 300
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "author"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruling"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "PR",
+            "desc": true
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true
+            },
+            "indexByName": {
+              "pr": 0,
+              "title": 1,
+              "author": 2,
+              "ruling": 3,
+              "checks": 4,
+              "state": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "type": "row",
+      "title": "History",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "panels": []
+    },
+    {
+      "id": 51,
+      "type": "logs",
+      "title": "Merges and deploys",
+      "description": "Every merge (which PR, merge commit, why, what deploys it), when it went live or turned unhealthy, and queue drops.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "expr": "{namespace=\"jevil\"} | json | msg=~\"merged|deploy ok|deploy unhealthy|merge failed|dequeued\" | line_format `{{ if eq .msg \"merged\" }}🃏 #{{.pr}} merged as {{ trunc 7 .sha }}: {{.title}} — {{.why}}. Deploys: {{.targets}}{{ else if eq .msg \"deploy ok\" }}✅ #{{.pr}} live: {{.detail}}{{ else if eq .msg \"deploy unhealthy\" }}❌ #{{.pr}} unhealthy: {{.detail}}{{ else if eq .msg \"dequeued\" }}↩️ #{{.pr}} dequeued: {{.reason}}{{ else }}⚠️ #{{.pr}} merge failed: {{.err}}{{ end }}`"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 52,
+      "type": "logs",
+      "title": "Replies",
+      "description": "Every comment Jevil posted or edited: the pull request, the kind (ruling, report, reply, queued, waiting, dequeued, merged, live, unhealthy, progress) and its first line.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "expr": "{namespace=\"jevil\"} | json | msg=\"comment\" | line_format `#{{.pr}} {{.kind}} ({{.action}}): {{.summary}}`"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 53,
+      "type": "logs",
+      "title": "Check runs",
+      "description": "Each time the pre-merge checks ran on a pull request head: findings, blocking findings and the targets it deploys.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 34
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "expr": "{namespace=\"jevil\"} | json | msg=\"report\" | line_format `#{{.pr}}: {{.findings}} findings, {{.blocking}} blocking{{ if .error }}, could not run: {{.error}}{{ end }} — deploys {{.targets}}`"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 54,
+      "type": "logs",
+      "title": "Poll runs",
+      "description": "One line per poll: how long it took and what it saw.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${lokiDatasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 34
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "expr": "{namespace=\"jevil\"} | json | msg=~\"cycle|cycle failed\" | line_format `{{ if .err }}❌ {{.err}}{{ else }}{{.duration_s}}s · {{.open}} open · {{.ruled}} ruled · {{.queued}} queued · {{.watching}} watching · {{.health_problems}} health problems{{ if .merged }} · merged #{{.merged}}{{ end }}{{ end }}`"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false
+      }
+    },
+    {
+      "id": 55,
+      "type": "timeseries",
+      "title": "Comments per hour",
+      "description": "Comments Jevil posted (solid) and edited in place, by kind.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum by (kind, action) (increase(jevil_comments_total[1h]))",
+          "legendFormat": "{{kind}} {{action}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "normal"
+            },
+            "fillOpacity": 60
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
       "id": 31,
       "type": "row",
       "title": "Merge queue (/jevil merge)",
@@ -464,7 +1219,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 48
       },
       "panels": []
     },
@@ -480,7 +1235,7 @@
         "h": 7,
         "w": 4,
         "x": 0,
-        "y": 6
+        "y": 49
       },
       "description": "Pull requests waiting for Jevil after /jevil merge: on a pending check, or behind a deploy that is being checked.",
       "targets": [
@@ -539,7 +1294,7 @@
         "h": 7,
         "w": 10,
         "x": 4,
-        "y": 6
+        "y": 49
       },
       "targets": [
         {
@@ -592,7 +1347,7 @@
         "h": 7,
         "w": 10,
         "x": 14,
-        "y": 6
+        "y": 49
       },
       "description": "merged: by /jevil merge (command) or on Jevil's own ruling (renovate). dequeued: a readiness check failed; the pull request comment says which.",
       "targets": [
@@ -669,7 +1424,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 56
       },
       "panels": []
     },
@@ -685,7 +1440,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 57
       },
       "targets": [
         {
@@ -740,7 +1495,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 57
       },
       "targets": [
         {
@@ -793,7 +1548,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 65
       },
       "targets": [
         {
@@ -874,7 +1629,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 65
       },
       "targets": [
         {
@@ -928,7 +1683,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 30
+        "y": 73
       },
       "targets": [
         {
@@ -986,7 +1741,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 30
+        "y": 73
       },
       "targets": [
         {
@@ -1040,7 +1795,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 30
+        "y": 73
       },
       "targets": [
         {
@@ -1087,7 +1842,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 80
       },
       "panels": []
     },
@@ -1103,7 +1858,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 38
+        "y": 81
       },
       "targets": [
         {
@@ -1163,7 +1918,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 38
+        "y": 81
       },
       "targets": [
         {
@@ -1222,7 +1977,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 38
+        "y": 81
       },
       "targets": [
         {
@@ -1282,7 +2037,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 38
+        "y": 81
       },
       "targets": [
         {
@@ -1342,7 +2097,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 38
+        "y": 81
       },
       "targets": [
         {
@@ -1401,7 +2156,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 38
+        "y": 81
       },
       "targets": [
         {
@@ -1462,7 +2217,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 42
+        "y": 85
       },
       "targets": [
         {
@@ -1517,7 +2272,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 85
       },
       "targets": [
         {
@@ -1579,13 +2334,13 @@
     {
       "id": 24,
       "type": "row",
-      "title": "Shadow evidence",
+      "title": "Ruling accuracy",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 92
       },
       "panels": []
     },
@@ -1601,7 +2356,7 @@
         "h": 5,
         "w": 5,
         "x": 0,
-        "y": 50
+        "y": 93
       },
       "targets": [
         {
@@ -1664,7 +2419,7 @@
         "h": 5,
         "w": 5,
         "x": 5,
-        "y": 50
+        "y": 93
       },
       "targets": [
         {
@@ -1733,7 +2488,7 @@
         "h": 5,
         "w": 14,
         "x": 10,
-        "y": 50
+        "y": 93
       },
       "targets": [
         {
@@ -1791,7 +2546,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 98
       },
       "targets": [
         {
@@ -1864,13 +2619,13 @@
     {
       "id": 29,
       "type": "row",
-      "title": "Activity log",
+      "title": "Raw activity log",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 63
+        "y": 106
       },
       "panels": []
     },
@@ -1886,7 +2641,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 64
+        "y": 107
       },
       "targets": [
         {

@@ -5,8 +5,8 @@
   "commanders": ["member87"],
   "pollSeconds": 60,
   "modes": {
-    "app": "shadow",
-    "terraform": "shadow"
+    "app": "merge",
+    "terraform": "merge"
   },
   "mergeWindow": { "timeZone": "Europe/London", "startHour": 8, "endHour": 22 },
   "mergeMethod": "squash",

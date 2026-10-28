@@ -39,7 +39,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: jevil
-          image: ghcr.io/member87/jevil:f6b14ca508e5bb48ee4824f2d44032c5f0695449
+          image: ghcr.io/member87/jevil:845d4ad038a0995835d3fc4009092c65458e92d6
           imagePullPolicy: IfNotPresent
           args:
             - -policy=/etc/jevil/config/policy.json
@@ -58,12 +58,13 @@ spec:
               path: /healthz
               port: http
             periodSeconds: 10
+          # Checks keep a few repository snapshots in memory and render them with kustomize.
           resources:
             requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
+              cpu: 20m
               memory: 128Mi
+            limits:
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -76,6 +77,13 @@ spec:
             - name: secret
               mountPath: /etc/jevil/secret
               readOnly: true
+            # Pull credentials, so the image check can see the private ghcr.io/member87 images.
+            - name: registry
+              mountPath: /etc/jevil/registry
+              readOnly: true
+            # kubeconform's schema cache; the root filesystem is read-only.
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: config
           configMap:
@@ -84,3 +92,10 @@ spec:
           secret:
             secretName: jevil-secrets
             defaultMode: 0440
+        - name: registry
+          secret:
+            secretName: jevil-ghcr-pull
+            defaultMode: 0440
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

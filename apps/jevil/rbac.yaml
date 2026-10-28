@@ -34,3 +34,54 @@ subjects:
   - kind: ServiceAccount
     name: jevil
     namespace: jevil
+---
+# Cluster health for the merge gate and tuppr progress: nodes, Longhorn volumes, and tuppr's
+# upgrade requests. Read-only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jevil-read-health
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  - apiGroups: ["tuppr.home-operations.com"]
+    resources: ["talosupgrades", "kubernetesupgrades"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jevil-read-health
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jevil-read-health
+subjects:
+  - kind: ServiceAccount
+    name: jevil
+    namespace: jevil
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jevil-read-volumes
+  namespace: longhorn-system
+rules:
+  - apiGroups: ["longhorn.io"]
+    resources: ["volumes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jevil-read-volumes
+  namespace: longhorn-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jevil-read-volumes
+subjects:
+  - kind: ServiceAccount
+    name: jevil
+    namespace: jevil

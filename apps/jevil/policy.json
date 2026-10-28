@@ -37,6 +37,18 @@
     },
     "talosPatches": "talos/patches"
   },
+  "rightSizing": {
+    "prometheusUrl": "http://prometheus.prometheus.svc.cluster.local:9090",
+    "everyHours": 168,
+    "lookbackDays": 14,
+    "minDays": 5,
+    "exclude": []
+  },
+  "cleanup": {
+    "renovate": "renovate.json",
+    "internalDomain": "lab.jackhumes.com",
+    "detachedDays": 7
+  },
   "tuppr": {
     "talosUpgrade": "cluster",
     "kubernetesUpgrade": "kubernetes",

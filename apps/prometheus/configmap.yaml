@@ -51,6 +51,7 @@ data:
               container_cpu_usage_seconds_total|\
               container_fs_reads_bytes_total|\
               container_fs_writes_bytes_total|\
+              container_memory_rss|\
               container_memory_working_set_bytes|\
               container_network_receive_bytes_total|\
               container_network_receive_errors_total|\

@@ -102,6 +102,12 @@ original pull request.
 
 ## Operations
 
+Grafana dashboard **Jevil** (Infrastructure folder, `terraform/grafana/dashboards/infrastructure/jevil.json`):
+last poll and halt state, mode per scope, open pull requests by ruling, rulings/labels/merges/deploy
+checks over time, Jev cost (24h, 30d, projected month, per call, cache hit rate), the shadow
+evidence for switching to merge mode, Jev's current answers per open pull request, and the
+activity log. Merges and unhealthy deploys show as annotations.
+
 ```bash
 kubectl -n jevil logs deploy/jevil                  # JSON log: rulings, merges, deploy checks
 kubectl -n jevil port-forward deploy/jevil 8080     # curl localhost:8080/metrics

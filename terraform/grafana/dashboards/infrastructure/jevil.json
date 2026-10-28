@@ -1291,7 +1291,7 @@
             "type": "prometheus",
             "uid": "${promDatasource}"
           },
-          "expr": "sum(increase(jevil_jev_cost_usd_total[7d])) / sum(increase(jevil_jev_requests_total{result=\"ok\"}[7d]))",
+          "expr": "sum(increase(jevil_jev_cost_usd_total[7d])) / (sum(increase(jevil_jev_requests_total{result=\"ok\"}[7d])) > 0)",
           "instant": true,
           "range": false
         }
@@ -1311,7 +1311,8 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "no Jev calls yet"
         },
         "overrides": []
       },
@@ -1409,7 +1410,7 @@
             "type": "prometheus",
             "uid": "${promDatasource}"
           },
-          "expr": "sum(increase(jevil_jev_lookups_total{cached=\"true\"}[7d])) / sum(increase(jevil_jev_lookups_total[7d]))",
+          "expr": "sum(increase(jevil_jev_lookups_total{cached=\"true\"}[7d])) / (sum(increase(jevil_jev_lookups_total[7d])) > 0)",
           "instant": true,
           "range": false
         }
@@ -1429,7 +1430,8 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "no Jev lookups yet"
         },
         "overrides": []
       },
@@ -1671,7 +1673,7 @@
             "type": "prometheus",
             "uid": "${promDatasource}"
           },
-          "expr": "(max(jevil_shadow_outcomes{ruling=\"pass\",outcome=\"merged\"}) + max(jevil_shadow_outcomes{ruling=\"review\",outcome=\"closed\"})) / sum(jevil_shadow_outcomes)",
+          "expr": "(max(jevil_shadow_outcomes{ruling=\"pass\",outcome=\"merged\"}) + max(jevil_shadow_outcomes{ruling=\"review\",outcome=\"closed\"})) / (sum(jevil_shadow_outcomes) > 0)",
           "instant": true,
           "range": false
         }
@@ -1699,7 +1701,8 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "no closed ruled PRs yet"
         },
         "overrides": []
       },
@@ -1711,7 +1714,7 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "textMode": "auto",
         "justifyMode": "auto"
@@ -1823,7 +1826,8 @@
               "type": "color-text"
             },
             "align": "center"
-          }
+          },
+          "noValue": "No open pull request has Jev answers (none with release notes to judge)"
         },
         "overrides": []
       },

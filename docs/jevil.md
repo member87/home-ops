@@ -35,7 +35,7 @@ same comment. ❌ findings block `/jevil merge`; ⚠️ findings are for you to 
 | Check | Blocks on | Warns on |
 |---|---|---|
 | `secret` | a known token format on an added line (GitHub, OpenRouter/OpenAI/Anthropic, AWS, private keys, Slack, Discord webhooks, Tailscale, age, `user:pass@` URLs); a long random value whose key Jev judges a credential (≥ 0.7) | Jev 0.3-0.7; diffs too large to scan |
-| `validate` | a target that does not build; `flux/cluster` not building or pointing at a missing directory; a changed object failing its schema (kubeconform, Kubernetes and CRD catalog schemas) | schemas that could not be fetched |
+| `validate` | a target that does not build; `flux/cluster` not building or pointing at a missing directory; a changed object failing its schema (kubeconform: this cluster's own CRD schemas first, refreshed hourly, then Kubernetes schemas, then the community CRD catalog for kinds the cluster does not have) | schemas that could not be fetched |
 | `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops |
 | `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization | |
 | `image` | a new image tag or digest the registry does not have | a registry that could not be asked |
@@ -49,7 +49,8 @@ on a line to silence the secret check for it.
 After reviewing a finding, accept it for one merge with `--allow`:
 `/jevil merge --allow destructive,image`. `--allow health` merges while the cluster is unhealthy.
 A pull request touching a failing Kustomization or the tuppr manifests is exempt from those health
-items, so a fix can always merge.
+items, and so is a Kustomization failing only because it depends on one of the pull request's
+targets (`dependency '...' is not ready`), so a fix can always merge.
 
 ## Merging a pull request: `/jevil merge`
 
@@ -148,8 +149,10 @@ still pending; Jevil looks again next poll).
   answered, and the policy hash. It also caches Jev's answers, so an unchanged pull request is not
   asked again.
 
-Commands, from logins in `commanders`, acknowledged with a 👍 reaction (anyone else gets a 😕 and a
-refusal). They work on any open pull request; `/jevil revert` on a merged one:
+Commands are accepted from the logins in `commanders` only; the policy sets that to `member87`
+alone, and Jevil refuses to start with an empty list. Anyone else gets a 😕 and a refusal. Jevil
+reads the first line of a comment as the command, so a note can follow on the next lines. They
+work on any open pull request; `/jevil revert` on a merged one:
 
 | Comment | Effect |
 |---|---|

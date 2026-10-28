@@ -84,15 +84,17 @@ when a ruling is wrong; every policy change re-asks Jev on open pull requests.
 
 ## After a merge
 
-Jevil adds `jevil:verifying` before merging (so a restart cannot lose the check) and merges
-nothing else until the deploy settles:
+Jevil adds `jevil:verifying` before merging (so a restart cannot lose the check), comments on the
+pull request with the merge commit and what it is waiting for, and merges nothing else until the
+deploy settles:
 
 - Apps: the Kustomization has applied the merge commit (or a later one) and is Ready. Ready False
   is unhealthy immediately.
 - Terraform: the workspace's Terrakube status on the merge commit is success.
 - Nothing within 30 minutes is unhealthy.
 
-Healthy: `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
+Healthy: a second comment saying the change is live (which Kustomization applied which commit, or
+the Terrakube apply) and `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
 **Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert` and
 `jevil:hold`. Jevil never merges its own reverts. It skips the revert when `main` has changed the
 same files since; revert by hand then.

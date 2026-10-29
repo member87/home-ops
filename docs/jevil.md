@@ -124,9 +124,16 @@ other Renovate updates, and the dashboard's open pull request table shows it und
 
 Upstream issues: for every upstream project an update resolves to, Jevil searches the issues
 opened there since the target version's release (the newest `upstreamIssues.maxIssues`, again
-every `refreshMinutes`) and asks Jev whether any reports a regression in that version. A yes
-(≥ 0.5) adds `jevil:regression` and sends the update to review; that is what the release-age
-wait is for. A failed search makes the ruling wait. The comment lists the newest issues.
+every `refreshMinutes`) and asks Jev about each one: did something that worked in the previous
+version break in this one? Any single issue at ≥ 0.7 adds `jevil:regression` and sends the
+update to review, naming the issue; that is what the release-age wait is for. Asking about all
+issues at once made every bug report that names the version look like a regression (issue
+templates ask for it). Jev is paid per call, so issues that cannot be a regression report
+(feature, question, docs or translation labels; closed as not planned or duplicate) are skipped
+unasked, only the `askPerUpstream` (10) most engaged are read, each issue is asked once (cached
+by its title and body, also in the pull request comment, so restarts and polls cost nothing), and
+`maxCallsPerDay` (200, about $0.04) caps the total. The comment says how many were read, skipped
+and left unread. A failed search makes the ruling wait.
 
 For Talos and Longhorn upgrades, Jev also answers the `upgradeNotes` questions in the policy
 (machine-config changes before first boot, removed fields, upgrade path, Kubernetes support;
@@ -161,7 +168,8 @@ flowchart LR
 All of these, checked in code:
 
 - The author and every commit are `chore-bore[bot]`, from a branch in this repository, into `main`.
-- Every file is under one `apps/<app>` (plain manifests, not a Helm chart dir) or one
+- Every file is under one `apps/<app>` (plain manifests, or a Helm wrapper chart listed in
+  `eligibleCharts` with only `Chart.yaml` changed and its version bumped) or one
   `terraform/<workspace>` listed in the policy. Mixed scopes go to review.
 - Every changed line is the same line with one version token swapped. Lockfile hash lines may
   come and go. Anything else (a new env var, an image repository change) goes to review.
@@ -170,11 +178,13 @@ All of these, checked in code:
   `Terrakube - homeops - grafana`, `renovate/stability-days`, and for Terraform the workspace's own
   context.
 - Terraform: the workspace's plan summary is `0 to add, 0 to change, 0 to destroy`.
-- Apps: the app's Flux Kustomization exists, has `wait: true` and is Ready.
+- Apps: the app's Flux Kustomization exists, has `wait: true` and is Ready; for an eligible chart,
+  its HelmRelease is Ready.
 - Release notes exist: Renovate's, or else the upstream GitHub releases between the two versions.
   Releases fetched that way must be at least 72 hours old.
 - Jev answers each policy question inside its threshold: no breaking change, no manual upgrade
-  step, no stored-data change, no text addressed to a bot, and a drop-in replacement.
+  step, no stored-data change, no text addressed to a bot. `drop_in` only flags below 0.3: Jev
+  hedges around 0.5 on any update with a feature list, so a higher bar held every update.
 - Jev finds no regression report among the issues opened upstream since the release.
 
 Rulings are `pass`, `review` (a human decides) or `wait` (a status, release age or reconcile is

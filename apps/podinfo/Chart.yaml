@@ -1,9 +1,9 @@
 apiVersion: v2
 name: podinfo
 type: application
-version: 0.2.0
+version: 0.3.0
 description: Podinfo with local home-ops manifests.
 dependencies:
   - name: podinfo
-    version: 6.15.0
+    version: 6.16.0
     repository: https://stefanprodan.github.io/podinfo

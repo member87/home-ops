@@ -11,6 +11,7 @@
   "mergeWindow": { "timeZone": "Europe/London", "startHour": 8, "endHour": 22 },
   "mergeMethod": "squash",
   "eligibleUpdateTypes": ["minor", "patch"],
+  "eligibleCharts": ["podinfo"],
   "requiredContexts": ["Terrakube - homeops - aws-edge", "Terrakube - homeops - grafana"],
   "stabilityContext": "renovate/stability-days",
   "minimumReleaseAgeHours": 72,
@@ -149,7 +150,7 @@
     },
     {
       "id": "drop_in",
-      "reviewBelow": 0.7,
+      "reviewBelow": 0.3,
       "instructions": "Can a deployment running the `from` version of every package in `package_updates` move to the `to` version with no change to its configuration, data or deployment, according to `release_notes`?"
     },
     {
@@ -166,16 +167,18 @@
   ],
   "upstreamIssues": {
     "maxIssues": 30,
+    "askPerUpstream": 10,
+    "maxCallsPerDay": 200,
     "refreshMinutes": 60,
     "questions": [
       {
         "id": "regression",
         "label": "jevil:regression",
-        "reviewAbove": 0.5,
-        "instructions": "Do any of the issues in `issues`, opened in `project` after `version` was released, report a bug that `version` introduced and that would hit an existing deployment: a crash, a failed start or migration, lost data, or something that worked in `previous_version` and stopped?",
+        "reviewAbove": 0.7,
+        "instructions": "Does the issue in `issue`, opened in `project` after `version` was released, report that something which worked in `previous_version` broke in `version` (a crash, a failed start or migration, lost data, a feature that stopped working), in a way that would hit an existing deployment?",
         "criteria": {
-          "true": "At least one issue describes such a regression in `version` and was not closed as not planned, a duplicate of an older problem, or user error.",
-          "false": "The issues are feature requests, support questions, problems in other versions, or reports too vague to tie to `version`."
+          "true": "The issue says or clearly shows that it worked before `version` and broke with it, and it is not closed as not planned, a duplicate of an older problem, or user error.",
+          "false": "A bug with no sign it is new in `version` (issue templates ask for the current version, so naming it is not evidence), a feature request, a support question, or too vague to tie to `version`."
         }
       }
     ]

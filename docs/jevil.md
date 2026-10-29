@@ -314,16 +314,17 @@ merged piecemeal, it would be left with an empty `matchFileNames`, which matches
 cleanups of the same file can conflict once one merges; the next weekly run rebuilds the other
 from `main`.
 
-**Weekly report** (issue "Jevil weekly report", `jevil:report`, edited in place): parked apps
+**Daily report** (issue "Jevil daily report", `jevil:report`, edited in place): parked apps
 (every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over
 `cleanup.detachedDays` (size, app, whether the PVC still exists), **resource use** (how many days
 of use Prometheus holds, and every container the right-sizing rules find clearly over or under
 its requests, with its open right-size pull request, or "not proposed yet" while it has under
-`minDays` of data), and open cleanup pull requests. The report itself opens nothing. Right-sizing,
-cleanup and the report are separate weekly jobs, run on the first poll after Jevil starts and
-every seven days after (right-sizing and cleanup first, so the report links what they opened). A
-section Jevil could not read (Longhorn or Prometheus unreachable) says so in the issue, and the
-report is written again every 10 minutes until it reads, instead of a week later. Report only:
+`minDays` of data), and open cleanup pull requests. The report itself opens nothing. Right-sizing
+and cleanup are separate weekly jobs and the report a daily one, each run on the first poll after
+Jevil starts and then every seven days or every day (right-sizing and cleanup first, so the report
+links what they opened). A section Jevil could not read (Longhorn or Prometheus unreachable) says
+so in the issue, and the report is written again every 10 minutes until it reads, instead of a day
+later. Report only:
 Jevil never deletes apps, PVCs or volumes.
 
 **One-click fixes**: when the checks find a lint problem Jevil can fix on a line the pull request

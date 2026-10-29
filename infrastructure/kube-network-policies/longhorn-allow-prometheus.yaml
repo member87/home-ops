@@ -1,0 +1,23 @@
+---
+# The Longhorn chart's longhorn-manager policy admits only Longhorn's own pods, which blocks
+# Prometheus scraping :9500/metrics once policies are enforced (job="longhorn", the Longhorn
+# dashboard and the volume alerts).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: longhorn-system
+spec:
+  podSelector:
+    matchLabels:
+      app: longhorn-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9500

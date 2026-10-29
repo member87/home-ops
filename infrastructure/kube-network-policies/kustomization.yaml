@@ -1,0 +1,35 @@
+---
+# NetworkPolicy enforcement. flannel implements none, so before this every NetworkPolicy in
+# the cluster was inert. kube-network-policies (Kubernetes SIG Network) enforces them with
+# nftables on each node, beside flannel; pods no policy selects are unaffected.
+#
+# Fail-open (the upstream default, set explicitly): while the daemon is down, packets pass
+# instead of being dropped. Fail-closed would cut Longhorn replica traffic on every restart.
+# Policies therefore lapse while it is not running; the pod health alerts cover that.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - install.yaml
+  - longhorn-allow-prometheus.yaml
+patches:
+  - target:
+      kind: DaemonSet
+      name: kube-network-policies
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args
+        value:
+          - /bin/netpol
+          - --hostname-override=$(MY_NODE_NAME)
+          - --v=2
+          - --nfqueue-id=98
+          - --fail-open=true
+          # hostNetwork: the default :9080 would be reachable from the LAN.
+          - --metrics-bind-address=127.0.0.1:9080
+      - op: add
+        path: /spec/template/spec/containers/0/resources/limits
+        value:
+          memory: 256Mi
+      - op: add
+        path: /spec/template/spec/priorityClassName
+        value: system-node-critical

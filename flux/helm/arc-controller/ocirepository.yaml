@@ -1,0 +1,15 @@
+---
+# GitHub's Actions Runner Controller publishes its charts only to OCI.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: arc-controller
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  url: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+  ref:
+    tag: 0.15.1
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy

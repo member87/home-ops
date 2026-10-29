@@ -1,0 +1,40 @@
+---
+# Actions Runner Controller: watches AutoscalingRunnerSets (flux/helm/arc-runners) and starts an
+# ephemeral runner pod per queued job. Its listener pods run here too and talk to GitHub.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: arc-controller
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  interval: 10m0s
+  releaseName: arc-controller
+  targetNamespace: arc-system
+  chartRef:
+    kind: OCIRepository
+    name: arc-controller
+    namespace: flux-system
+  install:
+    createNamespace: true
+    crds: Create
+    remediation:
+      retries: 3
+  upgrade:
+    # The AutoscalingRunnerSet CRDs change with the chart; Helm leaves crds/ alone otherwise.
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    # Named so flux/helm/arc-runners can point at it (controllerServiceAccount).
+    serviceAccount:
+      name: arc-controller
+    flags:
+      logLevel: info
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

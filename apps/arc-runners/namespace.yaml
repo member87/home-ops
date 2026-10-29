@@ -1,0 +1,13 @@
+---
+# Self-hosted GitHub Actions runners (flux/helm/arc-runners), one scale set per private
+# repository. Never register runners for a public repository (home-ops): a fork pull request
+# would run its code here. Privileged because each runner pod has a Docker-in-Docker sidecar;
+# the pods run under RuntimeClass kata, so that privilege stops at the pod's own VM.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-runners
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

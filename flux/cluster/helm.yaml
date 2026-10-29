@@ -163,3 +163,45 @@ spec:
     kind: GitRepository
     name: home-ops
     namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-arc-controller
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 10m0s
+  path: ./flux/helm/arc-controller
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: helm-arc-runners
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 10m0s
+  path: ./flux/helm/arc-runners
+  prune: true
+  wait: true
+  # The scale set needs the controller's CRDs and the namespace and GitHub App secret, and must
+  # never start a runner before its isolation exists: the kata RuntimeClass and NetworkPolicy
+  # enforcement.
+  dependsOn:
+    - name: helm-arc-controller
+    - name: arc-runners
+    - name: kata
+    - name: kube-network-policies
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system

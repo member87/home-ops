@@ -87,7 +87,7 @@ machine:
             - interface: eno1
               dhcp: true
               vip:
-                  ip: 10.0.0.15
+                ip: 10.0.0.15
     # # `interfaces` is used to define the network interface configuration.
     # interfaces:
     #     - interface: enp0s1 # The interface name.
@@ -196,7 +196,7 @@ machine:
         # Custom installer with iscsi-tools, util-linux-tools, and i915 extensions. This is the
         # source of truth for every node's Talos version and schematic: `just talos-sync` rolls it
         # out. From Talos 1.14 the factory only serves installers under metal-installer/.
-        image: factory.talos.dev/metal-installer/056d8e12ba2b9711c613665c43f0ebf86eb451839a22f360a42110362f84faa1:v1.14.5
+        image: factory.talos.dev/metal-installer/e6b43ff46963c69f12f495977e1c6e394d4dfec4351821e0e5e1729576aec812:v1.14.5
         # Indicates if the installation disk should be wiped at installation time.
         wipe: false
         # # Look up disk using disk attributes like model, size, serial and others.
@@ -264,15 +264,15 @@ machine:
             #     # The list of Kubernetes namespaces Talos API access is available from.
             #     allowedKubernetesNamespaces:
             #         - kube-system
-    # # Provides machine specific control plane configuration options.
-    # # ControlPlane definition example.
-    # controlPlane:
-    #     # Controller manager machine specific configuration options.
-    #     controllerManager:
-    #         disabled: false # Disable kube-controller-manager on the node.
-    #     # Scheduler machine specific configuration options.
-    #     scheduler:
-    #         disabled: true # Disable kube-scheduler on the node.
+        # # Provides machine specific control plane configuration options.
+        # # ControlPlane definition example.
+        # controlPlane:
+        #     # Controller manager machine specific configuration options.
+        #     controllerManager:
+        #         disabled: false # Disable kube-controller-manager on the node.
+        #     # Scheduler machine specific configuration options.
+        #     scheduler:
+        #         disabled: true # Disable kube-scheduler on the node.
         # # Used to provide static pod definitions to be run by the kubelet directly bypassing the kube-apiserver.
         # # nginx static pod.
         # pods:
@@ -513,32 +513,31 @@ cluster:
     #       kind: Namespace
     #       metadata:
     #       	name: ci
-# # A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).
-# # Decryption secret example (do not use in production!).
-# aescbcEncryptionSecret: z01mye6j16bspJYtTB/5SFX8j7Ph4JXxM2Xuu4vsBPM=
-# # Core DNS specific configuration options.
-# coreDNS:
-#     image: registry.k8s.io/coredns/coredns:v1.14.7 # The `image` field is an override to the default coredns image.
-# # External cloud provider configuration.
-# externalCloudProvider:
-#     enabled: true # Enable external cloud provider.
-#     # A list of urls that point to additional manifests for an external cloud provider.
-#     manifests:
-#         - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/v1.20.0-alpha.0/manifests/rbac.yaml
-#         - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/v1.20.0-alpha.0/manifests/aws-cloud-controller-manager-daemonset.yaml
-# # A map of key value pairs that will be added while fetching the extraManifests.
-# extraManifestHeaders:
-#     Token: "1234567"
-#     X-ExtraInfo: info
-# # Settings for admin kubeconfig generation.
-# adminKubeconfig:
-#     certLifetime: 1h0m0s # Admin kubeconfig certificate lifetime (default is 1 year).
+    # # A key used for the [encryption of secret data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/).
+    # # Decryption secret example (do not use in production!).
+    # aescbcEncryptionSecret: z01mye6j16bspJYtTB/5SFX8j7Ph4JXxM2Xuu4vsBPM=
+    # # Core DNS specific configuration options.
+    # coreDNS:
+    #     image: registry.k8s.io/coredns/coredns:v1.14.7 # The `image` field is an override to the default coredns image.
+    # # External cloud provider configuration.
+    # externalCloudProvider:
+    #     enabled: true # Enable external cloud provider.
+    #     # A list of urls that point to additional manifests for an external cloud provider.
+    #     manifests:
+    #         - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/v1.20.0-alpha.0/manifests/rbac.yaml
+    #         - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/v1.20.0-alpha.0/manifests/aws-cloud-controller-manager-daemonset.yaml
+    # # A map of key value pairs that will be added while fetching the extraManifests.
+    # extraManifestHeaders:
+    #     Token: "1234567"
+    #     X-ExtraInfo: info
+    # # Settings for admin kubeconfig generation.
+    # adminKubeconfig:
+    #     certLifetime: 1h0m0s # Admin kubeconfig certificate lifetime (default is 1 year).
     # Allows running workload on control-plane nodes.
     allowSchedulingOnControlPlanes: true
 sops:
     age:
-        - recipient: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
-          enc: |
+        - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
             YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB5T0JMd3pqVzFRZGIvREtS
             VmhTR2QxM1dHcDZrYi9CNy9zTW14Y08rR0JRClZRdzljQWltUXpuSXc3ZzFDT0cx
@@ -546,8 +545,9 @@ sops:
             RDBZYkZydEc2REJLTXVPOGFlNXVzZlEK9J4b+7LobeQ2zb7Jt+t8wWc9NvNz8tG/
             1YpvPnVAVb6Nj8KPyf+rLDIdix8KOVnkawQdGwgYPGMxzmQU0cKPPQ==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-02-13T18:18:31Z"
-    mac: ENC[AES256_GCM,data:ZCMminDmH7k3Dlrtvxd188dSQ8Mum4t7ueNCPwVbrPSFKPJraBKEzoEe8KpN7dNsBl63N6cKcwsYbhbOtQGdocYGzRJenKOlO+R2ixHunA8FdHe6Jsjqa5Ar53cGoj8fsCnKnEaoGNhV+yzYorkD71gdKxHyzidKr3ypAdPfYPw=,iv:VvtnwddyShoPMMaNwA72whe8ohH8ip9evlz48ROra0g=,tag:UAWyKqVlGz5fP+pb8S903Q==,type:str]
+          recipient: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
     encrypted_regex: ^(token|key|secret|secretboxEncryptionSecret|id)$
+    lastmodified: "2026-10-29T19:08:58Z"
+    mac: ENC[AES256_GCM,data:QhmXSpC5whzjhcxK9N/pu84kaML3cJ0AlKkW2KbiJQ6KpVFaj9TIfW+aI22JwBY/RGywgJ+4Inaj9tuB/IT32PZ9r4u6fYc8LaR5pZNMVZuhSXjMoPoGGHaod7SM/VZ8Ku2rpxeD54D6zsxW9zulWH+GWxM8SSfYnaLXkqoDG0o=,iv:s7LAiwe1AV1Nb4Htt986AXocaBsrunE9ICTDmQ6YUXU=,tag:YUnPa3YGDTVsS3H6k2nnig==,type:str]
     mac_only_encrypted: true
     version: 3.11.0

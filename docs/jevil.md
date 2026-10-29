@@ -292,11 +292,27 @@ skipped). One pull request per app, changing only values that exist:
 Prometheus keeps about five days here (size-capped retention), so proposals start once five days
 of `container_memory_rss` are stored.
 
+Each right-size pull request opens with a dark-themed chart (PNG), one row per container: CPU (millicores)
+and RSS (MiB) over the lookback at the busiest point of every 30 minutes, with the p95 the rules
+read, the request and limit now, and what the pull request sets (green; red for a raised limit).
+An untouched limit more than 4× above everything else is named in the panel title instead of
+flattening the use against the axis, and the line breaks where Prometheus has no data. Charts
+are committed to the `jevil/charts` branch (no shared history with `main`, nothing deploys from
+it) and linked by commit, so a later chart never changes an older pull request. They are drawn
+only when the pull request is opened or its files change; if Prometheus or the upload fails the
+body says so and the pull request opens on its table alone.
+
 **Cleanup** (`jevil:cleanup`, weekly, `cleanup` in the policy), only configuration that points at
 nothing: `renovate.json` `matchFileNames` paths that match no file (a rule goes only when all its
 paths are gone and it has no other matcher); a parked app's entry in a disabled Renovate rule
 once that app is scaled back up; Glance links under `lab.jackhumes.com` that no IngressRoute
-serves. One pull request per kind.
+serves. One pull request per kind and app (`jevil/cleanup/<app>/<kind>`), so each app's cleanup
+is merged or closed on its own: the app is the `apps/<app>` a Renovate path names (else the path's
+top directory, e.g. `infrastructure`) or the `<app>.lab.jackhumes.com` a Glance link points at. A
+Renovate rule whose paths are all gone is removed whole by one of those pull requests, never split:
+merged piecemeal, it would be left with an empty `matchFileNames`, which matches every file. Two
+cleanups of the same file can conflict once one merges; the next weekly run rebuilds the other
+from `main`.
 
 **Weekly report** (issue "Jevil weekly report", `jevil:report`, edited in place): parked apps
 (every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over

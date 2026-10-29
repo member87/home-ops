@@ -90,6 +90,7 @@ sops --input-type yaml --output-type yaml talos/talosconfig
 - Only reach for a `HelmRelease` in `flux/helm/` when the app needs an upstream chart.
 - Use health checks where supported. Use TCP probes when no HTTP health endpoint exists.
 - Give every application container a memory limit, init containers included. The Talos OOM ranking (`talos/patches/oom-config.yaml`) kills limited pods first and treats pods without a limit as infrastructure (Longhorn instance-manager, kube-apiserver), killed last. An app without a limit silently joins that protected tier. For Helm wrapper charts, values go under the dependency key, e.g. `values.podinfo.resources`.
+- A Deployment that mounts a ReadWriteOnce PVC (every Longhorn volume) uses `strategy.type: Recreate`: a RollingUpdate pod landing on another node waits on Multi-Attach forever. Jevil's lint blocks it and suggests the fix.
 - For OIDC apps, create a Pocket ID client and seal the client secret.
 - For non-OIDC apps, add Tiny Auth ForwardAuth middleware. Jevil blocks a new IngressRoute with a route that has neither (an HTTPS-redirect route is fine); an app with its own login, or a route meant to be open, says so with `# jevil:auth <why>` in its manifests.
 - Only add Grafana dashboards or app alerts when the app exposes Prometheus metrics or has a real exporter.

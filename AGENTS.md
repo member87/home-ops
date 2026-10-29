@@ -246,6 +246,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Sealed Secrets namespace: `sealed-secrets`.
 - Every node has an Intel UHD 630 iGPU (i915 extension in the schematic). `infrastructure/intel-gpu-plugin` exposes it as `gpu.intel.com/i915` (4 pods per GPU); request that instead of mounting `/dev/dri` privileged. Immich transcodes with VAAPI and Jellyfin with QSV (set in its `encoding.xml`), both unprivileged.
 - Kata Containers (`siderolabs/kata-containers` in the schematic; `RuntimeClass kata` in `infrastructure/kata`) runs a pod in its own Cloud Hypervisor VM, so `privileged: true` inside it reaches only the guest kernel and no host device. Use it for anything that must run untrusted code or needs privilege, such as Docker-in-Docker. Every node is a control-plane node, so root on a node means etcd and the cluster PKI.
+- NetworkPolicies are enforced by `infrastructure/kube-network-policies` (flannel enforces none). Charts that ship policies (Flux operator, Longhorn, Terrakube's MinIO/PostgreSQL) are now live: a new cross-namespace client of a selected pod needs an allow policy, like `longhorn-allow-prometheus.yaml`. It is fail-open, so policies lapse while its pod is down. Policies see pod IPs after kube-proxy DNAT, so allow the backing pods, not Service IPs.
 - Longhorn is the default replicated storage class.
 - Direct NFS is used for media/download storage from NAS `10.0.0.9`.
 - Use `longhorn` for app config, databases, and monitoring data.

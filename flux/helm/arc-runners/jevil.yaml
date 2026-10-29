@@ -1,0 +1,157 @@
+---
+# Runner scale set for member87/jevil. Workflows use `runs-on: homelab`.
+#
+# member87 is a personal account, and GitHub registers self-hosted runners per repository,
+# organization or enterprise only, so every repository gets its own scale set. To add one: copy
+# this file, change the name, releaseName and githubConfigUrl, list it in kustomization.yaml,
+# and add the repository to the "home-ops-runners" GitHub App installation. Private
+# repositories only.
+#
+# Isolation, in layers:
+# - Kata (infrastructure/kata): every runner pod is its own VM, so the privileged
+#   Docker-in-Docker sidecar is root in the guest kernel only, with no host devices. Every node
+#   is a control-plane node, so a host-kernel escape would mean etcd and the cluster PKI.
+# - NetworkPolicy (apps/arc-runners): no ingress; egress to the internet and cluster DNS only,
+#   never to pods, Services, nodes, the LAN or the tailnet.
+# - No Kubernetes API token, no Service env vars, and no secret but the job's GITHUB_TOKEN.
+#   Runners are ephemeral: one job per pod, then the VM is gone.
+# Docker-in-Docker follows ARC's own dind template, written out here instead of
+# `containerMode: dind` so the images are pinned by digest and every container has a memory
+# limit.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: arc-runners-jevil
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  interval: 10m0s
+  releaseName: jevil
+  targetNamespace: arc-runners
+  chartRef:
+    kind: OCIRepository
+    name: arc-runners
+    namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    githubConfigUrl: https://github.com/member87/jevil
+    # Credentials of the "home-ops-runners" GitHub App (apps/arc-runners).
+    githubConfigSecret: arc-runners-github-app
+    runnerScaleSetName: homelab
+    minRunners: 0
+    maxRunners: 2
+    controllerServiceAccount:
+      namespace: arc-system
+      name: arc-controller
+    listenerTemplate:
+      spec:
+        containers:
+          - name: listener
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+    template:
+      spec:
+        runtimeClassName: kata
+        automountServiceAccountToken: false
+        enableServiceLinks: false
+        # Each VM can grow to Kata's 2048MiB base plus these limits; t8o has 8GiB in total.
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: NotIn
+                      values: ["talos-t8o-8d5"]
+        initContainers:
+          - name: init-dind-externals
+            image: ghcr.io/actions/actions-runner:2.338.2@sha256:759a1d94a15b05941aba5196974ff43fe15b4cbba29b694b35cbc32a1166b232
+            command: ["cp", "-r", "/home/runner/externals/.", "/home/runner/tmpDir/"]
+            resources:
+              limits:
+                memory: 128Mi
+            volumeMounts:
+              - name: dind-externals
+                mountPath: /home/runner/tmpDir
+          # Native sidecar: starts before the runner and stops with it.
+          - name: dind
+            image: docker:29.9.2-dind@sha256:9e79b879b177fbd72c34376a3dd3d91747da5db49e1f560f76aea59561471977
+            args:
+              - dockerd
+              - --host=unix:///var/run/docker.sock
+              - --group=$(DOCKER_GROUP_GID)
+            env:
+              - name: DOCKER_GROUP_GID
+                value: "123"
+            securityContext:
+              privileged: true
+            restartPolicy: Always
+            startupProbe:
+              exec:
+                command: ["docker", "info"]
+              initialDelaySeconds: 0
+              failureThreshold: 24
+              periodSeconds: 5
+            # Image builds run inside dockerd, and its storage is a tmpfs inside the VM, so both
+            # count against this limit: keep it above dind-storage's sizeLimit.
+            resources:
+              requests:
+                cpu: 250m
+                memory: 2Gi
+              limits:
+                memory: 8Gi
+            volumeMounts:
+              - name: work
+                mountPath: /home/runner/_work
+              - name: dind-sock
+                mountPath: /var/run
+              - name: dind-externals
+                mountPath: /home/runner/externals
+              - name: dind-storage
+                mountPath: /var/lib/docker
+        containers:
+          - name: runner
+            image: ghcr.io/actions/actions-runner:2.338.2@sha256:759a1d94a15b05941aba5196974ff43fe15b4cbba29b694b35cbc32a1166b232
+            command: ["/home/runner/run.sh"]
+            env:
+              - name: DOCKER_HOST
+                value: unix:///var/run/docker.sock
+              - name: RUNNER_WAIT_FOR_DOCKER_IN_SECONDS
+                value: "120"
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+            volumeMounts:
+              - name: work
+                mountPath: /home/runner/_work
+              - name: dind-sock
+                mountPath: /var/run
+        volumes:
+          # Each node has one disk shared by etcd and Longhorn; cap what a job can write.
+          - name: work
+            emptyDir:
+              sizeLimit: 10Gi
+          - name: dind-sock
+            emptyDir: {}
+          - name: dind-externals
+            emptyDir: {}
+          # Kata shares disk-backed emptyDirs into the VM over virtiofs, which overlayfs
+          # refuses as an upper layer (docker build fails with EINVAL). A Memory emptyDir is
+          # a tmpfs inside the guest instead, and keeps image layers off the SSD etcd shares.
+          - name: dind-storage
+            emptyDir:
+              medium: Memory
+              sizeLimit: 6Gi

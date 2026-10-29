@@ -36,9 +36,9 @@ same comment. ❌ findings block `/jevil merge`; ⚠️ findings are for you to 
 |---|---|---|
 | `secret` | a known token format on an added line (GitHub, OpenRouter/OpenAI/Anthropic, AWS, private keys, Slack, Discord webhooks, Tailscale, age, `user:pass@` URLs); a long random value whose key Jev judges a credential (≥ 0.7) | Jev 0.3-0.7; diffs too large to scan |
 | `validate` | a target that does not build; `flux/cluster` not building or pointing at a missing directory; a changed object failing its schema (kubeconform: this cluster's own CRD schemas first, refreshed hourly, then Kubernetes schemas, then the community CRD catalog for kinds the cluster does not have) | schemas that could not be fetched |
-| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides; an frpc proxy, edge Caddy site and `public_hostnames` entry that disagree (only what the pull request introduces; `# jevil:edge-local` exempts a proxy only the edge uses); a new IngressRoute with a route that neither goes through a forwardAuth middleware nor only redirects to HTTPS, in an app with no OIDC configuration (`# jevil:auth <why>` exempts); a Talos minor bump to v1.N while `talos/patches` holds a patch marked `# jevil:before-boot v1.N` (apply it on every node, then `--allow lint`) | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops; a Talos minor bump with no patch marked for it (read the upgrade notes) |
-| `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization | |
-| `image` | a new image tag or digest the registry does not have | a registry that could not be asked |
+| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a Deployment mounting a ReadWriteOnce PVC (looked up in the rendered targets) without `strategy.type: Recreate`, so a rollout onto another node waits on Multi-Attach; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides; an frpc proxy, edge Caddy site and `public_hostnames` entry that disagree (only what the pull request introduces; `# jevil:edge-local` exempts a proxy only the edge uses); a new IngressRoute with a route that neither goes through a forwardAuth middleware nor only redirects to HTTPS, in an app with no OIDC configuration (`# jevil:auth <why>` exempts); a Talos minor bump to v1.N while `talos/patches` holds a patch marked `# jevil:before-boot v1.N` (apply it on every node, then `--allow lint`) | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops; a Talos minor bump with no patch marked for it (read the upgrade notes) |
+| `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization; removing a LoadBalancer Service, or changing what holds a LoadBalancer address: `type: LoadBalancer`, `loadBalancerIP` or a MetalLB `loadBalancerIPs`/`allow-shared-ip`/`address-pool` annotation, on a Service or in a HelmRelease's values (the Pi-hole NodePort outage) | |
+| `image` | a new image tag or digest the registry does not have. A missing image is asked about again every poll, so a pull request opened while its image still builds clears on its own once the image is pushed | a registry that could not be asked |
 | `health` (at merge time) | | waits while a node is NotReady, an attached Longhorn volume is not healthy, a TalosUpgrade/KubernetesUpgrade is not Completed, or a Kustomization other than the pull request's own targets is failing |
 | `manual` | | a pull request touching `manualSteps.paths` (`infrastructure/`, `talos/`, `flux/`, the edge) that Jev, reading `AGENTS.md` and the diff, thinks needs a step by hand or a change elsewhere (≥ 0.5). Never asked when the secret check found anything, so a possible secret never leaves the cluster |
 
@@ -303,17 +303,21 @@ serves. One pull request per kind.
 `cleanup.detachedDays` (size, app, whether the PVC still exists), **resource use** (how many days
 of use Prometheus holds, and every container the right-sizing rules find clearly over or under
 its requests, with its open right-size pull request, or "not proposed yet" while it has under
-`minDays` of data), and open cleanup pull requests. The report itself opens nothing: right-sizing
-and cleanup are their own weekly jobs, run on the first poll after Jevil starts and every seven days
-after (right-sizing first, so the report links what it opened). Report only: Jevil never deletes
-apps, PVCs or volumes.
+`minDays` of data), and open cleanup pull requests. The report itself opens nothing. Right-sizing,
+cleanup and the report are separate weekly jobs, run on the first poll after Jevil starts and
+every seven days after (right-sizing and cleanup first, so the report links what they opened). A
+section Jevil could not read (Longhorn or Prometheus unreachable) says so in the issue, and the
+report is written again every 10 minutes until it reads, instead of a week later. Report only:
+Jevil never deletes apps, PVCs or volumes.
 
 **One-click fixes**: when the checks find a lint problem Jevil can fix on a line the pull request
 changes, it posts one review per head commit with GitHub suggestions (apply each, or batch them
 under *Files changed*): `metadata.namespace` for a namespaced object without one (the app's
 `Namespace`, else the directory name), a manifest missing from `kustomization.yaml` (when that
-file is in the pull request), and an unpinned or `:latest` image (pinned to the newest stable
-`X.Y.Z` tag its registry lists). Never on Chore Bore pull requests.
+file is in the pull request), an unpinned or `:latest` image (pinned to the newest stable
+`X.Y.Z` tag its registry lists), and `strategy.type: Recreate` for a Deployment the rollout lint
+flags (a new `strategy:` after `replicas:`, or `type: RollingUpdate` rewritten when no
+`rollingUpdate:` settings are set). Never on Chore Bore pull requests.
 
 ## Operations
 

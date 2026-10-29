@@ -36,11 +36,10 @@ spec:
             - '--config.auto-reload'
             # Receives the edge-local Prometheus agent through the private FRP tunnel.
             - '--web.enable-remote-write-receiver'
-            # 90 days of history (right-sizing reads 14). With the keep-list the blocks grow
-            # ~0.25 GB a day, so 90 days is ~22 GB, plus ~2 GB while compaction rewrites a
-            # 9-day block; the size cap stays as a backstop against an exporter flooding the
-            # 40Gi volume. Raising either needs the volume to grow first (see pvc.yaml).
-            - '--storage.tsdb.retention.time=90d'
+            # Keep as much history as 32GB holds (no time limit): with the keep-list the blocks
+            # grow ~0.25 GB a day, so ~4 months. The cap leaves ~7 GB of the 40Gi volume for
+            # the WAL and compaction rewriting a block. Raising it needs the volume to grow
+            # first (see pvc.yaml).
             - '--storage.tsdb.retention.size=32GB'
           ports:
             - containerPort: 9090

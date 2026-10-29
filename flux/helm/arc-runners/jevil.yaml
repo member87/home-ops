@@ -96,12 +96,10 @@ spec:
             securityContext:
               privileged: true
             restartPolicy: Always
-            startupProbe:
-              exec:
-                command: ["docker", "info"]
-              initialDelaySeconds: 0
-              failureThreshold: 24
-              periodSeconds: 5
+            # No startupProbe: under Kata an exec into this container fails (dockerd nests its
+            # cgroup, and the agent cannot add the probe process to it), so ARC's
+            # `docker info` probe never passes and the runner never starts. The runner waits for
+            # the socket itself (RUNNER_WAIT_FOR_DOCKER_IN_SECONDS).
             # Image builds run inside dockerd, and its storage is a tmpfs inside the VM, so both
             # count against this limit: keep it above dind-storage's sizeLimit.
             resources:

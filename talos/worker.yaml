@@ -190,7 +190,7 @@ machine:
         disk: /dev/sdb
         # Custom installer with iscsi-tools, util-linux-tools, and i915 extensions. Keep the
         # version and schematic in step with talos/controlplane.yaml.
-        image: factory.talos.dev/metal-installer/056d8e12ba2b9711c613665c43f0ebf86eb451839a22f360a42110362f84faa1:v1.14.5
+        image: factory.talos.dev/metal-installer/e6b43ff46963c69f12f495977e1c6e394d4dfec4351821e0e5e1729576aec812:v1.14.5
         # Indicates if the installation disk should be wiped at installation time.
         wipe: false
         # # Look up disk using disk attributes like model, size, serial and others.
@@ -546,8 +546,7 @@ cluster:
 # allowSchedulingOnControlPlanes: true
 sops:
     age:
-        - recipient: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
-          enc: |
+        - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
             YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA1OGhnY1U0VWVqM05JOHFE
             ZlZBcE5NSWR5SENrZmROYTMxN21uWi9IVGpzCjFmZmJuSFRwVkNyd1l6Q1hTQUVz
@@ -555,8 +554,9 @@ sops:
             M05SY25RLy9qVUREYzFYSFMzTVk4bkEK5hdnBDtD8IjxYNhKbOohNlK6+sciSh66
             st0bahF2MklQdkGHE6hKYWwX0LlViDOUmVjJcRlugE6mgxu4rTJvrA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-02-13T18:18:33Z"
-    mac: ENC[AES256_GCM,data:5rMB7mTlXwLX6wGm6r6wOMWoP01+TjB2EK69gm63fLwVJ4ysFI503uUN4XwfE2FO90N1G6Pib0lbikgYjSRb5IQfHeEK5HMLyhu/7lT5soISlB9EWKvYhArZ7mu0rolNfXxH9PLK+j1W18nW4a8qiu4CVJceoMMgkZd2kk3GMb4=,iv:ASHxNRqNboGGOPdo1YTEFRKn7aHyjGJfyjZPjkwG2ac=,tag:tLuT8dThDBOxVnFAARirDw==,type:str]
+          recipient: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
     encrypted_regex: ^(token|key|secret|secretboxEncryptionSecret|id)$
+    lastmodified: "2026-10-29T19:08:58Z"
+    mac: ENC[AES256_GCM,data:MKrfxROKkTrNCn+JHuuwagOVuRrxJtLex3C9xT3zuwnQqV7cW6bYmSDbcyFxTo1c+mVLWFxeXUzvg3pYuijeA/Ae26VfHCGLBPlmwEDSDdrAdelEl8nF8nvAbFXOoprr6dOnKScKaKDxtGVHbb8m69RjNGE5vDv9DAKout+0eaA=,iv:gUov0y9I6jzvLgbax07zVezS/L1+WE0o6H8zVRUJIpk=,tag:yVdI7Mr5DpepWCguUcQQOQ==,type:str]
     mac_only_encrypted: true
     version: 3.11.0

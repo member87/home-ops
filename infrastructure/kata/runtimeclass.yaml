@@ -1,0 +1,18 @@
+---
+# Kata Containers (siderolabs/kata-containers in the Talos schematic): a pod with
+# `runtimeClassName: kata` runs in its own Cloud Hypervisor VM with its own kernel, so root
+# or `privileged: true` inside it reaches the guest only. The extension sets
+# privileged_without_host_devices, so no host device is passed in. Used by the GitHub
+# Actions runners (flux/helm/arc-runners) for Docker-in-Docker.
+#
+# The VM gets Kata's default 2048MiB plus the pod's limits; the host only backs the memory
+# the guest touches. podFixed is what the scheduler reserves for the VM itself.
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata
+handler: kata
+overhead:
+  podFixed:
+    cpu: 250m
+    memory: 256Mi

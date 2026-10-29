@@ -308,6 +308,10 @@ for step in "${WAVES[@]}"; do
     [[ $got == "$step" ]] || die "$ip reports Talos $got after upgrading to $step (rolled back?)"
     got=$(node_schematic "$ip")
     [[ $got == "$SCHEMATIC" ]] || die "$ip booted schematic $got, expected $SCHEMATIC"
+    # `talosctl upgrade --image` leaves machine.install.image as it was. tuppr swaps only the
+    # version tag of that live value and refuses a node whose schematic differs from it, so
+    # record the image the node now runs.
+    tc "$ip" patch mc --mode=no-reboot --patch "{machine: {install: {image: \"$(installer_image "$step")\"}}}" >/dev/null
     [[ $step == "$WANT_TALOS" ]] && apply_patches "$ip"
   done
 done

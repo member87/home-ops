@@ -122,7 +122,7 @@ spec:
         - name: sonarr
           # This image tracks Sonarr's develop branch and re-pushes the 3-part tag (5.0.0)
           # for every build; database migrations are one-way, so pin the full build number.
-          image: ghcr.io/home-operations/sonarr:5.0.0.2838
+          image: ghcr.io/home-operations/sonarr:5.0.0.2870
           ports:
             - containerPort: 8989
               name: http

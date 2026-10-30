@@ -89,6 +89,22 @@ data:
               flux_instance_info|\
               flux_operator_info|\
               flux_resource_info|\
+              gha_assigned_jobs|\
+              gha_busy_runners|\
+              gha_completed_jobs_total|\
+              gha_controller_failed_ephemeral_runners|\
+              gha_controller_pending_ephemeral_runners|\
+              gha_controller_running_ephemeral_runners|\
+              gha_controller_running_listeners|\
+              gha_desired_runners|\
+              gha_idle_runners|\
+              gha_job_execution_duration_seconds_(bucket|count|sum)|\
+              gha_job_startup_duration_seconds_(bucket|count|sum)|\
+              gha_max_runners|\
+              gha_min_runners|\
+              gha_registered_runners|\
+              gha_running_jobs|\
+              gha_started_jobs_total|\
               go_goroutines|\
               go_memstats_heap_inuse_bytes|\
               go_memstats_next_gc_bytes|\
@@ -657,6 +673,37 @@ data:
           - source_labels: [__meta_kubernetes_pod_container_port_name]
             action: keep
             regex: metrics
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+        metric_relabel_configs: *keep_used_metrics
+
+      # Actions Runner Controller (flux/helm/arc-controller sets `metrics`). The controller
+      # reports the ephemeral runners it manages; each scale set's listener reports what
+      # GitHub says about its jobs and runners. Both name their port `metrics`.
+      - job_name: 'arc-controller'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [arc-system]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: controller-manager;metrics
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+        metric_relabel_configs: *keep_used_metrics
+
+      - job_name: 'arc-listener'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [arc-system]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component, __meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: runner-scale-set-listener;metrics
+          - source_labels: [__meta_kubernetes_pod_label_actions_github_com_scale_set_name]
+            target_label: scale_set
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: kubernetes_pod_name
         metric_relabel_configs: *keep_used_metrics

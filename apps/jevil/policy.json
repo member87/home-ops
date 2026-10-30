@@ -44,7 +44,34 @@
     "refreshHours": 168,
     "lookbackDays": 90,
     "minDays": 5,
+    "exclude": [],
+    "helm": [
+      {"release": "immich", "file": "flux/helm/immich/helmrelease.yaml", "values": "immich.server.controllers.main.containers.main", "namespace": "immich", "pod": "immich-server-.*", "container": "main"},
+      {"release": "immich", "file": "flux/helm/immich/helmrelease.yaml", "values": "immich.machine-learning.controllers.main.containers.main", "namespace": "immich", "pod": "immich-machine-learning-.*", "container": "main"},
+      {"release": "pihole", "file": "flux/helm/pihole/helmrelease.yaml", "values": "pihole", "namespace": "pihole", "container": "pihole"},
+      {"release": "pihole", "file": "flux/helm/pihole/helmrelease.yaml", "values": "pihole.monitoring.sidecar", "namespace": "pihole", "container": "exporter"},
+      {"release": "podinfo", "file": "flux/helm/podinfo/helmrelease.yaml", "values": "podinfo", "namespace": "podinfo", "container": "podinfo"},
+      {"release": "terrakube", "file": "flux/helm/terrakube/helmrelease.yaml", "values": "terrakube.api", "namespace": "terrakube", "container": "terrakube-api"},
+      {"release": "terrakube", "file": "flux/helm/terrakube/helmrelease.yaml", "values": "terrakube.executor", "namespace": "terrakube", "container": "terrakube-executor"},
+      {"release": "terrakube", "file": "flux/helm/terrakube/helmrelease.yaml", "values": "terrakube.ui", "namespace": "terrakube", "container": "terrakube-ui"},
+      {"release": "terrakube", "file": "flux/helm/terrakube/helmrelease.yaml", "values": "terrakube.dex", "namespace": "terrakube", "container": "dex"},
+      {"release": "terrakube", "file": "flux/helm/terrakube/helmrelease.yaml", "values": "terrakube.postgresql.primary", "namespace": "terrakube", "container": "postgresql"},
+      {"release": "terrakube", "file": "flux/helm/terrakube/helmrelease.yaml", "values": "terrakube.valkey", "namespace": "terrakube", "container": "terrakube-valkey"},
+      {"release": "tuppr", "file": "flux/helm/tuppr/helmrelease.yaml", "values": "", "namespace": "system-upgrade", "pod": "tuppr-.*", "container": "manager"},
+      {"release": "flux-operator", "file": "flux/helm/flux-operator/helmrelease.yaml", "values": "", "namespace": "flux-system", "pod": "flux-operator-.*", "container": "manager"},
+      {"release": "arc-controller", "file": "flux/helm/arc-controller/helmrelease.yaml", "values": "", "namespace": "arc-system", "pod": "arc-controller-.*", "container": "manager"}
+    ]
+  },
+  "volumes": {
+    "everyHours": 24,
+    "above": 0.85,
+    "forDays": 3,
+    "target": 0.6,
+    "storageClasses": ["longhorn"],
     "exclude": []
+  },
+  "vendor": {
+    "everyHours": 24
   },
   "cleanup": {
     "renovate": "renovate.json",

@@ -38,7 +38,7 @@ spec:
                       - talos-t8o-8d5
       containers:
         - name: headscale
-          image: headscale/headscale:v0.29.6
+          image: headscale/headscale:v0.29.7
           args:
             - serve
           ports:

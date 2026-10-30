@@ -6,6 +6,7 @@ resources:
   - rbac.yaml
   - sealedsecret.yaml
   - sealedsecret-ghcr-pull.yaml
+  - pvc.yaml
   - deployment.yaml
 # Generated so a policy change gets a new name and rolls the pod onto it.
 configMapGenerator:

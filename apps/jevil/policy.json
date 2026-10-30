@@ -40,8 +40,9 @@
   },
   "rightSizing": {
     "prometheusUrl": "http://prometheus.prometheus.svc.cluster.local:9090",
-    "everyHours": 168,
-    "lookbackDays": 14,
+    "everyHours": 24,
+    "refreshHours": 168,
+    "lookbackDays": 90,
     "minDays": 5,
     "exclude": []
   },

@@ -210,7 +210,9 @@ still pending; Jevil looks again next poll).
 
 Commands are accepted from the logins in `commanders` only; the policy sets that to `member87`
 alone, and Jevil refuses to start with an empty list. Anyone else gets a 😕 and a refusal. Jevil
-reads the first line of a comment as the command, so a note can follow on the next lines. They
+reads the first line of a comment as the command, so a note can follow on the next lines. After a
+restart it reads on from where it stopped, but never further back than 24 hours: a command left
+while Jevil was down for longer is not run unseen days later; comment it again. They
 work on any open pull request; `/jevil revert` on a merged one:
 
 | Comment | Effect |
@@ -272,13 +274,17 @@ original pull request.
 
 Jevil proposes changes as ordinary pull requests (label `jevil:proposal`). They get the same checks
 and need `/jevil merge`: Jevil never merges its own. Closing one is a "no": that branch is not
-proposed again for 30 days. While one is open, Jevil refreshes it only when its files would change.
+proposed again for 30 days, and the same change (the same values, or the same entries removed)
+never again; a different change on the branch is proposed after the 30 days. While one is open,
+Jevil refreshes it only when its files would change.
 
-**Right-sizing** (`jevil:right-size`, weekly, `rightSizing` in the policy): from Prometheus, each
-container's p95 CPU and p95/max RSS over `lookbackDays` (14), needing `minDays` (5) of data,
+**Right-sizing** (`jevil:right-size`, `rightSizing` in the policy): from Prometheus, each
+container's p95 CPU and p95/max RSS over `lookbackDays` (90), needing `minDays` (5) of data,
 against the requests in the plain manifests under `apps/<app>/` (Helm chart dirs, `exclude`d apps,
 container names not unique in their namespace and workloads a kustomize patch changes are
-skipped). One pull request per app, changing only values that exist:
+skipped). Jevil looks every `everyHours` (24): an app's proposal opens the day its containers
+qualify, and an open one is rewritten with newer numbers at most every `refreshHours` (168). One
+pull request per app, changing only values that exist:
 
 - CPU request target p95 × 1.25 (rounded up to 10m); proposed at 3× over and 100m more, or 1.5×
   under and 50m more.
@@ -289,11 +295,13 @@ skipped). One pull request per app, changing only values that exist:
 - A memory limit is raised only after an OOM kill (to max(max RSS × 1.5, limit × 1.25)) or when max
   RSS reaches 85% of it (to max RSS × 1.5); it is never lowered. CPU limits are never touched.
 
-Prometheus keeps about five days here (size-capped retention), so proposals start once five days
-of `container_memory_rss` are stored.
+Prometheus keeps size-capped history (32 GB, 90 days and more), and Jevil reads up to
+`lookbackDays` of it; it never stores metrics itself. Proposals start once five days of
+`container_memory_rss` are stored and lean on more history as it builds up.
 
 Each right-size pull request opens with a dark-themed chart (PNG), one row per container: CPU (millicores)
-and RSS (MiB) over the lookback at the busiest point of every 30 minutes, with the p95 the rules
+and RSS (MiB) over the data held, each point the busiest moment of its step (30 minutes for a
+couple of weeks of data, 3 hours for 90 days), with the p95 the rules
 read, the request and limit now, and what the pull request sets (green; red for a raised limit).
 An untouched limit more than 4× above everything else is named in the panel title instead of
 flattening the use against the axis, and the line breaks where Prometheus has no data. Charts
@@ -314,17 +322,18 @@ merged piecemeal, it would be left with an empty `matchFileNames`, which matches
 cleanups of the same file can conflict once one merges; the next weekly run rebuilds the other
 from `main`.
 
-**Daily report** (issue "Jevil daily report", `jevil:report`, edited in place): parked apps
+**Daily report** (issue "Jevil daily report", `jevil:report`, edited in place): first, **since the
+last report**: what is new or gone in each section below compared with the last complete report.
+Then parked apps
 (every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over
 `cleanup.detachedDays` (size, app, whether the PVC still exists), **resource use** (how many days
 of use Prometheus holds, and every container the right-sizing rules find clearly over or under
 its requests, with its open right-size pull request, or "not proposed yet" while it has under
-`minDays` of data), and open cleanup pull requests. The report itself opens nothing. Right-sizing
-and cleanup are separate weekly jobs and the report a daily one, each run on the first poll after
-Jevil starts and then every seven days or every day (right-sizing and cleanup first, so the report
-links what they opened). A section Jevil could not read (Longhorn or Prometheus unreachable) says
-so in the issue, and the report is written again every 10 minutes until it reads, instead of a day
-later. Report only:
+`minDays` of data), and open cleanup pull requests. The report itself opens nothing.
+Right-sizing runs daily, cleanup weekly and the report daily; each runs on schedule across
+restarts (right-sizing and cleanup first, so the report links what they opened). A section Jevil
+could not read (Longhorn or Prometheus unreachable) says so in the issue, and the report is
+written again every 10 minutes until it reads, instead of a day later. Report only:
 Jevil never deletes apps, PVCs or volumes.
 
 **One-click fixes**: when the checks find a lint problem Jevil can fix on a line the pull request
@@ -335,6 +344,27 @@ file is in the pull request), an unpinned or `:latest` image (pinned to the newe
 `X.Y.Z` tag its registry lists), and `strategy.type: Recreate` for a Deployment the rollout lint
 flags (a new `strategy:` after `replicas:`, or `type: RollingUpdate` rewritten when no
 `rollingUpdate:` settings are set). Never on Chore Bore pull requests.
+
+## State
+
+Jevil keeps what it must remember across restarts in `/var/lib/jevil/state.db` (bbolt) on the
+`jevil-state` PVC (1Gi Longhorn, ReadWriteOnce, backed up daily like other volumes); the single
+replica and `Recreate` strategy free it before the next pod starts. It holds bookkeeping only:
+
+| Bucket | What |
+|---|---|
+| `jobs` | when right-sizing, cleanup and the report last ran, so a restart does not run them early |
+| `cursor` | where command comments were last read |
+| `budget` | upstream-issue Jev calls today, against `maxCallsPerDay` |
+| `answers`, `manual` | Jev's answers on upstream issues and manual-step diffs, for 30 days |
+| `proposals` | the last change proposed on each proposal branch, and when |
+| `report` | what the last complete report listed |
+
+Metrics are never stored: right-sizing, charts and the report read Prometheus each time. Losing
+the file costs only what it remembers: jobs run on the next poll, Jev is asked again, and a
+declined change could come back after its 30 days. Each failed read or write counts in
+`jevil_state_errors_total` and is logged; it never stops a poll. Jevil refuses to start
+without the file (`-state`); dry runs do not use it.
 
 ## Operations
 

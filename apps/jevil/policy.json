@@ -23,7 +23,7 @@
     "maxDestroy": 0
   },
   "flux": { "namespace": "flux-system" },
-  "verify": { "timeoutMinutes": 30, "upgradeTimeoutMinutes": 480 },
+  "verify": { "timeoutMinutes": 30, "upgradeTimeoutMinutes": 480, "soakMinutes": 15 },
   "notes": { "minBytes": 40, "maxBytes": 20000 },
   "upstreams": { "longhorn": "longhorn/longhorn" },
   "checks": {

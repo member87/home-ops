@@ -1,3 +1,6 @@
+# jevil:vendor repo=metallb/metallb version=v0.16.1 url=https://raw.githubusercontent.com/metallb/metallb/{version}/config/manifests/metallb-native.yaml
+# Upstream's metallb-native.yaml as released. Jevil opens a pull request when a newer version is
+# tagged; never bump the images alone.
 apiVersion: v1
 kind: Namespace
 metadata:

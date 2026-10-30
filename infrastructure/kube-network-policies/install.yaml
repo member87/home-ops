@@ -1,3 +1,4 @@
+# jevil:vendor repo=kubernetes-sigs/kube-network-policies version=v1.1.2 url=https://raw.githubusercontent.com/kubernetes-sigs/kube-network-policies/{version}/install.yaml
 # Vendored whole from kubernetes-sigs/kube-network-policies v1.1.2 (install.yaml). One change:
 # upstream's v1.1.2 manifest still names the v1.1.1 image, so the image is v1.1.2, pinned by
 # digest. Upgrade by re-vendoring; Renovate skips this file. Local settings are patches in

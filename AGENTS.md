@@ -313,7 +313,7 @@ just talos-sync     # break-glass: upgrade nodes by hand when tuppr cannot
 
 - Symptom: MetalLB speaker failed liveness with `statuscode: 400`, the release rollback-looped, and everything behind it (metallb-config, pihole, therefore LAN DNS) stayed NotReady.
 - Cause: `infrastructure/*/install.yaml` are complete upstream manifests vendored whole. Renovate rewrote only the `image:` tags to v0.16.1, so 0.16 images ran against 0.15 plumbing (`/metrics` on 7472 over HTTP vs upstream's `/healthz` on 17472).
-- Fix: pin the images back to the vendored manifest's version. Renovate is now disabled for those files; upgrading means re-vendoring the whole manifest.
+- Fix: pin the images back to the vendored manifest's version. Renovate is now disabled for those files; upgrading means re-vendoring the whole manifest. Jevil does that: a vendored file carries a `# jevil:vendor repo=... version=... url=...{version}...` marker, and Jevil opens a re-vendor pull request when upstream tags a newer version (or names the file in its daily report when upstream's changes collide with local ones). Give every newly vendored manifest a marker.
 
 ### Pi-hole Deployed With Chart Defaults (LAN DNS Dies)
 

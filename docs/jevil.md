@@ -280,11 +280,11 @@ Jevil refreshes it only when its files would change.
 
 **Right-sizing** (`jevil:right-size`, `rightSizing` in the policy): from Prometheus, each
 container's p95 CPU and p95/max RSS over `lookbackDays` (90), needing `minDays` (5) of data,
-against the requests in the plain manifests under `apps/<app>/` (Helm chart dirs, `exclude`d apps,
-container names not unique in their namespace and workloads a kustomize patch changes are
-skipped). Jevil looks every `everyHours` (24): an app's proposal opens the day its containers
-qualify, and an open one is rewritten with newer numbers at most every `refreshHours` (168). One
-pull request per app, changing only values that exist:
+against the requests in the plain manifests under `apps/<app>/` (`exclude`d apps, container names
+not unique in their namespace and workloads a kustomize patch changes are skipped), and in the
+values of the HelmReleases `rightSizing.helm` maps (below). Jevil looks every `everyHours` (24):
+an app's proposal opens the day its containers qualify, and an open one is rewritten with newer
+numbers at most every `refreshHours` (168). One pull request per app or release:
 
 - CPU request target p95 × 1.25 (rounded up to 10m); proposed at 3× over and 100m more, or 1.5×
   under and 50m more.
@@ -294,6 +294,15 @@ pull request per app, changing only values that exist:
   limit with 365Mi RSS).
 - A memory limit is raised only after an OOM kill (to max(max RSS × 1.5, limit × 1.25)) or when max
   RSS reaches 85% of it (to max RSS × 1.5); it is never lowered. CPU limits are never touched.
+- A missing CPU request, memory request or memory limit is added (requests at the targets above,
+  the limit at max RSS × 1.5 and at least the request): a container without a memory limit joins
+  the Talos OOM ranking's protected tier. Nothing is added inside a `{flow: mapping}`.
+
+`rightSizing.helm` names each chart-deployed container and where its resources sit in the
+HelmRelease: `values` is the path under `spec.values` to the mapping that holds `resources` (""
+for `spec.values.resources`), and `pod`, a regular expression on the pod name, tells containers
+of the same name apart (Immich's server and machine learning are both `main`). A value edit there
+deploys at once: no chart version bump.
 
 Prometheus keeps size-capped history (32 GB, 90 days and more), and Jevil reads up to
 `lookbackDays` of it; it never stores metrics itself. Proposals start once five days of
@@ -321,6 +330,35 @@ Renovate rule whose paths are all gone is removed whole by one of those pull req
 merged piecemeal, it would be left with an empty `matchFileNames`, which matches every file. Two
 cleanups of the same file can conflict once one merges; the next weekly run rebuilds the other
 from `main`.
+
+The weekly cleanup also drops **config nothing uses** (`jevil/cleanup/<app>/unused-config`): a
+ConfigMap, Secret or SealedSecret written in `apps/<app>` whose name appears in no other rendered
+object of its namespace (env, volumes, envFrom, imagePullSecrets, a HelmRelease's values for that
+namespace via `targetNamespace`) and nowhere in a wrapper chart's files. Its document goes; a file
+left empty is deleted and dropped from `kustomization.yaml`. Flux prunes the object on merge. A
+document with `# jevil:keep <why>` in it is never proposed, for config an app reads by other means.
+
+**Volume growth** (`jevil:grow`, daily, `volumes` in the policy): a Longhorn PVC written in
+`apps/<app>` that has been at least `above` (85%) full for `forDays` (3), by the kubelet's
+`kubelet_volume_stats_*` in Prometheus, gets a request that leaves it `target` (60%) full, in
+whole GiB and never less than 25% more; one pull request per app, with a chart of its use over
+30 days. Longhorn grows a volume in place. PVCs here are create-only
+(`kustomize.toolkit.fluxcd.io/ssa: IfNotPresent`), so the merge only records the size: the pull
+request lists the `kubectl patch` that applies it. NFS-backed PVCs are never proposed.
+
+**Re-vendoring** (`jevil:vendor`, daily, `vendor` in the policy): a manifest vendored whole from
+upstream carries a marker, e.g.
+`# jevil:vendor repo=metallb/metallb version=v0.16.1 url=https://raw.githubusercontent.com/metallb/metallb/{version}/config/manifests/metallb-native.yaml`,
+with `only=`/`skip=` kinds when the file holds part of the upstream file (sealed-secrets splits
+its CRD into `crds.yaml`). When the repository tags a newer `X.Y.Z`, Jevil fetches the upstream
+file at both versions and carries upstream's changes onto the vendored one, object by object, so
+local deviations (another namespace, a renamed ClusterRole, a reformatted Deployment) stay; where
+the lines cannot merge, it applies upstream's changed values in place. One pull request per
+directory, with the upstream release notes and comments that still name the old version. When
+upstream's changes collide with local ones (both changed the same values, or upstream changed an
+object renamed here) no pull request opens, and the daily report lists the file under **Vendored
+manifests to re-vendor by hand**. Marked today: MetalLB, Sealed Secrets (install and CRDs) and
+kube-network-policies. Traefik's `install.yaml` is assembled by hand and has no marker.
 
 **Daily report** (issue "Jevil daily report", `jevil:report`, edited in place): first, **since the
 last report**: what is new or gone in each section below compared with the last complete report.
@@ -359,6 +397,7 @@ replica and `Recreate` strategy free it before the next pod starts. It holds boo
 | `answers`, `manual` | Jev's answers on upstream issues and manual-step diffs, for 30 days |
 | `proposals` | the last change proposed on each proposal branch, and when |
 | `report` | what the last complete report listed |
+| `vendor` | upstream releases that collide with local changes, for the report |
 
 Metrics are never stored: right-sizing, charts and the report read Prometheus each time. Losing
 the file costs only what it remembers: jobs run on the next poll, Jev is asked again, and a

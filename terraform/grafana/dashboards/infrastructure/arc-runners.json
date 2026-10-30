@@ -1837,8 +1837,8 @@
         "showHeader": true,
         "sortBy": [
           {
-            "desc": true,
-            "displayName": "Succeeded"
+            "desc": false,
+            "displayName": "Job"
           }
         ]
       },
@@ -1858,8 +1858,7 @@
         {
           "id": "labelsToFields",
           "options": {
-            "mode": "columns",
-            "valueLabel": "result"
+            "mode": "columns"
           }
         },
         {
@@ -1867,42 +1866,19 @@
           "options": {}
         },
         {
-          "id": "groupBy",
+          "id": "groupingToMatrix",
           "options": {
-            "fields": {
-              "job_name": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "Succeeded": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "Failed": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "Canceled": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              }
-            }
+            "columnField": "result",
+            "rowField": "job_name",
+            "valueField": "Value #A",
+            "emptyValue": "zero"
           }
         },
         {
           "id": "organize",
           "options": {
             "renameByName": {
-              "job_name": "Job",
-              "Succeeded (sum)": "Succeeded",
-              "Failed (sum)": "Failed",
-              "Canceled (sum)": "Canceled"
+              "job_name\\result": "Job"
             }
           }
         }

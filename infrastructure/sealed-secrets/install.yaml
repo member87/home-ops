@@ -1,4 +1,4 @@
-# jevil:vendor repo=bitnami-labs/sealed-secrets version=v0.40.0 url=https://github.com/bitnami-labs/sealed-secrets/releases/download/{version}/controller.yaml skip=CustomResourceDefinition
+# jevil:vendor repo=bitnami-labs/sealed-secrets version=v0.41.2 url=https://github.com/bitnami-labs/sealed-secrets/releases/download/{version}/controller.yaml skip=CustomResourceDefinition
 # Vendored from upstream sealed-secrets v0.40.0 controller.yaml (all objects
 # except the CRD, which lives in crds.yaml):
 #   https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.40.0/controller.yaml
@@ -53,7 +53,7 @@ spec:
           command:
             - controller
           env: []
-          image: docker.io/bitnami/sealed-secrets-controller:0.40.0
+          image: docker.io/bitnami/sealed-secrets-controller:0.41.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:

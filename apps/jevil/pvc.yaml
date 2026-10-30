@@ -1,0 +1,17 @@
+---
+# Jevil's state file (/var/lib/jevil/state.db): job schedules, the command cursor, Jev's answers,
+# proposal history and the last report. No metrics: those stay in Prometheus. ReadWriteOnce
+# matches the single replica; the Deployment's Recreate strategy frees it before the next pod.
+# Backed up by Longhorn's default group (backup-daily).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jevil-state
+  namespace: jevil
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn

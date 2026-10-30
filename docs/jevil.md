@@ -159,8 +159,10 @@ flowchart LR
   J -->|clean| S[pass]
   S -->|scope in merge mode,<br/>08:00-22:00 London| M[merge, one at a time]
   M --> V[deploy check]
-  V -->|ok| OK[jevil:merged-ok]
+  V -->|ok| SK[jevil:soaking<br/>15m restart watch]
+  SK -->|no restart| OK[jevil:merged-ok]
   V -->|unhealthy or 30m timeout| H[jevil:merged-unhealthy<br/>revert PR, queue halted]
+  SK -->|container restarted| H
 ```
 
 ## What passes
@@ -259,8 +261,20 @@ deploy settles:
   node. Upgrades get `verify.upgradeTimeoutMinutes` (8h) instead of 30 minutes.
 - Nothing within 30 minutes is unhealthy.
 
-Healthy: a second comment saying the change is live (which Kustomization applied which commit, or
-the Terrakube apply) and `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
+Ready is not the end: a readiness probe passing says nothing about the first real requests. Once
+the deploy is Ready, Jevil posts the live comment, swaps `jevil:verifying` for `jevil:soaking`
+(merged and live, still watched) and keeps the queue held for `verify.soakMinutes` (15). Each
+poll it reads `kube_pod_container_status_restarts_total` from Prometheus for the pods of what the
+merge deployed: the Deployments, StatefulSets, DaemonSets, Jobs and CronJobs in each
+Kustomization's inventory, and every pod in the target namespace of a HelmRelease (Git-sourced
+or in the inventory). A container restart since the merge (a crash, an OOM kill, a failing
+liveness probe; the comment names the pod and its last exit reason) is unhealthy, as below.
+Prometheus not answering keeps the watch going rather than passing it. Talos/Kubernetes upgrades
+and Terraform-only merges are not watched. Remove `jevil:soaking` to end a watch early;
+`/jevil status` on the merged pull request shows how long it has left.
+
+Healthy: the live comment says which Kustomization applied which commit (or the Terrakube apply)
+and, after the watch, that nothing restarted; plus `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
 **Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert` (not
 for a failed Talos/Kubernetes upgrade: rolling nodes back is a human decision).
 Jevil never merges a revert on its own: review it and comment `/jevil merge`; while merging is

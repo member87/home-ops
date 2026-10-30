@@ -36,7 +36,7 @@ same comment. ❌ findings block `/jevil merge`; ⚠️ findings are for you to 
 |---|---|---|
 | `secret` | a known token format on an added line (GitHub, OpenRouter/OpenAI/Anthropic, AWS, private keys, Slack, Discord webhooks, Tailscale, age, `user:pass@` URLs); a long random value whose key Jev judges a credential (≥ 0.7) | Jev 0.3-0.7; diffs too large to scan |
 | `validate` | a target that does not build; `flux/cluster` not building or pointing at a missing directory; a changed object failing its schema (kubeconform: this cluster's own CRD schemas first, refreshed hourly, then Kubernetes schemas, then the community CRD catalog for kinds the cluster does not have) | schemas that could not be fetched |
-| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a Deployment mounting a ReadWriteOnce PVC (looked up in the rendered targets) without `strategy.type: Recreate`, so a rollout onto another node waits on Multi-Attach; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides; an frpc proxy, edge Caddy site and `public_hostnames` entry that disagree (only what the pull request introduces; `# jevil:edge-local` exempts a proxy only the edge uses); a new IngressRoute with a route that neither goes through a forwardAuth middleware nor only redirects to HTTPS, in an app with no OIDC configuration (`# jevil:auth <why>` exempts); a Talos minor bump to v1.N while `talos/patches` holds a patch marked `# jevil:before-boot v1.N` (apply it on every node, then `--allow lint`) | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops; a Talos minor bump with no patch marked for it (read the upgrade notes) |
+| `lint` | a container or init container without a memory limit; an unpinned or `:latest` image; a namespaced object without `metadata.namespace`; a Deployment mounting a ReadWriteOnce PVC (looked up in the rendered targets) without `strategy.type: Recreate`, so a rollout onto another node waits on Multi-Attach; a file `kustomization.yaml` does not reference; a chart directory changed without a `Chart.yaml` bump; Longhorn image overrides; an frpc proxy, edge Caddy site and `public_hostnames` entry that disagree (only what the pull request introduces; `# jevil:edge-local` exempts a proxy only the edge uses); a new IngressRoute with a route that neither goes through a forwardAuth middleware nor only redirects to HTTPS, in an app with no OIDC configuration (`# jevil:auth <why>` exempts); a Talos minor bump to v1.N while `talos/patches` holds a patch marked `# jevil:before-boot v1.N` (apply it on every node, then `--allow lint`); a Kubernetes minor bump of the KubernetesUpgrade (v1.N → v1.M) while any Kustomization, rendered at the pull request's head, has an object whose apiVersion v1.N serves and v1.M does not, read from each release's OpenAPI spec (`flowcontrol.apiserver.k8s.io/v1beta3` FlowSchema at v1.32: the finding names the object and what v1.M still serves; move it there, or `--allow lint`) | a new app with an IngressRoute missing from Glance; a dashboard or alert reading a metric the Prometheus keep-list drops; a Talos minor bump with no patch marked for it (read the upgrade notes); a Kubernetes minor bump whose release API specs could not be fetched, or a Kustomization that does not build, so the removed-API check did not run for it |
 | `destructive` | removing a PVC, PV, Namespace, HelmRelease, StatefulSet, CRD, Kustomization or FluxInstance; changing an immutable field (PVC spec, workload selectors, StatefulSet `volumeClaimTemplates`/`serviceName`, Service `clusterIP`, ...); dropping `kustomize.toolkit.fluxcd.io/prune: disabled`; shrinking a PVC; deleting every manifest of a Kustomization; removing a LoadBalancer Service, or changing what holds a LoadBalancer address: `type: LoadBalancer`, `loadBalancerIP` or a MetalLB `loadBalancerIPs`/`allow-shared-ip`/`address-pool` annotation, on a Service or in a HelmRelease's values (the Pi-hole NodePort outage) | |
 | `image` | a new image tag or digest the registry does not have. A missing image is asked about again every poll, so a pull request opened while its image still builds clears on its own once the image is pushed | a registry that could not be asked |
 | `health` (at merge time) | | waits while a node is NotReady, an attached Longhorn volume is not healthy, a TalosUpgrade/KubernetesUpgrade is not Completed, or a Kustomization other than the pull request's own targets is failing |
@@ -46,6 +46,11 @@ Only the changed objects are linted and validated, so an old problem elsewhere d
 unrelated pull request. Jev never sees a candidate secret's value: only the file, the key and the
 value's shape (length, character classes, first three characters). Put `jevil:allow` in a comment
 on a line to silence the secret check for it.
+
+The removed-API check is the exception: a Kubernetes minor bump makes every manifest's
+apiVersion matter, so it renders every Kustomization, not just the pull request's targets.
+Objects a HelmRelease renders from its chart are not covered (Jevil does not render charts);
+check the charts' upgrade notes before a minor bump.
 
 After reviewing a finding, accept it for one merge with `--allow`:
 `/jevil merge --allow destructive,image`. `--allow health` merges while the cluster is unhealthy.
@@ -61,7 +66,7 @@ Like the Aviator merge queue:
    adds `jevil:queued` and replies with the head commit it queued (within a minute: it polls every
    `pollSeconds`).
 2. Last readiness check, on a fresh read: the head is still that commit (a later push dequeues;
-   comment again), not a draft, not on `jevil:hold`, into `main`, no merge conflict, no failing
+   comment again, except a Renovate rebase, below), not a draft, not on `jevil:hold`, into `main`, no merge conflict, no failing
    commit status, the required statuses (`Terrakube - homeops - aws-edge`, `- grafana`, plus the
    workspace of any changed `terraform/<workspace>`) reported success, no blocking check finding
    outside `--allow`, and the cluster is healthy. Pending checks and an unhealthy cluster keep it
@@ -73,6 +78,15 @@ Like the Aviator merge queue:
 
 `/jevil revert` on a merged pull request opens a revert pull request (restoring each file and its
 mode) and queues it in one step; it still goes through every check above.
+
+Renovate rebases its own pull requests when they conflict. If Chore Bore rebases a queued pull
+request and the change is the same, it stays queued at the new head. "The same" means the pull
+request and every commit on it are still by `chore-bore[bot]`, it touches the same files, and
+each file adds and removes the same lines (only where they land in the file moved). Jevil rewrites
+the queue comment to the new head, keeping `--allow` and the schedule, says Renovate rebased it,
+and runs the whole readiness check above on the new head before merging. Any other push,
+including Renovate moving to a newer version, dequeues as before. Pull requests queued before
+this change carry no fingerprint (`diff=` in the queue comment) and dequeue on any push.
 
 One merge at a time: the queue waits while a deploy is being checked, oldest request first.
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
@@ -381,10 +395,19 @@ Then parked apps
 `cleanup.detachedDays` (size, app, whether the PVC still exists), **resource use** (how many days
 of use Prometheus holds, and every container the right-sizing rules find clearly over or under
 its requests, with its open right-size pull request, or "not proposed yet" while it has under
-`minDays` of data), and open cleanup pull requests. The report itself opens nothing.
+`minDays` of data), **Jev thresholds**, and open cleanup pull requests. **Jev thresholds** reads
+up to 300 Chore Bore pull requests closed in the last 90 days, leaving out the ones Renovate closed
+itself as superseded (`- autoclosed`). It lists any that Jevil ruled `pass` and you then closed:
+that is the evidence to go back to `shadow`. For each question that sends pull requests to review,
+it uses Jev's last answer from the ruling comment and today's threshold to show the flagged pull
+requests that were merged anyway (a flag you overrode) and those closed unmerged. It then gives
+the `reviewAbove`/`reviewBelow` range that would have passed every merged one and still flagged
+every closed one, or says that none separates them. Label-only questions (`security`) are not
+listed. Change a threshold only once several pull requests point the same way. The report itself
+opens nothing.
 Right-sizing runs daily, cleanup weekly and the report daily; each runs on schedule across
 restarts (right-sizing and cleanup first, so the report links what they opened). A section Jevil
-could not read (Longhorn or Prometheus unreachable) says so in the issue, and the report is
+could not read (Longhorn, Prometheus or the closed pull requests unreachable) says so in the issue, and the report is
 written again every 10 minutes until it reads, instead of a day later. Report only:
 Jevil never deletes apps, PVCs or volumes.
 

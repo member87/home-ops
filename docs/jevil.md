@@ -88,7 +88,8 @@ and runs the whole readiness check above on the new head before merging. Any oth
 including Renovate moving to a newer version, dequeues as before. Pull requests queued before
 this change carry no fingerprint (`diff=` in the queue comment) and dequeue on any push.
 
-One merge at a time: the queue waits while a deploy is being checked, oldest request first.
+One merge at a time: the queue waits while a deploy is being checked, oldest request first
+(`--first` entries ahead of the rest).
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
 human decision that ruling asks for). `/jevil cancel` takes a pull request out of the queue.
 
@@ -102,6 +103,9 @@ Scheduling, on the same command (they combine, in any order after `merge`):
 - `--batch`: once one batch entry merges, every other batch entry ready in that poll merges right
   after it, and their deploys are checked together: one restart window instead of one each.
   Entries without `--batch` wait for the batch to go live.
+- `--first`: go ahead of every entry queued without `--first` (several go oldest first). It still
+  waits for the deploy being checked, its own `at`/`after` and the readiness checks. On a pull
+  request already queued, `/jevil cancel` and queue it again with `--first`.
 
 `/jevil merge --batch at 03:00` on several pull requests merges all of them at 03:00. The schedule
 is stored in the queue comment, so it survives restarts; `/jevil status` and the dashboard's
@@ -235,7 +239,7 @@ work on any open pull request; `/jevil revert` on a merged one:
 |---|---|
 | `/jevil merge` | Queue it for merge at its current head |
 | `/jevil merge --allow destructive,image` | Same, accepting the blocking findings of those checks (`secret`, `validate`, `lint`, `destructive`, `image`, `health`) |
-| `/jevil merge at 03:00` · `after #570` · `--batch` | Same, scheduled (see [Merging a pull request](#merging-a-pull-request-jevil-merge)) |
+| `/jevil merge at 03:00` · `after #570` · `--batch` · `--first` | Same, scheduled or put ahead of the queue (see [Merging a pull request](#merging-a-pull-request-jevil-merge)) |
 | `/jevil cancel` | Take it out of the queue |
 | `/jevil revert` | On a merged pull request: open a revert pull request and queue it |
 | `/jevil reclassify` | Ask Jev again and rerun the checks even though nothing changed |

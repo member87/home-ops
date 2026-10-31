@@ -332,7 +332,7 @@ for `spec.values.resources`), and `pod`, a regular expression on the pod name, t
 of the same name apart (Immich's server and machine learning are both `main`). A value edit there
 deploys at once: no chart version bump.
 
-Prometheus keeps size-capped history (32 GB, 90 days and more), and Jevil reads up to
+Prometheus keeps size-capped history (50 GB, about 6.5 months), and Jevil reads up to
 `lookbackDays` of it; it never stores metrics itself. Proposals start once five days of
 `container_memory_rss` are stored and lean on more history as it builds up.
 

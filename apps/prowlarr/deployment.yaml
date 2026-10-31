@@ -120,7 +120,7 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              memory: "256Mi"
+              memory: "96Mi"
               cpu: "100m"
             limits:
               memory: "1Gi"
@@ -197,7 +197,7 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              memory: "256Mi"
+              memory: "112Mi"
               cpu: "100m"
             limits:
               memory: "2Gi"

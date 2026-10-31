@@ -102,6 +102,7 @@ spec:
                 # The request makes the scheduler count it, which it did not before.
                 resources:
                   requests:
+                    cpu: 850m
                     memory: 2Gi
                   limits:
                     memory: 5Gi
@@ -148,7 +149,7 @@ spec:
               main:
                 resources:
                   requests:
-                    cpu: 300m
+                    cpu: 600m
                     memory: 1Gi
                   limits:
                     cpu: 600m

@@ -447,6 +447,11 @@ without the file (`-state`); dry runs do not use it.
 Grafana dashboard **Jevil** (Infrastructure folder, `terraform/grafana/dashboards/infrastructure/jevil.json`):
 
 - **Status**: last poll, halt state, mode per scope, open pull requests by ruling, errors.
+- **Merge success** (30 days): the share of merges not rolled back, rollbacks, merges, the
+  share of deploy checks that passed, and merges and rollbacks per day. A rollback is a revert
+  pull request Jevil opened (`jevil_reverts_total`: `unhealthy` after a failed deploy check,
+  `command` on `/jevil revert`); a revert done by hand is not counted, and merges of revert pull
+  requests (`jevil_merges_total{kind="revert"}`) count as neither merge nor rollback.
 - **Now**, rebuilt every poll: the merge queue in merge order with each entry's status and what it
   waits for; merged pull requests whose deploy Jevil is still watching (Flux, Terrakube, tuppr
   upgrades, with the current phase); the cluster health gate's problems; and every open pull

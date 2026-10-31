@@ -30,6 +30,12 @@ spec:
         # second Talos OOM tier with traefik instead of dying first with the apps
         # (talos/patches/oom-config.yaml).
         - name: tailscale
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              memory: 48Mi
+              cpu: 10m
           image: tailscale/tailscale:v1.104.2
           command:
             - /bin/sh

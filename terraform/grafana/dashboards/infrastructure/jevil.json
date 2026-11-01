@@ -1420,7 +1420,7 @@
       "id": 52,
       "type": "logs",
       "title": "Replies",
-      "description": "Every comment Jevil posted or edited: the pull request, the kind (ruling, report, reply, queued, waiting, dequeued, merged, live, unhealthy, progress) and its first line.",
+      "description": "Every comment Jevil posted, edited or folded into its card: the pull request, the kind (card, reply for /jevil revert, queued, waiting, dequeued, merged, live, unhealthy, progress, withdrawn, suggestion) and its first line. folded: an old comment deleted into the card.",
       "datasource": {
         "type": "loki",
         "uid": "${lokiDatasource}"

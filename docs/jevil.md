@@ -3,13 +3,22 @@
 Jevil, `apps/jevil`, is the only thing that merges to `main`, for every pull request: a ruleset
 blocks the GitHub merge button and `gh pr merge`, and you comment `/jevil merge` instead. It also
 rules on every Chore Bore (Renovate) pull request, labels it, and on its own merges the ones its
-policy passes, one at a time, checking each deploy before the next. It acts on GitHub as
+policy passes, in groups whose deploys it checks together before the next. It acts on GitHub as
 `jevil-bot[bot]`. Source: `github.com/member87/jevil` (private), image `ghcr.io/member87/jevil:<sha>`.
 
 ## What a pull request changes
 
-Every open pull request, from anyone, gets one Jevil comment **"what this changes"**, kept up to
-date as commits land. Each changed file is mapped onto what deploys it:
+Every open pull request, from anyone, has one Jevil **card**: a comment that leads with Jevil's
+ruling (on Chore Bore updates) and a **TL;DR** saying why it has not merged and what happens next:
+what held a passing update this poll, its place in the queue, or the merge commit. Below it,
+collapsed sections each say their gist on one line: 📦 what this changes, ✅/❌ checks, 🤖 Jev's
+reading, 🔎 upstream issues, 📜 changelog, 🗨️ the last `/jevil explain` or `/jevil status` output,
+and 🕘 the history of other commands. Jevil edits the card only when its text changes, and it
+carries Jev's cached answers. The merge lifecycle keeps its own comments, so each one notifies: the
+queue comment (with its `⏳ Waiting…` line), dequeued, merged, live, upgrade progress and unhealthy.
+
+**📦 What this changes**, kept up to date as commits land, maps each changed file onto what
+deploys it:
 
 | Target | When a file belongs to it | Deploys on merge |
 |---|---|---|
@@ -88,28 +97,34 @@ and runs the whole readiness check above on the new head before merging. Any oth
 including Renovate moving to a newer version, dequeues as before. Pull requests queued before
 this change carry no fingerprint (`diff=` in the queue comment) and dequeue on any push.
 
-One merge at a time: the queue waits while a deploy is being checked, oldest request first
-(`--first` entries ahead of the rest).
+Each poll Jevil walks one merge line: `/jevil merge --first` entries, then queued pull requests (by
+when `/jevil merge` was asked) and passing Renovate updates (by when they were opened, and only
+inside the merge window) oldest first. Every pull request that clears its checks joins this poll's
+merge group unless it deploys to a namespace, Kustomization, HelmRelease or Terrakube workspace
+already in the group; then it waits for the next group and keeps its place. A group holds up to 5
+pull requests. They merge back to back, their deploys are checked together, and nothing else
+merges until all of them are live. A revert stays with the pull request whose deploy failed.
+Reverts, Talos/Kubernetes upgrades and pull requests queued with `--alone` always merge by
+themselves. Each queued pull request's comment carries a `⏳ Waiting…` line naming what holds it,
+for example `merging is halted: #612 is jevil:merged-unhealthy`, `#613's deploy is being checked`
+or `waits for the next group: overlaps #608 (namespace radarr)`; `/jevil status` reads it back.
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
 human decision that ruling asks for). `/jevil cancel` takes a pull request out of the queue.
 
-Scheduling, on the same command (they combine, in any order after `merge`):
+Scheduling and grouping, on the same command (they combine, in any order after `merge`):
 
 - `at 03:00`: wait until the next 03:00 in the merge window's time zone (Europe/London), then
-  merge if every check above passes.
+  merge if every check above passes. Entries due at the same time go out as one group.
 - `after #570`: wait until #570 is merged and its deploy is live. If #570 is closed unmerged,
   turns `jevil:merged-unhealthy`, or waits for this pull request in turn, this one leaves the
   queue with a comment saying why.
-- `--batch`: once one batch entry merges, every other batch entry ready in that poll merges right
-  after it, and their deploys are checked together: one restart window instead of one each.
-  Entries without `--batch` wait for the batch to go live.
+- `--alone`: merge by itself, never in a group. (`--batch` is gone: grouping is automatic.)
 - `--first`: go ahead of every entry queued without `--first` (several go oldest first). It still
   waits for the deploy being checked, its own `at`/`after` and the readiness checks. On a pull
   request already queued, `/jevil cancel` and queue it again with `--first`.
 
-`/jevil merge --batch at 03:00` on several pull requests merges all of them at 03:00. The schedule
-is stored in the queue comment, so it survives restarts; `/jevil status` and the dashboard's
-merge queue show it.
+The schedule is stored in the queue comment, so it survives restarts; `/jevil status` and the
+dashboard's merge queue show it.
 
 The block on manual merges is the `jevil-merges-only` repository ruleset: it restricts updates to
 `main` and only the Jevil Bot App may bypass it. Break-glass when Jevil is down: an admin
@@ -137,8 +152,8 @@ version) is not eligible to merge on its own and gets `jevil:prerelease`: home-o
 can track an application's develop channel, so a minor bump there can still be a test build.
 
 `jevil:security` comes from a `labelOnly` question: Jev thinks the release fixes a security
-vulnerability (≥ 0.5). It never sends an update to review; a ready one carrying it merges ahead of
-other Renovate updates, and the dashboard's open pull request table shows it under flags.
+vulnerability (≥ 0.5). It never sends an update to review and no longer jumps the merge line; the
+dashboard's open pull request table shows it under flags.
 
 Upstream issues: for every upstream project an update resolves to, Jevil searches the issues
 opened there since the target version's release (the newest `upstreamIssues.maxIssues`, again
@@ -195,8 +210,10 @@ All of these, checked in code:
   come and go. Anything else (a new env var, an image repository change) goes to review.
 - Every update in Renovate's table is `minor` or `patch`.
 - Every commit status is green, and these exist: `Terrakube - homeops - aws-edge`,
-  `Terrakube - homeops - grafana`, `renovate/stability-days`, and for Terraform the workspace's own
-  context.
+  `Terrakube - homeops - grafana`, and for Terraform the workspace's own context; and, for an
+  update that is otherwise eligible, `renovate/stability-days`. Renovate posts that status only
+  where `minimumReleaseAge` applies, so majors and updates elsewhere (`flux/helm/**`) do not wait
+  for it; they go to review anyway. Jevil's own `minimumReleaseAgeHours` gate is unchanged.
 - Terraform: the workspace's plan summary is `0 to add, 0 to change, 0 to destroy`.
 - Apps: the app's Flux Kustomization exists, has `wait: true` and is Ready; for an eligible chart,
   its HelmRelease is Ready.
@@ -218,18 +235,20 @@ still pending; Jevil looks again next poll).
   `jevil:addressed-to-bot`. Jevil removes its own stale labels and never touches anyone else's.
 - Commit status `jevil/policy` on the head commit (informational, not required by branch
   protection).
-- One comment, edited in place: the reasons, Jev's probability per question, the model that
-  answered, and the policy hash. It also caches Jev's answers, so an unchanged pull request is not
-  asked again.
-- In that comment, a collapsed **📜 Changelog** per upstream project Jevil fetched itself: every
+- The card (above), edited in place: the ruling and its reasons in plain words ("Jev thinks
+  `breaking` is likely (0.57; review from 0.3)"), Jev's probability per question, the model that
+  answered, and the policy hash under 🤖 Jev's reading. It also caches Jev's answers, so an
+  unchanged pull request is not asked again.
+- In the card, a collapsed **📜 Changelog** per upstream project Jevil fetched itself: every
   release between the two versions, newest first, so a missing Renovate changelog is not a trip
   to GitHub. Renovate's own notes stay in the pull request description and are not repeated.
-  Capped at 12 KB a release and 45 KB a comment (cut at a line, with a link to the rest).
+  Capped at 8 KB a release and 20 KB a card (cut at a line, with a link to the rest); the card
+  stays under GitHub's comment limit.
   Mentions are broken and issue references and links go through `redirect.github.com`, so the
   notes ping nobody and leave no cross-references on this repository's or upstream's issues.
 
 Commands are accepted from the logins in `commanders` only; the policy sets that to `member87`
-alone, and Jevil refuses to start with an empty list. Anyone else gets a 😕 and a refusal. Jevil
+alone, and Jevil refuses to start with an empty list. Anyone else gets a 😕 and a refusal in the card. Jevil
 reads the first line of a comment as the command, so a note can follow on the next lines. After a
 restart it reads on from where it stopped, but never further back than 24 hours: a command left
 while Jevil was down for longer is not run unseen days later; comment it again. They
@@ -239,12 +258,12 @@ work on any open pull request; `/jevil revert` on a merged one:
 |---|---|
 | `/jevil merge` | Queue it for merge at its current head |
 | `/jevil merge --allow destructive,image` | Same, accepting the blocking findings of those checks (`secret`, `validate`, `lint`, `destructive`, `image`, `health`) |
-| `/jevil merge at 03:00` · `after #570` · `--batch` · `--first` | Same, scheduled or put ahead of the queue (see [Merging a pull request](#merging-a-pull-request-jevil-merge)) |
+| `/jevil merge at 03:00` · `after #570` · `--alone` · `--first` | Same, scheduled, kept out of a group, or put ahead of the queue (see [Merging a pull request](#merging-a-pull-request-jevil-merge)) |
 | `/jevil cancel` | Take it out of the queue |
 | `/jevil revert` | On a merged pull request: open a revert pull request and queue it |
 | `/jevil reclassify` | Ask Jev again and rerun the checks even though nothing changed |
-| `/jevil status` | Reply with the ruling and its reasons, the checks, the queue position and what it waits for, the health gate for this pull request's targets and what it deploys; on a merged one, whether the deploy is live |
-| `/jevil explain` | On a Chore Bore pull request: re-ask Jev with each part of the release notes left out (paragraphs, then down to one line inside the strongest) and reply with what drives each flagged answer. At most 40 Jev calls a pass, about $0.005 in all |
+| `/jevil status` | Show in the card: the ruling and its reasons, the checks, the queue position and what it waits for, the health gate for this pull request's targets and what it deploys; on a merged one, whether the deploy is live |
+| `/jevil explain` | On a Chore Bore pull request: re-ask Jev with each part of the release notes left out (paragraphs, then down to one line inside the strongest) and show in the card what drives each flagged answer. At most 40 Jev calls a pass, about $0.005 in all |
 | `/jevil hold` | Add `jevil:hold` (and dequeue): never merge this pull request |
 | `/jevil unhold` | Remove `jevil:hold` |
 
@@ -285,8 +304,11 @@ the deploy is Ready, Jevil posts the live comment, swaps `jevil:verifying` for `
 poll it reads `kube_pod_container_status_restarts_total` from Prometheus for the pods of what the
 merge deployed: the Deployments, StatefulSets, DaemonSets, Jobs and CronJobs in each
 Kustomization's inventory, and every pod in the target namespace of a HelmRelease (Git-sourced
-or in the inventory). A container restart since the merge (a crash, an OOM kill, a failing
+or in the inventory). A container restart after the live comment (a crash, an OOM kill, a failing
 liveness probe; the comment names the pod and its last exit reason) is unhealthy, as below.
+Restarts while the rollout settles (an app failing while a database recreated by the same merge
+starts) do not count once its workloads are Ready; a rollout that never gets Ready times out
+unhealthy in the deploy check. If the live comment is deleted, restarts count from the merge.
 Prometheus not answering keeps the watch going rather than passing it. Talos/Kubernetes upgrades
 and Terraform-only merges are not watched. Remove `jevil:soaking` to end a watch early;
 `/jevil status` on the merged pull request shows how long it has left.
@@ -307,16 +329,21 @@ original pull request.
 Jevil proposes changes as ordinary pull requests (label `jevil:proposal`). They get the same checks
 and need `/jevil merge`: Jevil never merges its own. Closing one is a "no": that branch is not
 proposed again for 30 days, and the same change (the same values, or the same entries removed)
-never again; a different change on the branch is proposed after the 30 days. While one is open,
-Jevil refreshes it only when its files would change.
+never again; a different change on the branch is proposed after the 30 days.
 
 **Right-sizing** (`jevil:right-size`, `rightSizing` in the policy): from Prometheus, each
 container's p95 CPU and p95/max RSS over `lookbackDays` (90), needing `minDays` (5) of data,
 against the requests in the plain manifests under `apps/<app>/` (`exclude`d apps, container names
 not unique in their namespace and workloads a kustomize patch changes are skipped), and in the
 values of the HelmReleases `rightSizing.helm` maps (below). Jevil looks every `everyHours` (24):
-an app's proposal opens the day its containers qualify, and an open one is rewritten with newer
-numbers at most every `refreshHours` (168). One pull request per app or release:
+an app's proposal opens the day its containers qualify. Every run refreshes each open one with the
+newest numbers: the title's day count, the table and the chart; the branch gets a new commit (and
+the checks run again) only when the proposed values change. A `jevil:queued` or `jevil:hold`
+proposal is never touched, so what was reviewed is what merges. When newer data no longer calls
+for any change in that app, Jevil closes the pull request with a comment giving the day count;
+that is not a "no", so it proposes again as soon as the numbers call for it. The body opens with
+the net change and one table, the sizing rules collapsed under "How Jevil sized these". One pull
+request per app or release:
 
 - CPU request target p95 × 1.25 (rounded up to 10m); proposed at 3× over and 100m more, or 1.5×
   under and 50m more.

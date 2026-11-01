@@ -449,8 +449,9 @@ without the file (`-state`); dry runs do not use it.
 What gates merging lives on GitHub, not in the file or in memory: the queue is the
 `jevil:queued` label plus the queue comment (head, `--allow`, schedule), a deploy being checked
 is `jevil:verifying` or `jevil:soaking`, and a halt is `jevil:merged-unhealthy`. Jevil reads
-them each poll from the issues list, which shows a label as soon as it is written, so a restart
-or an upgrade carries on exactly where the last pod stopped.
+them each poll from the issues list (search can lag a label by minutes), so a restart or an
+upgrade carries on where the last pod stopped. The list itself can lag a label write by a few
+seconds, so a deploy found unhealthy halts the poll that found it without reading its label back.
 
 ## Operations
 

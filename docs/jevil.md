@@ -446,6 +446,12 @@ declined change could come back after its 30 days. Each failed read or write cou
 `jevil_state_errors_total` and is logged; it never stops a poll. Jevil refuses to start
 without the file (`-state`); dry runs do not use it.
 
+What gates merging lives on GitHub, not in the file or in memory: the queue is the
+`jevil:queued` label plus the queue comment (head, `--allow`, schedule), a deploy being checked
+is `jevil:verifying` or `jevil:soaking`, and a halt is `jevil:merged-unhealthy`. Jevil reads
+them each poll from the issues list, which shows a label as soon as it is written, so a restart
+or an upgrade carries on exactly where the last pod stopped.
+
 ## Operations
 
 Grafana dashboard **Jevil** (Infrastructure folder, `terraform/grafana/dashboards/infrastructure/jevil.json`):

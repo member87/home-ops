@@ -67,7 +67,7 @@ spec:
           # the request now matches real usage so the scheduler counts it.
           resources:
             requests:
-              cpu: 500m
+              cpu: 130m
               memory: 2Gi
             limits:
               cpu: 2000m

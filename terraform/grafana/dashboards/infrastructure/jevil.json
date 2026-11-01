@@ -456,6 +456,364 @@
       "description": "Failed poll cycles plus pull requests Jevil could not rule on, last 24 hours. The log below names the cause."
     },
     {
+      "id": 60,
+      "type": "row",
+      "title": "Merge success",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "id": 61,
+      "type": "stat",
+      "title": "Merge success (30d)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "1 - (sum(increase(jevil_reverts_total[30d])) or vector(0)) / (sum(increase(jevil_merges_total{kind!=\"revert\"}[30d])) > 0)",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.9
+              },
+              {
+                "color": "green",
+                "value": 0.95
+              }
+            ]
+          },
+          "noValue": "no merges in 30 days",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      },
+      "description": "Share of Jevil's merges in the last 30 days that were not rolled back: 1 - rollbacks / merges. Merges of revert pull requests count as neither."
+    },
+    {
+      "id": 62,
+      "type": "stat",
+      "title": "Rollbacks (30d)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "round(sum(increase(jevil_reverts_total[30d]))) or vector(0)",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      },
+      "description": "Revert pull requests Jevil opened in the last 30 days: after an unhealthy deploy, or on /jevil revert. Reverts done by hand outside Jevil, and Talos/Kubernetes upgrades (never reverted), are not counted."
+    },
+    {
+      "id": 63,
+      "type": "stat",
+      "title": "Merges (30d)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "round(sum(increase(jevil_merges_total{kind!=\"revert\"}[30d]))) or vector(0)",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      },
+      "description": "Pull requests Jevil merged in the last 30 days, on /jevil merge or its own Renovate ruling, not counting revert pull requests."
+    },
+    {
+      "id": 64,
+      "type": "stat",
+      "title": "Deploy checks passed (30d)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum(increase(jevil_verifications_total{outcome=\"ok\"}[30d])) / (sum(increase(jevil_verifications_total[30d])) > 0)",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.9
+              },
+              {
+                "color": "green",
+                "value": 0.95
+              }
+            ]
+          },
+          "noValue": "no deploy checks in 30 days",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      },
+      "description": "Post-merge deploy checks in the last 30 days that ended ok rather than unhealthy (failed reconcile, timeout, or a container restart while soaking). Includes upgrades, which turn unhealthy without a revert."
+    },
+    {
+      "id": 65,
+      "type": "timeseries",
+      "title": "Merges and rollbacks per day",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${promDatasource}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum(increase(jevil_merges_total{kind!=\"revert\"}[1d]))",
+          "legendFormat": "merged",
+          "interval": "1d"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${promDatasource}"
+          },
+          "expr": "sum by (trigger) (increase(jevil_reverts_total[1d]))",
+          "legendFormat": "rolled back ({{trigger}})",
+          "interval": "1d"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "barAlignment": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "rolled back.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "description": "Merges Jevil made each day (revert pull requests excluded) and the revert pull requests it opened, by trigger: unhealthy (deploy check failed) or command (/jevil revert)."
+    },
+    {
       "id": 40,
       "type": "row",
       "title": "Now",
@@ -464,7 +822,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 11
       },
       "panels": []
     },
@@ -481,7 +839,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 12
       },
       "targets": [
         {
@@ -671,7 +1029,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 18
       },
       "targets": [
         {
@@ -820,7 +1178,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 17
+        "y": 23
       },
       "targets": [
         {
@@ -879,7 +1237,7 @@
         "h": 7,
         "w": 16,
         "x": 8,
-        "y": 17
+        "y": 23
       },
       "targets": [
         {
@@ -1020,7 +1378,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 30
       },
       "panels": []
     },
@@ -1037,7 +1395,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 31
       },
       "targets": [
         {
@@ -1071,7 +1429,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 31
       },
       "targets": [
         {
@@ -1105,7 +1463,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 34
+        "y": 40
       },
       "targets": [
         {
@@ -1139,7 +1497,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 40
       },
       "targets": [
         {
@@ -1173,7 +1531,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 48
       },
       "targets": [
         {
@@ -1219,7 +1577,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 54
       },
       "panels": []
     },
@@ -1235,7 +1593,7 @@
         "h": 7,
         "w": 4,
         "x": 0,
-        "y": 49
+        "y": 55
       },
       "description": "Pull requests waiting for Jevil after /jevil merge: on a pending check, or behind a deploy that is being checked.",
       "targets": [
@@ -1294,7 +1652,7 @@
         "h": 7,
         "w": 10,
         "x": 4,
-        "y": 49
+        "y": 55
       },
       "targets": [
         {
@@ -1347,7 +1705,7 @@
         "h": 7,
         "w": 10,
         "x": 14,
-        "y": 49
+        "y": 55
       },
       "description": "merged: by /jevil merge (command) or on Jevil's own ruling (renovate). dequeued: a readiness check failed; the pull request comment says which.",
       "targets": [
@@ -1424,7 +1782,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 56
+        "y": 62
       },
       "panels": []
     },
@@ -1440,7 +1798,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 57
+        "y": 63
       },
       "targets": [
         {
@@ -1495,7 +1853,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 57
+        "y": 63
       },
       "targets": [
         {
@@ -1548,7 +1906,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 65
+        "y": 71
       },
       "targets": [
         {
@@ -1629,7 +1987,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 65
+        "y": 71
       },
       "targets": [
         {
@@ -1683,7 +2041,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 73
+        "y": 79
       },
       "targets": [
         {
@@ -1741,7 +2099,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 73
+        "y": 79
       },
       "targets": [
         {
@@ -1795,7 +2153,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 73
+        "y": 79
       },
       "targets": [
         {
@@ -1842,7 +2200,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 80
+        "y": 86
       },
       "panels": []
     },
@@ -1858,7 +2216,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 81
+        "y": 87
       },
       "targets": [
         {
@@ -1918,7 +2276,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 81
+        "y": 87
       },
       "targets": [
         {
@@ -1977,7 +2335,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 81
+        "y": 87
       },
       "targets": [
         {
@@ -2037,7 +2395,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 81
+        "y": 87
       },
       "targets": [
         {
@@ -2097,7 +2455,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 81
+        "y": 87
       },
       "targets": [
         {
@@ -2156,7 +2514,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 81
+        "y": 87
       },
       "targets": [
         {
@@ -2217,7 +2575,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 85
+        "y": 91
       },
       "targets": [
         {
@@ -2272,7 +2630,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 85
+        "y": 91
       },
       "targets": [
         {
@@ -2340,7 +2698,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 92
+        "y": 98
       },
       "panels": []
     },
@@ -2356,7 +2714,7 @@
         "h": 5,
         "w": 5,
         "x": 0,
-        "y": 93
+        "y": 99
       },
       "targets": [
         {
@@ -2419,7 +2777,7 @@
         "h": 5,
         "w": 5,
         "x": 5,
-        "y": 93
+        "y": 99
       },
       "targets": [
         {
@@ -2488,7 +2846,7 @@
         "h": 5,
         "w": 14,
         "x": 10,
-        "y": 93
+        "y": 99
       },
       "targets": [
         {
@@ -2546,7 +2904,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 98
+        "y": 104
       },
       "targets": [
         {
@@ -2625,7 +2983,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 106
+        "y": 112
       },
       "panels": []
     },
@@ -2641,7 +2999,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 107
+        "y": 113
       },
       "targets": [
         {

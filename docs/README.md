@@ -132,6 +132,7 @@ under `terraform/aws-edge/config/`.
 | [Tailnet VPN](tailnet-vpn.md) | Headscale connectivity, direct paths, and relay fallback |
 | [Media streaming](media-streaming.md) | Local and remote media paths plus bandwidth considerations |
 | [Immich backup](immich-backup.md) | What the nightly B2 backup covers, how deletions are retained, and how to restore |
+| [etcd snapshots](etcd-backup.md) | How the nightly etcd snapshot reaches the NAS, how it is watched, and how to restore the control plane |
 | [Jevil](jevil.md) | How dependency pull requests are ruled on, labelled and merged, and how to turn merging on |
 
 The detailed diagrams intentionally use example names and addresses. For current

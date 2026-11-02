@@ -57,17 +57,21 @@
         "type": "dashboard"
       },
       {
-        "name": "Merges",
+        "name": "Jevil",
         "enable": true,
         "datasource": {
-          "type": "loki",
-          "uid": "${lokiDatasource}"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
         "iconColor": "purple",
-        "expr": "{namespace=\"jevil\"} | json | msg=~\"merged|deploy unhealthy\"",
-        "titleFormat": "{{msg}}",
-        "textFormat": "PR #{{pr}}",
-        "tagKeys": "msg"
+        "target": {
+          "type": "tags",
+          "tags": [
+            "jevil"
+          ],
+          "matchAny": false,
+          "limit": 100
+        }
       }
     ]
   },

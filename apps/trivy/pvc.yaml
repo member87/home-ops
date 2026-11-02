@@ -1,0 +1,24 @@
+---
+# The vulnerability database (about 1.6 GB unpacked, replaced whole on an update, so twice that
+# for a moment) and what the server learned about every layer Jevil's scans sent it. A cache:
+# a lost volume is downloaded again on start. Not backed up: without recurring-job labels a
+# volume falls into Longhorn's default group (backup-daily + snapshot-cleanup-daily); the source
+# label makes Longhorn copy these labels to the volume, so it keeps only the snapshot cleanup.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable;
+    # a server-side apply that later omits spec.volumeName would try to clear it.
+  labels:
+    recurring-job.longhorn.io/source: enabled
+    recurring-job.longhorn.io/snapshot-cleanup-daily: enabled
+  name: trivy-cache
+  namespace: trivy
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn

@@ -1,0 +1,38 @@
+---
+# The NAS share; the CronJob mounts only its etcd-backups directory (subPath), which the
+# kubelet creates on the first run.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etcd-backup-nas-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable
+  name: etcd-backup-nas
+  namespace: etcd-backup
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: etcd-backup-nas-pv
+  resources:
+    requests:
+      storage: 5Gi

@@ -12,6 +12,23 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "name": "Jevil",
+        "enable": true,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "iconColor": "purple",
+        "target": {
+          "type": "tags",
+          "tags": [
+            "jevil"
+          ],
+          "matchAny": false,
+          "limit": 100
+        }
       }
     ]
   },

@@ -6,12 +6,13 @@
   "pollSeconds": 60,
   "modes": {
     "app": "merge",
-    "terraform": "merge"
+    "terraform": "merge",
+    "helm": "merge",
+    "infrastructure": "shadow"
   },
   "mergeWindow": { "timeZone": "Europe/London", "startHour": 8, "endHour": 22 },
   "mergeMethod": "squash",
-  "eligibleUpdateTypes": ["minor", "patch"],
-  "eligibleCharts": ["podinfo"],
+  "eligibleUpdateTypes": ["minor", "patch", "digest"],
   "requiredContexts": ["Terrakube - homeops - aws-edge", "Terrakube - homeops - grafana"],
   "stabilityContext": "renovate/stability-days",
   "minimumReleaseAgeHours": 72,
@@ -23,9 +24,117 @@
     "maxDestroy": 0
   },
   "flux": { "namespace": "flux-system" },
-  "verify": { "timeoutMinutes": 30, "upgradeTimeoutMinutes": 480, "soakMinutes": 15 },
+  "verify": {
+    "timeoutMinutes": 30,
+    "upgradeTimeoutMinutes": 480,
+    "soakMinutes": 15,
+    "signals": {
+      "lokiUrl": "http://loki.loki.svc.cluster.local:3100",
+      "serverErrors": { "ratio": 2, "floor": 0.05 },
+      "latency": { "ratio": 2, "floor": 1 },
+      "minRequests": 30,
+      "logErrors": { "ratio": 3, "floor": 2 },
+      "errorLines": "level=(?i:error|fatal|crit)|\"level\":\\s*\"(?i:error|fatal|critical)\"|\\[(?i:error|fatal|crit)\\]|\\b(?:ERROR|FATAL|CRITICAL|PANIC)\\b|\\bpanic:|Traceback \\(most recent call last\\)|\\b[A-Z][A-Za-z]*Exception\\b",
+      "logLines": 20,
+      "logBytes": 8000,
+      "causes": [
+        {
+          "id": "out_of_memory",
+          "reviewAbove": 0.5,
+          "instructions": "Did a container run out of memory: killed as OOMKilled, exit code 137 with memory growth, or out-of-memory errors in `logs`?",
+          "criteria": {
+            "true": "`containers` or `logs` show an OOM kill or the process running out of memory.",
+            "false": "Nothing in `containers` or `logs` points at memory."
+          }
+        },
+        {
+          "id": "configuration",
+          "reviewAbove": 0.5,
+          "instructions": "Does the deployed version reject or misread its configuration: an unknown, renamed, removed or missing setting, environment variable, flag or config file, or a config parse error?",
+          "criteria": {
+            "true": "`logs` show a configuration, flag, environment or config-file error at start.",
+            "false": "The configuration is accepted; the failure is elsewhere."
+          }
+        },
+        {
+          "id": "data_migration",
+          "reviewAbove": 0.5,
+          "instructions": "Did a database or data migration fail, or does the new version refuse its existing data (schema version, incompatible on-disk format, a migration it requires first)?",
+          "criteria": {
+            "true": "`logs` show a failed or required migration, or a schema/data version the release will not run with.",
+            "false": "No migration or data-format problem appears."
+          }
+        },
+        {
+          "id": "dependency_unreachable",
+          "reviewAbove": 0.5,
+          "instructions": "Is it failing because something it depends on cannot be reached or refuses it: a database, another service, DNS, the network, or an external API?",
+          "criteria": {
+            "true": "`logs` show connection refused, timeouts, DNS failures or authentication refused by another service.",
+            "false": "Its dependencies answer; the failure is in the app itself."
+          }
+        },
+        {
+          "id": "permissions",
+          "reviewAbove": 0.5,
+          "instructions": "Is it failing on file or volume permissions: permission denied, a read-only file system, or files owned by another user or group?",
+          "criteria": {
+            "true": "`logs` show permission denied, EACCES, EROFS or ownership errors.",
+            "false": "No permission or filesystem error appears."
+          }
+        },
+        {
+          "id": "broken_image",
+          "reviewAbove": 0.5,
+          "instructions": "Is the image itself unusable: it cannot be pulled, or it does not start at all (exec format error, missing binary or entrypoint, wrong architecture)?",
+          "criteria": {
+            "true": "`containers` wait on ErrImagePull, ImagePullBackOff or CreateContainerError, or `logs` show the process cannot be executed.",
+            "false": "The image pulls and its process starts."
+          }
+        },
+        {
+          "id": "failing_probe",
+          "reviewAbove": 0.5,
+          "instructions": "Does the app run while its readiness or liveness probe fails: started too slowly, or the probe's path or port no longer answers?",
+          "criteria": {
+            "true": "`containers` are not ready or restarted while `logs` show the app running normally without a crash.",
+            "false": "The app itself crashes or errors; probes are not the problem."
+          }
+        },
+        {
+          "id": "release_bug",
+          "reviewAbove": 0.5,
+          "instructions": "Does the new release itself crash or error with its configuration accepted: a panic, stack trace, unhandled exception or assertion in its own code?",
+          "criteria": {
+            "true": "`logs` show a panic, stack trace or unhandled exception from the application's code.",
+            "false": "No crash in the application's own code appears."
+          }
+        },
+        {
+          "id": "unrelated_to_change",
+          "reviewAbove": 0.5,
+          "instructions": "Does the evidence point at something other than the change in `change`: a node, storage, network or cluster-wide problem that would have hit any version?",
+          "criteria": {
+            "true": "The failure comes from the cluster or another component, not from what `change` deployed.",
+            "false": "The failure follows from what `change` deployed."
+          }
+        }
+      ]
+    }
+  },
+  "infrastructure": { "soakMinutes": 60 },
+  "reverts": { "autoMerge": true },
+  "canary": [
+    {"name": "home-operations", "match": "^ghcr\\.io/home-operations/[a-z0-9-]+$", "app": "bazarr", "soakMinutes": 60, "withinHours": 24}
+  ],
+  "grafana": { "url": "http://grafana.grafana.svc.cluster.local:3000" },
   "notes": { "minBytes": 40, "maxBytes": 20000 },
-  "upstreams": { "longhorn": "longhorn/longhorn", "ekofr/pihole-exporter": "eko/pihole-exporter" },
+  "upstreams": {
+    "longhorn": "longhorn/longhorn",
+    "ekofr/pihole-exporter": "eko/pihole-exporter",
+    "fatedier/frps": "fatedier/frp",
+    "caddy": "caddyserver/caddy"
+  },
   "checks": {
     "schemaCache": "/tmp/kubeconform",
     "prometheusConfig": "apps/prometheus/configmap.yaml",
@@ -71,6 +180,61 @@
   },
   "vendor": {
     "everyHours": 24
+  },
+  "backups": {
+    "maxAgeHours": 36,
+    "etcd": {"namespace": "etcd-backup", "cronJob": "etcd-snapshot"}
+  },
+  "liveDiff": {
+    "maxBytes": 6000
+  },
+  "security": {
+    "trivyServer": "http://trivy.trivy.svc.cluster.local:4954",
+    "severities": ["HIGH", "CRITICAL"],
+    "cacheDir": "/var/cache/trivy",
+    "timeoutMinutes": 10,
+    "rescanHours": 24,
+    "maxScansPerDay": 200,
+    "maxScansPerPoll": 4,
+    "eol": {
+      "soonDays": 90,
+      "products": [
+        { "product": "kubernetes", "name": "Kubernetes", "node": "kubelet" },
+        { "product": "talos", "name": "Talos", "node": "os" },
+        { "product": "longhorn", "name": "Longhorn", "image": "longhornio/longhorn-manager" },
+        { "product": "flux", "name": "Flux", "label": "app.kubernetes.io/version", "namespace": "flux-system", "selector": "app.kubernetes.io/part-of=flux" },
+        { "product": "postgresql", "name": "PostgreSQL", "image": "pgvector/pgvector", "version": "pg(\\d+)" },
+        { "product": "postgresql", "name": "PostgreSQL (Terrakube)", "image": "bitnamilegacy/postgresql" },
+        { "product": "traefik", "name": "Traefik", "image": "traefik" },
+        { "product": "cert-manager", "name": "cert-manager", "image": "quay.io/jetstack/cert-manager-controller" },
+        { "product": "metallb", "name": "MetalLB", "image": "quay.io/metallb/controller" },
+        { "product": "grafana", "name": "Grafana", "image": "grafana/grafana" },
+        { "product": "prometheus", "name": "Prometheus", "image": "prom/prometheus" },
+        { "product": "grafana-loki", "name": "Loki", "image": "grafana/loki" },
+        { "product": "valkey", "name": "Valkey", "image": "valkey/valkey" },
+        { "product": "nginx", "name": "nginx", "image": "nginxinc/nginx-unprivileged" },
+        { "product": "python", "name": "Python", "image": "python" }
+      ]
+    }
+  },
+  "edge": {
+    "workspace": "aws-edge",
+    "bumps": {
+      "path": "terraform/aws-edge/config/",
+      "replace": "terraform_data.edge_config",
+      "planCommenter": "terrakube-homeops-bot[bot]"
+    },
+    "health": {
+      "instance": "aws-edge",
+      "jobs": ["aws-edge-node", "aws-edge-prometheus-agent"],
+      "endpoints": ["https://auth.jackhumes.com/healthz", "https://headscale.jackhumes.com/health"],
+      "stun": ["headscale.jackhumes.com:3478"]
+    }
+  },
+  "privatePins": {
+    "everyHours": 6,
+    "include": ["ghcr.io/member87/*"],
+    "exclude": []
   },
   "cleanup": {
     "renovate": "renovate.json",
@@ -225,5 +389,28 @@
         }
       }
     ]
+  },
+  "majorPlaybook": {
+    "breaking": {
+      "id": "breaking",
+      "reviewAbove": 0.5,
+      "instructions": "Does item {item} of `items`, from the release notes of `release` of `project`, describe a breaking change for someone already running an earlier version of `package`?",
+      "criteria": {
+        "true": "A setting, environment variable, command-line flag, API, file path, supported platform or default behaviour is removed, renamed or changed in a way existing users notice, or the item calls the change breaking.",
+        "false": "A bug fix, a new optional feature, performance work, a dependency bump with no stated effect on users, documentation, translations, tests or build changes."
+      }
+    },
+    "step": {
+      "id": "step",
+      "reviewAbove": 0.5,
+      "instructions": "Does item {item} of `items`, from the release notes of `release` of `project`, tell someone running `package` in a container to do something by hand when upgrading to this release?",
+      "criteria": {
+        "true": "Change configuration, an environment variable, a volume or the container image; run a command or migration; take a backup the release asks for specifically; or upgrade in a set order.",
+        "false": "Nothing to do beyond deploying the new image. Migrations the software runs by itself on start are not a step, and general advice repeated for every release (always take a backup, do not update inside a running container) is not one either."
+      }
+    },
+    "maxItems": 150,
+    "maxItemsPerCall": 40,
+    "maxCallsPerDay": 60
   }
 }

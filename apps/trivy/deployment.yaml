@@ -1,0 +1,88 @@
+---
+# Trivy in server mode (github.com/aquasecurity/trivy): holds the vulnerability database for
+# Jevil's CVE scans. Jevil runs the Trivy client (`trivy image --server`) against it for the old
+# and new image of each Renovate pull request and for every running image (docs/jevil.md,
+# "CVE scans"). The server updates its database from mirror.gcr.io on its own. Keep the image at
+# the Trivy version in Jevil's Dockerfile.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivy
+  namespace: trivy
+  labels:
+    app: trivy
+spec:
+  replicas: 1
+  # The cache PVC is ReadWriteOnce.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: trivy
+  template:
+    metadata:
+      labels:
+        app: trivy
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: trivy
+          image: ghcr.io/aquasecurity/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+          args:
+            - server
+            - --listen=0.0.0.0:4954
+            - --cache-dir=/cache
+          env:
+            - name: TMPDIR
+              value: /tmp
+          ports:
+            - containerPort: 4954
+              name: http
+          # The first start downloads the database before it listens (about 10s here).
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 20m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: trivy-cache
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

@@ -1,0 +1,53 @@
+---
+# Only Jevil talks to the server, and the server talks only to DNS and the internet (its
+# database on mirror.gcr.io): no pod, Service, node, NAS or tailnet. Enforced by
+# infrastructure/kube-network-policies, which sees pod IPs after kube-proxy DNAT.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trivy
+  namespace: trivy
+spec:
+  podSelector:
+    matchLabels:
+      app: trivy
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jevil
+          podSelector:
+            matchLabels:
+              app: jevil
+      ports:
+        - protocol: TCP
+          port: 4954
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443

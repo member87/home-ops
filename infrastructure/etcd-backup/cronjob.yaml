@@ -1,0 +1,109 @@
+---
+# Daily etcd snapshot to the NAS (/volume1/kubernetes/etcd-backups), keeping the newest 14.
+# talosctl asks one control-plane node (behind Service default/talos) for a consistent
+# snapshot with the os:etcd:backup certificate from talos-serviceaccount.yaml; the job
+# succeeds only once the file is on the NAS, so Jevil reads the CronJob's last successful
+# run as the newest snapshot (backups.etcd in apps/jevil/policy.json; alert "Etcd Snapshot
+# Stale"). Restore: docs/etcd-backup.md.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-snapshot
+  namespace: etcd-backup
+spec:
+  schedule: "30 3 * * *"
+  timeZone: Europe/London
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: etcd-snapshot
+        spec:
+          restartPolicy: Never
+          initContainers:
+            # The talosctl image is scratch: no shell, so it writes into the shared emptyDir.
+            - name: snapshot
+              image: ghcr.io/siderolabs/talosctl:v1.14.5
+              imagePullPolicy: IfNotPresent
+              args:
+                - --talosconfig=/var/run/secrets/talos.dev/config
+                - etcd
+                - snapshot
+                - /work/etcd.snapshot
+              env:
+                - name: HOME
+                  value: /work
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: talos
+                  mountPath: /var/run/secrets/talos.dev
+                  readOnly: true
+                - name: work
+                  mountPath: /work
+          containers:
+            - name: store
+              image: busybox:1.38
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  test -s /work/etcd.snapshot
+                  f="etcd-snapshot-$(date -u +%Y%m%d-%H%M%S).db"
+                  cp /work/etcd.snapshot "/backups/.${f}.part"
+                  mv "/backups/.${f}.part" "/backups/${f}"
+                  ls -1 /backups/etcd-snapshot-*.db | sort -r | tail -n +15 | xargs -r rm -f
+                  ls -l /backups
+              # Root: the NAS export denies other uids (as for immich-backup). No capabilities.
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  memory: 64Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                  readOnly: true
+                - name: nas
+                  mountPath: /backups
+                  subPath: etcd-backups
+          volumes:
+            - name: talos
+              secret:
+                secretName: etcd-snapshot
+            - name: work
+              emptyDir:
+                sizeLimit: 1Gi
+            - name: nas
+              persistentVolumeClaim:
+                claimName: etcd-backup-nas

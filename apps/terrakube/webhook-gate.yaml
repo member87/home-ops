@@ -43,9 +43,10 @@ spec:
             - name: ALLOWED_REPO
               value: "member87/home-ops"
             # Only these logins may trigger a run with a `terrakube plan`/`terrakube apply`
-            # pull request comment. Everything else is dropped.
+            # pull request comment. Everything else is dropped. jevil-bot[bot] posts
+            # `terrakube plan` for `/jevil retry`; apply-via-comment is off in Terrakube.
             - name: ALLOWED_SENDERS
-              value: "member87"
+              value: "member87,jevil-bot[bot]"
             - name: APPLY_BRANCH
               value: "main"
             - name: GITHUB_WEBHOOK_SECRETS

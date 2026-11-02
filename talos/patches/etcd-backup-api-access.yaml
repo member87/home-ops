@@ -1,0 +1,16 @@
+# Talos API access for the etcd snapshot CronJob (infrastructure/etcd-backup): Talos issues
+# an os:etcd:backup client certificate to the talos.dev ServiceAccount there. Plaintext on
+# purpose - it holds no secrets. Valid on 1.13 and 1.14.
+#
+# Talos merges these lists into the ones tuppr-api-access.yaml sets, and grants any allowed
+# role to any allowed namespace, so etcd-backup could also ask for os:admin: keep its
+# talos.dev ServiceAccount at os:etcd:backup. Applies without a reboot:
+# `just talos-patch <node-ip> etcd-backup-api-access.yaml` on every node.
+machine:
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:etcd:backup
+      allowedKubernetesNamespaces:
+        - etcd-backup

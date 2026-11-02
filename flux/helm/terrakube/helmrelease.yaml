@@ -157,6 +157,7 @@ spec:
         # Chart default is true: seeds demo organizations (aws/azure/gcp/simple) and makes
         # the API sync public registry modules on every start.
         loadSampleData: false
+        # renovate: datasource=docker depName=azbuilder/api-server
         version: "2.33.1"
         replicaCount: "1"
         env:
@@ -173,6 +174,7 @@ spec:
       executor:
         enabled: true
         existingSecret: true
+        # renovate: datasource=docker depName=azbuilder/executor
         version: "2.33.1"
         replicaCount: "1"
         # Upstream wires the executor's tofu list through the API proxy
@@ -204,6 +206,7 @@ spec:
 
       ui:
         enabled: true
+        # renovate: datasource=docker depName=azbuilder/terrakube-ui
         version: "2.33.1"
         replicaCount: "1"
         resources:

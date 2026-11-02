@@ -218,11 +218,19 @@ All of these, checked in code:
 - Apps: the app's Flux Kustomization exists, has `wait: true` and is Ready; for an eligible chart,
   its HelmRelease is Ready.
 - Release notes exist: Renovate's, or else the upstream GitHub releases between the two versions.
-  Releases fetched that way must be at least 72 hours old.
+- Every eligible update is at least 72 hours old, wherever its notes come from. The age is taken
+  from the upstream release of the target version, or, when there is none (and for LinuxServer
+  rebuilds), from the image's build time in its registry. An update whose age cannot be found
+  waits with "release age unknown": `renovate/stability-days` passes at once on registries like
+  ghcr.io that publish no release dates.
 - Jev answers each policy question inside its threshold: no breaking change, no manual upgrade
   step, no stored-data change, no text addressed to a bot. `drop_in` only flags below 0.3: Jev
   hedges around 0.5 on any update with a feature list, so a higher bar held every update.
-- Jev finds no regression report among the issues opened upstream since the release.
+- Jev finds no regression report among the issues opened upstream since the release. "Since the
+  release" means since the exact time it was published: GitHub's issue search only works by day,
+  so Jevil drops issues opened earlier on the release day before Jev reads or counts them, and
+  the card shows the time it searched from (`since 2026-11-01 21:47 UTC`). Closed issues still
+  count: a regression fixed in a later version still affects this one.
 
 Rulings are `pass`, `review` (a human decides) or `wait` (a status, release age or reconcile is
 still pending; Jevil looks again next poll).

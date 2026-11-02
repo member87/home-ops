@@ -83,6 +83,8 @@ spec:
         - name: cache
           persistentVolumeClaim:
             claimName: trivy-cache
+        # The database download unpacks here before it moves into /cache (over 256Mi evicted
+        # the first pod).
         - name: tmp
           emptyDir:
-            sizeLimit: 256Mi
+            sizeLimit: 2Gi

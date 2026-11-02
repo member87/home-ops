@@ -700,7 +700,9 @@ candidate is the newest image (by build time) from that source with a revision o
 pinned one, built after it; when GitHub can read the source repository, Jevil also requires the
 revision to be on its default branch and lists the commits from the pinned revision (for an
 unlabelled pin, from its tag when that is a commit of the repository; the body says so). One pull
-request per image, `jevil/pin/<image>`, updated in place when a newer build appears. When GitHub
+request per source repository, `jevil/pin/<repository>`, pinning every image it builds that has a
+newer build (tailscale-exit-node-manager's `-api` and `-web` together, their shared commit list
+written once), updated in place when a newer build appears. When GitHub
 answers 404 for the source repository, the body says the jevil-bot App installation does not
 include it, so no commits are listed and the default branch is not checked: add the repository to
 the installation (GitHub → Settings → Applications → jevil-bot → Configure → Repository access)

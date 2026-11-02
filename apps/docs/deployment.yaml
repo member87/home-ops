@@ -20,7 +20,7 @@ spec:
         - name: home-ops-docs-ghcr-pull
       containers:
         - name: docs
-          image: ghcr.io/member87/home-ops-docs:707972bf2842e91da2a0e19d2f422dd21124dda2
+          image: ghcr.io/member87/home-ops-docs:7ee6f2515b24faa0a11fc8795a775e46ef9471f4
           ports:
             - containerPort: 80
               name: http

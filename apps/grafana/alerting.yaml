@@ -894,6 +894,6 @@ data:
             for: 0m
             annotations:
               summary: Jevil merged an update whose deploy came up unhealthy
-              description: A pull request Jevil merged failed its deploy check and is labelled jevil:merged-unhealthy. Jevil opened a revert pull request (labelled jevil:revert) for you to review and merges nothing else until the label is removed. See docs/jevil.md.
+              description: A pull request Jevil merged failed its deploy check and is labelled merged-unhealthy. Jevil opened a revert pull request (labelled revert) for you to review and merges nothing else until the label is removed. See docs/jevil.md.
             labels:
               severity: critical

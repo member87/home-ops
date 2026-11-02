@@ -72,10 +72,10 @@ targets (`dependency '...' is not ready`), so a fix can always merge.
 Like the Aviator merge queue:
 
 1. A login in `commanders` comments `/jevil merge` (optionally `--allow <checks>`). Jevil reacts 🚀,
-   adds `jevil:queued` and replies with the head commit it queued (within a minute: it polls every
+   adds `queued` and replies with the head commit it queued (within a minute: it polls every
    `pollSeconds`).
 2. Last readiness check, on a fresh read: the head is still that commit (a later push dequeues;
-   comment again, except a Renovate rebase, below), not a draft, not on `jevil:hold`, into `main`, no merge conflict, no failing
+   comment again, except a Renovate rebase, below), not a draft, not on `hold`, into `main`, no merge conflict, no failing
    commit status, the required statuses (`Terrakube - homeops - aws-edge`, `- grafana`, plus the
    workspace of any changed `terraform/<workspace>`) reported success, no blocking check finding
    outside `--allow`, and the cluster is healthy. Pending checks and an unhealthy cluster keep it
@@ -106,7 +106,7 @@ pull requests. They merge back to back, their deploys are checked together, and 
 merges until all of them are live. A revert stays with the pull request whose deploy failed.
 Reverts, Talos/Kubernetes upgrades and pull requests queued with `--alone` always merge by
 themselves. Each queued pull request's comment carries a `⏳ Waiting…` line naming what holds it,
-for example `merging is halted: #612 is jevil:merged-unhealthy`, `#613's deploy is being checked`
+for example `merging is halted: #612 is merged-unhealthy`, `#613's deploy is being checked`
 or `waits for the next group: overlaps #608 (namespace radarr)`; `/jevil status` reads it back.
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
 human decision that ruling asks for). `/jevil cancel` takes a pull request out of the queue.
@@ -116,7 +116,7 @@ Scheduling and grouping, on the same command (they combine, in any order after `
 - `at 03:00`: wait until the next 03:00 in the merge window's time zone (Europe/London), then
   merge if every check above passes. Entries due at the same time go out as one group.
 - `after #570`: wait until #570 is merged and its deploy is live. If #570 is closed unmerged,
-  turns `jevil:merged-unhealthy`, or waits for this pull request in turn, this one leaves the
+  turns `merged-unhealthy`, or waits for this pull request in turn, this one leaves the
   queue with a comment saying why.
 - `--alone`: merge by itself, never in a group. (`--batch` is gone: grouping is automatic.)
 - `--first`: go ahead of every entry queued without `--first` (several go oldest first). It still
@@ -138,7 +138,7 @@ passes.
 A major (any update type the policy does not let merge on its own) is always ruled `review`,
 but Jev still reads its release notes, Renovate's and the upstream project's, and answers the
 same questions. The comment presents the answers as advice for your `/jevil merge` decision and
-the reason labels (`jevil:breaking`, `jevil:migration`, ...) still apply. Release age does not
+the reason labels (`breaking`, `migration`, ...) still apply. Release age does not
 hold advice back, and notes over `notes.maxBytes` are cut rather than refused.
 
 Before Jev reads the notes, paragraphs that also appear verbatim in the release the deployment
@@ -148,17 +148,17 @@ as a step for this upgrade. The comment's notes line says how many were left out
 changelog stays verbatim.
 
 An update whose upstream target exists on GitHub only as prereleases (no stable release of that
-version) is not eligible to merge on its own and gets `jevil:prerelease`: home-operations images
+version) is not eligible to merge on its own and gets `prerelease`: home-operations images
 can track an application's develop channel, so a minor bump there can still be a test build.
 
-`jevil:security` comes from a `labelOnly` question: Jev thinks the release fixes a security
+`security` comes from a `labelOnly` question: Jev thinks the release fixes a security
 vulnerability (≥ 0.5). It never sends an update to review and no longer jumps the merge line; the
 dashboard's open pull request table shows it under flags.
 
 Upstream issues: for every upstream project an update resolves to, Jevil searches the issues
 opened there since the target version's release (the newest `upstreamIssues.maxIssues`, again
 every `refreshMinutes`) and asks Jev about each one: did something that worked in the previous
-version break in this one? Any single issue at ≥ 0.7 adds `jevil:regression` and sends the
+version break in this one? Any single issue at ≥ 0.7 adds `regression` and sends the
 update to review, naming the issue; that is what the release-age wait is for. Asking about all
 issues at once made every bug report that names the version look like a regression (issue
 templates ask for it). Jev is paid per call, so issues that cannot be a regression report
@@ -192,9 +192,9 @@ flowchart LR
   J -->|clean| S[pass]
   S -->|scope in merge mode,<br/>08:00-22:00 London| M[merge, one at a time]
   M --> V[deploy check]
-  V -->|ok| SK[jevil:soaking<br/>15m restart watch]
-  SK -->|no restart| OK[jevil:merged-ok]
-  V -->|unhealthy or 30m timeout| H[jevil:merged-unhealthy<br/>revert PR, queue halted]
+  V -->|ok| SK[soaking<br/>15m restart watch]
+  SK -->|no restart| OK[merged-ok]
+  V -->|unhealthy or 30m timeout| H[merged-unhealthy<br/>revert PR, queue halted]
   SK -->|container restarted| H
 ```
 
@@ -229,10 +229,13 @@ still pending; Jevil looks again next poll).
 
 ## What it writes on each pull request
 
-- Labels, updated as soon as the ruling is made: `jevil:pass`, `jevil:review` or `jevil:waiting`,
-  plus `scope:app|terraform`, `update:<type>`, and the reason labels `jevil:not-eligible`,
-  `jevil:notes-missing`, `jevil:breaking`, `jevil:migration`, `jevil:data-risk`,
-  `jevil:addressed-to-bot`. Jevil removes its own stale labels and never touches anyone else's.
+- Labels, updated as soon as the ruling is made: `pass`, `review` or `waiting`, plus
+  `scope:app|terraform`, `update:<type>`, and the reason labels `not-eligible`, `notes-missing`,
+  `breaking`, `migration`, `data-risk`, `addressed-to-bot`. A ruling removes only its own stale
+  labels (the built-in ones, the policy's question labels, and `scope:`/`update:` ones), never
+  anyone else's such as `bug`. Jevil's labels carried a `jevil:` prefix until November 2026; on
+  startup Jevil renames any old `jevil:X` to `X`, keeping it on every issue and pull request, and
+  if both exist moves everything onto `X` and deletes the old one.
 - Commit status `jevil/policy` on the head commit (informational, not required by branch
   protection).
 - The card (above), edited in place: the ruling and its reasons in plain words ("Jev thinks
@@ -264,8 +267,8 @@ work on any open pull request; `/jevil revert` on a merged one:
 | `/jevil reclassify` | Ask Jev again and rerun the checks even though nothing changed |
 | `/jevil status` | Show in the card: the ruling and its reasons, the checks, the queue position and what it waits for, the health gate for this pull request's targets and what it deploys; on a merged one, whether the deploy is live |
 | `/jevil explain` | On a Chore Bore pull request: re-ask Jev with each part of the release notes left out (paragraphs, then down to one line inside the strongest) and show in the card what drives each flagged answer. At most 40 Jev calls a pass, about $0.005 in all |
-| `/jevil hold` | Add `jevil:hold` (and dequeue): never merge this pull request |
-| `/jevil unhold` | Remove `jevil:hold` |
+| `/jevil hold` | Add `hold` (and dequeue): never merge this pull request |
+| `/jevil unhold` | Remove `hold` |
 
 ## Merge mode
 
@@ -278,13 +281,13 @@ update always goes to review. In `shadow` Jevil labels and comments only.
 They were switched on 2026-10-28 by decision, before the shadow criteria this section used to
 set (4 weeks, 40 rulings, 95% agreement). Go back to `shadow` for a scope as soon as Jevil passes
 something you would have closed: that is `jevil_shadow_outcomes{ruling="pass",outcome="closed"}`
-(the **Passed but you closed it** panel) and any `jevil:merged-unhealthy`. Tune the thresholds and
+(the **Passed but you closed it** panel) and any `merged-unhealthy`. Tune the thresholds and
 wording in `policy.json` when a ruling is wrong; every policy change re-asks Jev on open pull
 requests.
 
 ## After a merge
 
-Jevil adds `jevil:verifying` before merging (so a restart cannot lose the check), comments on the
+Jevil adds `verifying` before merging (so a restart cannot lose the check), comments on the
 pull request with the merge commit and what it is waiting for, and merges nothing else until the
 deploy settles:
 
@@ -299,7 +302,7 @@ deploy settles:
 - Nothing within 30 minutes is unhealthy.
 
 Ready is not the end: a readiness probe passing says nothing about the first real requests. Once
-the deploy is Ready, Jevil posts the live comment, swaps `jevil:verifying` for `jevil:soaking`
+the deploy is Ready, Jevil posts the live comment, swaps `verifying` for `soaking`
 (merged and live, still watched) and keeps the queue held for `verify.soakMinutes` (15). Each
 poll it reads `kube_pod_container_status_restarts_total` from Prometheus for the pods of what the
 merge deployed: the Deployments, StatefulSets, DaemonSets, Jobs and CronJobs in each
@@ -310,35 +313,35 @@ Restarts while the rollout settles (an app failing while a database recreated by
 starts) do not count once its workloads are Ready; a rollout that never gets Ready times out
 unhealthy in the deploy check. If the live comment is deleted, restarts count from the merge.
 Prometheus not answering keeps the watch going rather than passing it. Talos/Kubernetes upgrades
-and Terraform-only merges are not watched. Remove `jevil:soaking` to end a watch early;
+and Terraform-only merges are not watched. Remove `soaking` to end a watch early;
 `/jevil status` on the merged pull request shows how long it has left.
 
 Healthy: the live comment says which Kustomization applied which commit (or the Terrakube apply)
-and, after the watch, that nothing restarted; plus `jevil:merged-ok`. Unhealthy: `jevil:merged-unhealthy`, a comment with the reason, the
-**Jevil Merging Halted** alert on Discord, and a revert pull request labelled `jevil:revert` (not
+and, after the watch, that nothing restarted; plus `merged-ok`. Unhealthy: `merged-unhealthy`, a comment with the reason, the
+**Jevil Merging Halted** alert on Discord, and a revert pull request labelled `revert` (not
 for a failed Talos/Kubernetes upgrade: rolling nodes back is a human decision).
 Jevil never merges a revert on its own: review it and comment `/jevil merge`; while merging is
 halted only reverts can merge. It skips the revert when `main` has changed the
 same files since; revert by hand then.
 
-To resume after fixing it: `/jevil merge` or close the revert, then remove `jevil:merged-unhealthy` from the
+To resume after fixing it: `/jevil merge` or close the revert, then remove `merged-unhealthy` from the
 original pull request.
 
 ## Pull requests Jevil opens
 
-Jevil proposes changes as ordinary pull requests (label `jevil:proposal`). They get the same checks
+Jevil proposes changes as ordinary pull requests (label `proposal`). They get the same checks
 and need `/jevil merge`: Jevil never merges its own. Closing one is a "no": that branch is not
 proposed again for 30 days, and the same change (the same values, or the same entries removed)
 never again; a different change on the branch is proposed after the 30 days.
 
-**Right-sizing** (`jevil:right-size`, `rightSizing` in the policy): from Prometheus, each
+**Right-sizing** (`right-size`, `rightSizing` in the policy): from Prometheus, each
 container's p95 CPU and p95/max RSS over `lookbackDays` (90), needing `minDays` (5) of data,
 against the requests in the plain manifests under `apps/<app>/` (`exclude`d apps, container names
 not unique in their namespace and workloads a kustomize patch changes are skipped), and in the
 values of the HelmReleases `rightSizing.helm` maps (below). Jevil looks every `everyHours` (24):
 an app's proposal opens the day its containers qualify. Every run refreshes each open one with the
 newest numbers: the title's day count, the table and the chart; the branch gets a new commit (and
-the checks run again) only when the proposed values change. A `jevil:queued` or `jevil:hold`
+the checks run again) only when the proposed values change. A `queued` or `hold`
 proposal is never touched, so what was reviewed is what merges. When newer data no longer calls
 for any change in that app, Jevil closes the pull request with a comment giving the day count;
 that is not a "no", so it proposes again as soon as the numbers call for it. The body opens with
@@ -378,7 +381,7 @@ it) and linked by commit, so a later chart never changes an older pull request. 
 only when the pull request is opened or its files change; if Prometheus or the upload fails the
 body says so and the pull request opens on its table alone.
 
-**Cleanup** (`jevil:cleanup`, weekly, `cleanup` in the policy), only configuration that points at
+**Cleanup** (`cleanup`, weekly, `cleanup` in the policy), only configuration that points at
 nothing: `renovate.json` `matchFileNames` paths that match no file (a rule goes only when all its
 paths are gone and it has no other matcher); a parked app's entry in a disabled Renovate rule
 once that app is scaled back up; Glance links under `lab.jackhumes.com` that no IngressRoute
@@ -397,7 +400,7 @@ namespace via `targetNamespace`) and nowhere in a wrapper chart's files. Its doc
 left empty is deleted and dropped from `kustomization.yaml`. Flux prunes the object on merge. A
 document with `# jevil:keep <why>` in it is never proposed, for config an app reads by other means.
 
-**Volume growth** (`jevil:grow`, daily, `volumes` in the policy): a Longhorn PVC written in
+**Volume growth** (`grow`, daily, `volumes` in the policy): a Longhorn PVC written in
 `apps/<app>` that has been at least `above` (85%) full for `forDays` (3), by the kubelet's
 `kubelet_volume_stats_*` in Prometheus, gets a request that leaves it `target` (60%) full, in
 whole GiB and never less than 25% more; one pull request per app, with a chart of its use over
@@ -405,7 +408,7 @@ whole GiB and never less than 25% more; one pull request per app, with a chart o
 (`kustomize.toolkit.fluxcd.io/ssa: IfNotPresent`), so the merge only records the size: the pull
 request lists the `kubectl patch` that applies it. NFS-backed PVCs are never proposed.
 
-**Re-vendoring** (`jevil:vendor`, daily, `vendor` in the policy): a manifest vendored whole from
+**Re-vendoring** (`vendor`, daily, `vendor` in the policy): a manifest vendored whole from
 upstream carries a marker, e.g.
 `# jevil:vendor repo=metallb/metallb version=v0.16.1 url=https://raw.githubusercontent.com/metallb/metallb/{version}/config/manifests/metallb-native.yaml`,
 with `only=`/`skip=` kinds when the file holds part of the upstream file (sealed-secrets splits
@@ -419,7 +422,7 @@ object renamed here) no pull request opens, and the daily report lists the file 
 manifests to re-vendor by hand**. Marked today: MetalLB, Sealed Secrets (install and CRDs) and
 kube-network-policies. Traefik's `install.yaml` is assembled by hand and has no marker.
 
-**Daily report** (issue "Jevil daily report", `jevil:report`, edited in place): first, **since the
+**Daily report** (issue "Jevil daily report", `report`, edited in place): first, **since the
 last report**: what is new or gone in each section below compared with the last complete report.
 Then parked apps
 (every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over
@@ -474,8 +477,8 @@ declined change could come back after its 30 days. Each failed read or write cou
 without the file (`-state`); dry runs do not use it.
 
 What gates merging lives on GitHub, not in the file or in memory: the queue is the
-`jevil:queued` label plus the queue comment (head, `--allow`, schedule), a deploy being checked
-is `jevil:verifying` or `jevil:soaking`, and a halt is `jevil:merged-unhealthy`. Jevil reads
+`queued` label plus the queue comment (head, `--allow`, schedule), a deploy being checked
+is `verifying` or `soaking`, and a halt is `merged-unhealthy`. Jevil reads
 them each poll from the issues list (search can lag a label by minutes), so a restart or an
 upgrade carries on where the last pod stopped. The list itself can lag a label write by a few
 seconds, so a deploy found unhealthy halts the poll that found it without reading its label back.

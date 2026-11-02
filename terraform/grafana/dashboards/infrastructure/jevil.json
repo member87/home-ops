@@ -227,7 +227,7 @@
         "textMode": "auto",
         "justifyMode": "auto"
       },
-      "description": "HALTED while a pull request carries jevil:merged-unhealthy: a merged deploy failed its check, a revert pull request is waiting for you, and Jevil merges nothing until the label is removed."
+      "description": "HALTED while a pull request carries merged-unhealthy: a merged deploy failed its check, a revert pull request is waiting for you, and Jevil merges nothing until the label is removed."
     },
     {
       "id": 4,

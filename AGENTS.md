@@ -88,7 +88,7 @@ sops --input-type yaml --output-type yaml talos/talosconfig
 - Every hand-written manifest carries an explicit `metadata.namespace`; the only namespace transformers are `apps/{frp-client,glance,headscale,ip-checker,nas}`, where generated ConfigMaps need the transformer to receive a namespace. `kustomization.yaml` must reference every file in the directory.
 - Add a Flux `Kustomization` for the app in `flux/cluster/apps.yaml`, then run `scripts/validate-flux-manifests.sh`.
 - Only reach for a `HelmRelease` in `flux/helm/` when the app needs an upstream chart.
-- Use health checks where supported. Use TCP probes when no HTTP health endpoint exists.
+- Use health checks where supported. Use TCP probes when no HTTP health endpoint exists. Jevil's lint warns about a new or changed long-running container with neither a readiness nor a liveness probe, and the daily report lists those already on `main`; a workload that truly needs none says why with `# jevil:no-probe <why>` in its document.
 - Give every application container a memory limit, init containers included. The Talos OOM ranking (`talos/patches/oom-config.yaml`) kills limited pods first and treats pods without a limit as infrastructure (Longhorn instance-manager, kube-apiserver), killed last. An app without a limit silently joins that protected tier. For Helm wrapper charts, values go under the dependency key, e.g. `values.podinfo.resources`.
 - A Deployment that mounts a ReadWriteOnce PVC (every Longhorn volume) uses `strategy.type: Recreate`: a RollingUpdate pod landing on another node waits on Multi-Attach forever. Jevil's lint blocks it and suggests the fix.
 - For OIDC apps, create a Pocket ID client and seal the client secret.
@@ -253,7 +253,8 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Direct NFS is used for media/download storage from NAS `10.0.0.9`.
 - Use `longhorn` for app config, databases, and monitoring data.
 - Use `nfs-manual` or direct NFS PVs only for shared media/download data.
-- NAS paths: `/volume1/kubernetes/media`, `/volume1/kubernetes/downloads`, and Longhorn backups at `/volume1/kubernetes/longhorn-backups`.
+- NAS paths: `/volume1/kubernetes/media`, `/volume1/kubernetes/downloads`, Longhorn backups at `/volume1/kubernetes/longhorn-backups`, and etcd snapshots at `/volume1/kubernetes/etcd-backups`.
+- etcd snapshots: `infrastructure/etcd-backup` CronJob (03:30) runs `talosctl etcd snapshot` with a talos.dev ServiceAccount limited to `os:etcd:backup` (needs `talos/patches/etcd-backup-api-access.yaml` on every node) and keeps the newest 14 on the NAS. Jevil reports the newest one's age (alert `etcd-snapshot-stale`) and the age of every Longhorn backup (alert `longhorn-backup-stale`). Restore steps: `docs/etcd-backup.md`.
 - Immich off-site backup: `apps/immich-backup` CronJob (04:00) runs `rclone sync` of `library/`, `upload/`, `profile/` and Immich's DB dumps (`backups/` -> `db/`) to B2 bucket `jackhumes-immich-backup`. The sealed key cannot delete; removed files are only hidden and B2 lifecycle rules purge them after 90 days (30 for `db/`). `thumbs/` and `encoded-video/` are skipped. `immich-backup-exporter` (list-only key) lists the bucket every 15 minutes for the *Immich Backup* dashboard (`terraform/grafana/dashboards/media/immich-backup.json`). Restore steps: `docs/immich-backup.md`.
 - MetalLB address pool is `10.0.0.200-10.0.0.250`.
 - External access uses FRP through the AWS Lightsail edge (`18.171.34.111`); see Public Access & AWS Lightsail Edge (FRP) for the full chain, tunnel map, and SSH steps.

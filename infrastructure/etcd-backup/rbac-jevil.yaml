@@ -1,0 +1,28 @@
+---
+# Jevil reports the newest etcd snapshot from this CronJob's last successful run
+# (backups.etcd in apps/jevil/policy.json). Read-only; here rather than in apps/jevil/rbac.yaml
+# because this Kustomization creates the namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jevil-read-etcd-snapshot
+  namespace: etcd-backup
+rules:
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    resourceNames: ["etcd-snapshot"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jevil-read-etcd-snapshot
+  namespace: etcd-backup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jevil-read-etcd-snapshot
+subjects:
+  - kind: ServiceAccount
+    name: jevil
+    namespace: jevil

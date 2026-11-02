@@ -20,6 +20,11 @@ rules:
   - apiGroups: ["helm.toolkit.fluxcd.io"]
     resources: ["helmreleases"]
     verbs: ["get", "list"]
+  # The daily report's support ends read the Flux release from the controllers'
+  # app.kubernetes.io/version label.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -53,6 +58,11 @@ rules:
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list"]
+  # CVE scans and support ends: the images every running pod uses (spec only; no logs, exec or
+  # Secrets).
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -67,6 +77,10 @@ subjects:
     name: jevil
     namespace: jevil
 ---
+# Longhorn volumes for the health gate and the daily report; backup volumes and recurring jobs
+# for the backup checks (how old each volume's newest backup is, which volumes no backup job
+# selects, backups of deleted volumes). Read-only: Jevil deletes no backup. The etcd snapshot
+# CronJob is read through a Role in infrastructure/etcd-backup, which creates its namespace.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -74,7 +88,7 @@ metadata:
   namespace: longhorn-system
 rules:
   - apiGroups: ["longhorn.io"]
-    resources: ["volumes"]
+    resources: ["volumes", "backupvolumes", "recurringjobs"]
     verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86,6 +100,103 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: jevil-read-volumes
+subjects:
+  - kind: ServiceAccount
+    name: jevil
+    namespace: jevil
+---
+# The daily report and the merge-time health gate: cert-manager Certificates (not Ready, or
+# expiring within 14 days) and SealedSecrets the controller could not unseal (Synced False).
+# Status only; read-only.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jevil-read-hygiene
+rules:
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates"]
+    verbs: ["get", "list"]
+  - apiGroups: ["bitnami.com"]
+    resources: ["sealedsecrets"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jevil-read-hygiene
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jevil-read-hygiene
+subjects:
+  - kind: ServiceAccount
+    name: jevil
+    namespace: jevil
+---
+# The card's live diff reads back every object the repository's Kustomizations render, to show
+# what merging a pull request changes in the cluster. get only, on the kinds the repository renders;
+# never Secrets (Jevil counts them from the Kustomization inventory instead). A kind added to the
+# repository later shows as "not readable" on the card until it is listed here.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jevil-read-live
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "endpoints", "namespaces", "persistentvolumeclaims", "persistentvolumes", "serviceaccounts", "services"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets", "deployments"]
+    verbs: ["get"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get"]
+  - apiGroups: ["node.k8s.io"]
+    resources: ["runtimeclasses"]
+    verbs: ["get"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingadmissionpolicies", "validatingadmissionpolicybindings", "validatingwebhookconfigurations"]
+    verbs: ["get"]
+  - apiGroups: ["bitnami.com"]
+    resources: ["sealedsecrets"]
+    verbs: ["get"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates", "clusterissuers"]
+    verbs: ["get"]
+  - apiGroups: ["metallb.io"]
+    resources: ["ipaddresspools", "l2advertisements"]
+    verbs: ["get"]
+  - apiGroups: ["traefik.io"]
+    resources: ["ingressroutes", "middlewares"]
+    verbs: ["get"]
+  - apiGroups: ["fluxcd.controlplane.io"]
+    resources: ["fluxinstances"]
+    verbs: ["get"]
+  - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    resources: ["kustomizations"]
+    verbs: ["get"]
+  - apiGroups: ["helm.toolkit.fluxcd.io"]
+    resources: ["helmreleases"]
+    verbs: ["get"]
+  - apiGroups: ["source.toolkit.fluxcd.io"]
+    resources: ["gitrepositories", "helmrepositories", "ocirepositories"]
+    verbs: ["get"]
+  # CustomResourceDefinitions and tuppr's upgrades are already readable through jevil-read-health.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jevil-read-live
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jevil-read-live
 subjects:
   - kind: ServiceAccount
     name: jevil

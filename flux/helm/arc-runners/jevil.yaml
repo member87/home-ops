@@ -18,6 +18,8 @@
 # Docker-in-Docker follows ARC's own dind template, written out here instead of
 # `containerMode: dind` so the images are pinned by digest and every container has a memory
 # limit.
+# jevil:no-probe runners are ephemeral (one job per pod, nothing routes to them), and under Kata
+# an exec probe into dind never passes (#585)
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

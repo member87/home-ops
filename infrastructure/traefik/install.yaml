@@ -1,3 +1,8 @@
+# jevil:vendor repo=traefik/traefik version=v3.7.16 url=https://raw.githubusercontent.com/traefik/traefik/{version}/docs/content/reference/dynamic-configuration/kubernetes-crd-rbac.yml image=traefik rename=traefik-ingress-controller:traefik
+# Assembled by hand: the ClusterRole and ClusterRoleBinding are upstream's kubernetes-crd-rbac.yml
+# (renamed to traefik, without the OTel-only pods rule); the rest is written here. Renovate is off
+# for this file: Jevil proposes a re-vendor with each Traefik release, carrying upstream's RBAC
+# changes and moving the traefik image with it, together with crds.yaml.
 apiVersion: v1
 kind: Namespace
 metadata:

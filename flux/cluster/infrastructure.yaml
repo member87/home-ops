@@ -142,6 +142,25 @@ spec:
     name: home-ops
     namespace: flux-system
 ---
+# Daily etcd snapshot to the NAS. Its Talos API access needs
+# talos/patches/etcd-backup-api-access.yaml on every node (see the patch).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: etcd-backup
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./infrastructure/etcd-backup
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
 # The kube-system/coredns ConfigMap (Corefile forwarding to Pi-hole, which serves the
 # *.lab.jackhumes.com wildcard). Talos also renders this object and `talosctl upgrade-k8s`
 # re-applies the Talos default (`forward . /etc/resolv.conf`) with forced ownership, so Flux

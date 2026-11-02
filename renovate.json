@@ -35,6 +35,19 @@
       "versioningTemplate": "semver"
     },
     {
+      "description": "talosctl for the etcd snapshot CronJob, tracked through siderolabs/talos (docker lookups of ghcr.io/siderolabs are off), so it moves with the cluster in the Talos and Kubernetes PR.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^infrastructure/etcd-backup/cronjob\\.yaml$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)[ \\t]*image: ghcr\\.io/siderolabs/talosctl:(?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "siderolabs/talos",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
       "customType": "regex",
       "managerFilePatterns": [
         "/^talos/controlplane\\.yaml$/",
@@ -132,6 +145,14 @@
       "sourceUrl": "https://github.com/traefik/traefik"
     },
     {
+      "description": "Terrakube's API, executor and UI images are pinned in flux/helm/terrakube values (annotated with # renovate: comments) and release together; one PR moves all three.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["azbuilder/api-server", "azbuilder/executor", "azbuilder/terrakube-ui"],
+      "groupName": "Terrakube images",
+      "commitMessageTopic": "Terrakube images",
+      "sourceUrl": "https://github.com/terrakube-io/terrakube"
+    },
+    {
       "description": "linuxserver.io images: tags are <upstream version>[base]-ls<n> (12.2ubu2604-ls55, 4.0.20.3014-ls329, 5.1.4-r3-ls453). Since Jellyfin 12 there is no plain version tag, and docker versioning never changes a suffix, so a plain pin silently stops updating: pin the full tag. -ls<n> is a per-image counter that only grows, so it is the build part (regex versioning ignores revision without build) and a 4th upstream part is not needed for ordering. The base (ubuNNNN, alpine -rN, plex hash) is ignored so rebases do not stall updates; the narrow middle keeps branch and legacy tags (5.14-2.0.0.5344-ls15) out.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["lscr.io/linuxserver/**", "ghcr.io/linuxserver/**", "linuxserver/**", "docker.io/linuxserver/**"],
@@ -180,14 +201,21 @@
       "schedule": ["* 8-11 * * 1"]
     },
     {
+      "description": "The Trivy server (apps/trivy) and the Trivy client in Jevil's image (the aquasec/trivy stage in member87/jevil's Dockerfile) stay on one minor. Patches come here; move a minor by hand together with a Jevil image that carries the same client.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/aquasecurity/trivy"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
       "description": "install.yaml/crds.yaml under infrastructure/ are complete upstream manifests vendored whole. Bumping only the image tag leaves probes, RBAC and env vars at the old version - that is how MetalLB 0.16 broke the LoadBalancer (#298). Upgrade by re-vendoring the whole manifest.",
       "matchFileNames": ["infrastructure/**/install.yaml", "infrastructure/**/crds.yaml"],
       "enabled": false
     },
     {
-      "description": "Renovate never merges: Jevil (apps/jevil) rules on these and merges what its policy passes. Wait 3 days after a release, so a broken or pulled release is caught upstream first; Jevil requires the renovate/stability-days status this sets. Registries that publish no release timestamps (ghcr.io among them) would otherwise never pass the wait, so those pass it, and Jevil applies the same age to the GitHub releases it reads. Rebase whenever main moves, because with automerge off Renovate would otherwise only rebase on conflicts and Jevil's checks would go stale.",
-      "matchFileNames": ["apps/**", "terraform/**"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "description": "Renovate never merges: Jevil (apps/jevil) rules on these and merges what its policy passes. Wait 3 days after a release, so a broken or pulled release is caught upstream first; Jevil requires the renovate/stability-days status this sets. Registries that publish no release timestamps (ghcr.io among them) would otherwise never pass the wait, so those pass it, and Jevil applies the same age to the GitHub releases it reads (for a digest, to the new image's build time). Rebase whenever main moves, because with automerge off Renovate would otherwise only rebase on conflicts and Jevil's checks would go stale.",
+      "matchFileNames": ["apps/**", "terraform/**", "flux/helm/**", "charts/**", "infrastructure/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
       "minimumReleaseAge": "3 days",
       "minimumReleaseAgeBehaviour": "timestamp-optional",
       "rebaseWhen": "behind-base-branch"

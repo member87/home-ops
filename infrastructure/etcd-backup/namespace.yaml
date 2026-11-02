@@ -1,0 +1,8 @@
+---
+# Must match allowedKubernetesNamespaces in talos/patches/etcd-backup-api-access.yaml.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: etcd-backup
+  labels:
+    app.kubernetes.io/name: etcd-backup

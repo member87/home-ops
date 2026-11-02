@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zz
+  namespace: zz
+spec:
+  selector: {matchLabels: {app: zz}}
+  template:
+    metadata: {labels: {app: zz}}
+    spec:
+      containers:
+        - name: zz
+          image: nginx

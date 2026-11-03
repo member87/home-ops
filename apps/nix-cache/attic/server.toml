@@ -16,12 +16,15 @@ url = "sqlite:///db/server.db?mode=rwc"
 type = "local"
 path = "/storage"
 
-# Attic's defaults. Changing them breaks deduplication against existing chunks.
+# Every chunk is a file on the NAS, and over NFS each file costs a round trip: with Attic's
+# defaults (64 KiB average) a first push ran at ~1.8 MB/s. 16x larger chunks mean 16x fewer
+# files, for a little less deduplication. Changing these later stops new uploads from
+# deduplicating against the chunks already stored.
 [chunking]
-nar-size-threshold = 65536
-min-size = 16384
-avg-size = 65536
-max-size = 262144
+nar-size-threshold = 1048576 # chunk store paths of 1 MiB or more
+min-size = 262144            # 256 KiB
+avg-size = 1048576           # 1 MiB
+max-size = 4194304           # 4 MiB
 
 [compression]
 type = "zstd"

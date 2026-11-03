@@ -264,7 +264,7 @@ for i in "${!names[@]}"; do
   out=$(nix eval --raw "${installables[$i]}.outPath")
   if nix path-info "$out" >/dev/null 2>&1; then
     nix-env --profile "$PROFILES/$name" --set "$out"
-    size=$(nix path-info --closure-size --json "$out" | "$JQ" '[.[]][0].closureSize')
+    size=$(nix path-info --closure-size --json --json-format 1 "$out" | "$JQ" '[.[]][0].closureSize')
     outs+=("$out")
     targets=$("$JQ" -c --arg t "$name" --argjson s "$size" '.[$t] = {success: true, closure_bytes: $s}' <<<"$targets")
     log "$name: built"

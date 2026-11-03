@@ -39,6 +39,28 @@ lock_changed=false
 inputs_updated=0
 commit=""
 
+# Long commands run as background children: bash only acts on a signal between commands,
+# so a SIGTERM (job deleted, deadline hit) would otherwise wait for a whole nix build and
+# then be cut off by SIGKILL. on_term stops the child, lets Nix clean up, and exits through
+# on_exit, which marks the store as cleanly stopped.
+child=""
+run() {
+  "$@" &
+  child=$!
+  local rc=0
+  wait "$child" || rc=$?
+  child=""
+  return "$rc"
+}
+on_term() {
+  log "stopping on SIGTERM"
+  if [ -n "$child" ]; then
+    kill -TERM "$child" 2>/dev/null || true
+    wait "$child" 2>/dev/null || true
+  fi
+  exit 143
+}
+
 # Times the phase that just ended and starts the next one.
 next_phase() {
   local now
@@ -50,6 +72,7 @@ next_phase() {
 
 # Written on every exit, so a failed run is as visible as a good one.
 store_mounted=false
+store_checked=false
 write_status() {
   local rc=$1 used=0 size=0
   if [ "$store_mounted" = true ]; then
@@ -76,8 +99,9 @@ on_exit() {
   next_phase "done"
   phase=$failed_phase
   write_status "$rc" || log "could not write $STATUS"
-  # Reached only when the script itself ends; a VM killed mid-run leaves no marker.
-  if [ "$store_mounted" = true ]; then
+  # Only once the store passed its check: a VM killed mid-run leaves no marker, and neither
+  # does a run stopped while checking a store that was already suspect.
+  if [ "$store_checked" = true ]; then
     sync
     touch "$CLEAN_MARKER"
     sync
@@ -88,6 +112,7 @@ on_exit() {
 # --- mount the persistent store --------------------------------------------------------
 nix build --no-link "$UTIL_LINUX" "$E2FSPROGS" "${JQ%/bin/jq}"
 trap on_exit EXIT
+trap on_term TERM INT
 export PATH="$PATH:$UTIL_LINUX/bin:$E2FSPROGS/bin"
 
 # Privileged, but the container's /dev still has no loop nodes.
@@ -110,10 +135,10 @@ mount_image() {
     new_image
   fi
   mkdir -p /mnt/store
-  # Direct I/O to the image file: without it the guest caches every block twice (the ext4
-  # page cache and the image file's), and guest memory the VM has touched stays charged to
-  # the pod.
-  loop_dev=$(losetup --find --show --direct-io=on "$STORE_IMG")
+  # Buffered, not --direct-io: direct I/O over virtiofs and NFS read at about 16 MB/s (a
+  # store check took 40 minutes for 39 GiB). The double page cache this costs fits, because
+  # the RuntimeClass overhead makes the pod cgroup as big as the VM.
+  loop_dev=$(losetup --find --show "$STORE_IMG")
   mount -o noatime "$loop_dev" /mnt/store
 }
 unmount_image() {
@@ -123,18 +148,30 @@ unmount_image() {
 [ -e "$STORE_IMG" ] || new_image
 mount_image
 
-# A store whose last run did not end (VM killed, deadline hit) can hold paths Nix had
-# registered before their contents reached the NAS. Check every path's contents and fetch
-# damaged ones again; if that fails (a damaged .drv cannot be fetched), start over.
+# A store whose last run did not end (VM killed) can hold paths Nix had registered before
+# their contents reached the NAS. Check every path's contents, then delete the damaged ones
+# and everything that refers to them; the build fetches or rebuilds them. Only if that
+# fails does the store start over (a full re-download).
 if [ -d /mnt/store/nix/store ] && [ ! -e "$CLEAN_MARKER" ]; then
-  log "the last run did not stop cleanly: verifying the store"
-  if ! nix store verify --store 'local?root=/mnt/store' --all --no-trust --repair; then
-    log "the store could not be repaired: starting a new one"
-    unmount_image
-    new_image
-    mount_image
+  log "the last run did not stop cleanly: checking the store"
+  # To a file, not $(...): a command substitution would hold off on_term until it ends.
+  run nix store verify --store 'local?root=/mnt/store' --all --no-trust >/tmp/verify.log 2>&1 || true
+  mapfile -t damaged < <(grep -o "path '/nix/store/[^']*' was modified" /tmp/verify.log | cut -d"'" -f2)
+  if [ "${#damaged[@]}" -gt 0 ]; then
+    log "damaged: ${damaged[*]}"
+    if nix-store --store 'local?root=/mnt/store' -q --referrers-closure "${damaged[@]}" >/tmp/doomed.txt &&
+      mapfile -t doomed </tmp/doomed.txt &&
+      run nix store delete --store 'local?root=/mnt/store' --ignore-liveness "${doomed[@]}"; then
+      log "deleted ${#doomed[@]} damaged or dependent paths"
+    else
+      log "could not delete the damaged paths: starting a new store"
+      unmount_image
+      new_image
+      mount_image
+    fi
   fi
 fi
+store_checked=true
 rm -f "$CLEAN_MARKER"
 sync
 
@@ -168,7 +205,7 @@ git remote set-url --push origin "$REPO_SSH"
 git config user.name "nix-cache builder"
 git config user.email "nix-cache@lab.jackhumes.com"
 old_lock=$(cat flake.lock)
-nix flake update
+run nix flake update
 
 # Input name -> lastModified, for the dashboard's input age panel.
 inputs=$("$JQ" -c '.nodes as $n | .nodes.root.inputs | with_entries(
@@ -221,7 +258,7 @@ done
 # and --keep-going still builds everything that does not depend on a failure.
 log "building ${names[*]}"
 build_rc=0
-nix build --keep-going --no-link "${installables[@]}" || build_rc=$?
+run nix build --keep-going --no-link "${installables[@]}" || build_rc=$?
 
 outs=()
 failed=0
@@ -249,7 +286,7 @@ fi
 next_phase push
 export XDG_CONFIG_HOME=/tmp/attic
 "$ATTIC" login --set-default local "$ATTIC_ENDPOINT" "$(cat /secrets/attic-token)" >/dev/null
-"$ATTIC" push "local:$CACHE" "${outs[@]}"
+run "$ATTIC" push "local:$CACHE" "${outs[@]}"
 if [ "$lock_changed" = true ]; then
   # A push rejected because main moved fails the run; tomorrow's run starts from the new main.
   GIT_SSH_COMMAND="ssh -i /secrets/deploy-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/config/known_hosts -o StrictHostKeyChecking=yes" \
@@ -268,6 +305,6 @@ done
 read -r size used < <(df -B1 --output=size,used /nix | tail -1)
 if [ $((used * 100 / size)) -ge 60 ]; then
   log "store at $((used * 100 / size))%, collecting garbage"
-  nix store gc
+  run nix store gc
 fi
 log "done"

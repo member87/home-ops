@@ -27,6 +27,9 @@ spec:
           labels:
             app: nix-cache-builder
         spec:
+          # run.sh passes SIGTERM to Nix and marks the store as cleanly stopped once Nix has
+          # cleaned up; past this the VM is killed and the next run checks the whole store.
+          terminationGracePeriodSeconds: 300
           restartPolicy: Never
           # The Nix sandbox and the loop mount need privilege; under kata it stops at the
           # pod's own VM, with no host device or node filesystem in reach.

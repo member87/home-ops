@@ -178,14 +178,20 @@ changes=$("$JQ" -r --argjson old "$old_lock" '.nodes as $n | .nodes.root.inputs 
   | (.value | if type == "array" then .[0] else . end) as $key
   | ($old.nodes[$key].locked.rev // "") as $a | ($n[$key].locked.rev // "") as $b
   | select($a != $b) | "\(.key): \($a[0:7]) -> \($b[0:7])"' flake.lock)
-if ! git diff --quiet -- flake.lock; then
+# The repo's own bumps outside flake.lock, e.g. packages pinned to release binaries. Its
+# output lines go into the commit message.
+if [ -x scripts/nightly-update.sh ]; then
+  bumps=$(PATH="$PATH:${JQ%/jq}" scripts/nightly-update.sh)
+  [ -z "$bumps" ] || changes=$(printf '%s\n%s' "$changes" "$bumps" | grep .)
+fi
+if ! git diff --quiet; then
   lock_changed=true
   inputs_updated=$(grep -c . <<<"$changes" || true)
-  log "updated inputs:"$'\n'"$changes"
+  log "updated:"$'\n'"$changes"
   # Commit before building, so anything that reads self.rev sees the commit that ships.
-  git commit --quiet -m "chore(flake): update inputs" -m "$changes" -- flake.lock
+  git commit --quiet -a -m "chore(flake): update inputs" -m "$changes"
 else
-  log "flake.lock already current"
+  log "nothing to update"
 fi
 commit=$(git rev-parse HEAD)
 

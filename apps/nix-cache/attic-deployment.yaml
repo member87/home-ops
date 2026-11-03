@@ -1,8 +1,8 @@
 ---
 # Attic binary cache server. The desktops pull https://nix-cache.lab.jackhumes.com/jackhumes
 # (public: no token needed to read); only the builder's token can push. The cache skips
-# anything signed by cache.nixos.org, nix-community, hyprland or nix-citizen, so it holds
-# only the paths nobody else builds.
+# anything signed by cache.nixos.org, nix-community, hyprland, nix-citizen, nix-gaming or
+# vicinae (the seed database's upstream keys), so it holds only the paths nobody else builds.
 #
 # The image is upstream's last published build (ghcr.io/zhaofengli/attic stopped publishing
 # after 90dcbd6, 2025-09-24) and has no version tags, so Renovate cannot bump it: move the

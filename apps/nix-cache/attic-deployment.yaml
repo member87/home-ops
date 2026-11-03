@@ -1,0 +1,202 @@
+---
+# Attic binary cache server. The desktops pull https://nix-cache.lab.jackhumes.com/jackhumes
+# (public: no token needed to read); only the builder's token can push. The cache skips
+# anything signed by cache.nixos.org, nix-community, hyprland, nix-citizen, nix-gaming or
+# vicinae (the seed database's upstream keys), so it holds only the paths nobody else builds.
+#
+# The image is upstream's last published build (ghcr.io/zhaofengli/attic stopped publishing
+# after 90dcbd6, 2025-09-24) and has no version tags, so Renovate cannot bump it: move the
+# tag and digest by hand when upstream publishes again.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: attic
+  namespace: nix-cache
+  labels:
+    app: attic
+spec:
+  replicas: 1
+  # The database volume is ReadWriteOnce.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: attic
+  template:
+    metadata:
+      labels:
+        app: attic
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/path: /metrics
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # First start only: copy the seed database (the jackhumes cache and its signing
+        # key) onto the empty volume. A database that already exists is never touched.
+        - name: seed-db
+          image: busybox:1.38
+          command:
+            - /bin/sh
+            - -c
+            - |
+              if [ -e /db/server.db ]; then
+                echo "database exists, not seeding"
+              else
+                # The secret file is 0440; Attic needs to write the database.
+                cp /seed/server.db /db/server.db && chmod 0600 /db/server.db && echo "seeded /db/server.db"
+              fi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          volumeMounts:
+            - name: db
+              mountPath: /db
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+      containers:
+        - name: attic
+          image: ghcr.io/zhaofengli/attic:90dcbd6acdc70353aa7488b0c914a433b7caee92@sha256:18574aba70fc89d2b695273fbe2e7b2f8ad7e8e786b4cc535124fbe14bada1d0
+          imagePullPolicy: IfNotPresent
+          args:
+            - -f
+            - /config/server.toml
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64
+              valueFrom:
+                secretKeyRef:
+                  name: nix-cache-attic-secret
+                  key: ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64
+          # allowed-hosts rejects the probe's default Host (the pod IP) with a 400.
+          readinessProbe:
+            httpGet:
+              path: /jackhumes/nix-cache-info
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: attic.nix-cache.svc.cluster.local:8080
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: db
+              mountPath: /db
+            - name: nas
+              mountPath: /storage
+              subPath: nix-cache/attic
+            - name: tmp
+              mountPath: /tmp
+        # Prometheus metrics for the Nix Cache dashboard (exporter.py): cache contents from
+        # Attic's database, and the last build from the status file the builder writes.
+        - name: exporter
+          image: python:3.15-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -u
+            - -B
+            - /scripts/exporter.py
+          ports:
+            - containerPort: 9102
+              name: metrics
+              protocol: TCP
+          env:
+            - name: ATTIC_DB
+              value: /db/server.db
+            - name: BUILD_STATUS
+              value: /builder/status.json
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            # Read-write although the exporter only reads: Attic runs SQLite in WAL mode,
+            # and a WAL reader has to update the -shm file.
+            - name: db
+              mountPath: /db
+            - name: nas
+              mountPath: /builder
+              subPath: nix-cache/builder
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: attic-config
+        - name: scripts
+          configMap:
+            name: nix-cache-exporter
+        - name: seed
+          secret:
+            secretName: nix-cache-attic-secret
+            items:
+              - key: server.db
+                path: server.db
+            defaultMode: 0440
+        - name: db
+          persistentVolumeClaim:
+            claimName: nix-cache-attic-db
+        - name: nas
+          persistentVolumeClaim:
+            claimName: nix-cache-nas
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi

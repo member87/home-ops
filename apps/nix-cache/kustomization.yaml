@@ -1,0 +1,28 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - storage.yaml
+  - sealedsecret.yaml
+  - attic-deployment.yaml
+  - service.yaml
+  - ingressroute.yaml
+  - builder-cronjob.yaml
+  - networkpolicy.yaml
+# Generated so a change to any of these files gets a new name and rolls its workload.
+configMapGenerator:
+  - name: attic-config
+    namespace: nix-cache
+    files:
+      - attic/server.toml
+  - name: nix-cache-exporter
+    namespace: nix-cache
+    files:
+      - exporter.py
+  - name: nix-cache-builder
+    namespace: nix-cache
+    files:
+      - builder/run.sh
+      - builder/nix.conf
+      - builder/known_hosts

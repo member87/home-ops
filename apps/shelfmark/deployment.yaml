@@ -54,6 +54,42 @@ spec:
     requests:
       storage: 1Ti
 ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: shelfmark-media-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes/media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable
+  name: shelfmark-media
+  namespace: shelfmark
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: shelfmark-media-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -95,6 +131,17 @@ spec:
               value: "true"
             - name: INGEST_DIR
               value: "/books"
+            # Audiobooks go straight into the Audiobookshelf library (/media/audiobooks
+            # there), one Author/Title folder each. ENV values override Shelfmark's UI.
+            - name: DESTINATION_AUDIOBOOK
+              value: "/audiobooks"
+            - name: FILE_ORGANIZATION_AUDIOBOOK
+              value: "organize"
+            - name: TEMPLATE_AUDIOBOOK_ORGANIZE
+              value: "{Author}/{Title}/{Title}"
+            # downloads and media are separate NFS exports, so a hardlink is impossible
+            - name: HARDLINK_TORRENTS_AUDIOBOOK
+              value: "false"
           volumeMounts:
             - name: config
               mountPath: /config
@@ -102,6 +149,9 @@ spec:
               mountPath: /books
             - name: books
               mountPath: /downloads
+            - name: media
+              mountPath: /audiobooks
+              subPath: audiobooks
           startupProbe:
             httpGet:
               path: /api/health
@@ -134,3 +184,6 @@ spec:
         - name: books
           persistentVolumeClaim:
             claimName: shelfmark-books
+        - name: media
+          persistentVolumeClaim:
+            claimName: shelfmark-media

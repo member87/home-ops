@@ -1595,7 +1595,7 @@
       "id": 28,
       "type": "timeseries",
       "title": "Builder VM Memory",
-      "description": "Memory of the builder's Kata VM. The limit is 12 GiB.",
+      "description": "Memory of the builder's Kata VM. The limit is 16 GiB.",
       "datasource": {
         "type": "prometheus",
         "uid": "${promDatasource}"

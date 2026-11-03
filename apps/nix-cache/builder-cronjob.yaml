@@ -49,8 +49,9 @@ spec:
               command: ["bash", "/config/run.sh"]
               securityContext:
                 privileged: true
-              # Kata sizes the VM from the limits: 5 vCPUs and 12GiB for evaluation plus two
-              # parallel builds of three cores each (builder/nix.conf).
+              # Kata sizes the VM from the limits: 5 vCPUs, and 16GiB for evaluation plus two
+              # parallel builds of three cores each (builder/nix.conf). 12GiB was not enough:
+              # clang compiling ghostty's glslang was OOM-killed beside another build.
               resources:
                 requests:
                   cpu: "1"
@@ -58,7 +59,7 @@ spec:
                   ephemeral-storage: 1Gi
                 limits:
                   cpu: "5"
-                  memory: 12Gi
+                  memory: 16Gi
                   ephemeral-storage: 5Gi
               volumeMounts:
                 - name: config

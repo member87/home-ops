@@ -200,24 +200,41 @@ if [ "${#hosts[@]}" = 0 ]; then
   log "the flake has no nixosConfigurations"
   exit 1
 fi
+names=()
+installables=()
+for h in "${hosts[@]}"; do
+  names+=("$h")
+  installables+=(".#nixosConfigurations.\"$h\".config.system.build.toplevel")
+done
+for h in "${homes[@]}"; do
+  names+=("$h")
+  installables+=(".#homeConfigurations.\"$h\".activationPackage")
+done
+
+# One invocation for every target: a package two hosts share is built (or fails) once,
+# and --keep-going still builds everything that does not depend on a failure.
+log "building ${names[*]}"
+build_rc=0
+nix build --keep-going --no-link "${installables[@]}" || build_rc=$?
+
 outs=()
 failed=0
-build() { # name installable
-  local name=$1 out size
-  log "building $name"
-  if nix build --profile "$PROFILES/$name" "$2"; then
-    out=$(readlink -f "$PROFILES/$name")
+for i in "${!names[@]}"; do
+  name=${names[$i]}
+  out=$(nix eval --raw "${installables[$i]}.outPath")
+  if nix path-info "$out" >/dev/null 2>&1; then
+    nix-env --profile "$PROFILES/$name" --set "$out"
     size=$(nix path-info --closure-size --json "$out" | "$JQ" '[.[]][0].closureSize')
     outs+=("$out")
     targets=$("$JQ" -c --arg t "$name" --argjson s "$size" '.[$t] = {success: true, closure_bytes: $s}' <<<"$targets")
+    log "$name: built"
   else
     failed=1
     targets=$("$JQ" -c --arg t "$name" '.[$t] = {success: false, closure_bytes: null}' <<<"$targets")
+    log "$name: failed"
   fi
-}
-for h in "${hosts[@]}"; do build "$h" ".#nixosConfigurations.\"$h\".config.system.build.toplevel"; done
-for h in "${homes[@]}"; do build "$h" ".#homeConfigurations.\"$h\".activationPackage"; done
-if [ "$failed" != 0 ]; then
+done
+if [ "$failed" != 0 ] || [ "$build_rc" != 0 ]; then
   log "a build failed: nothing is pushed, main keeps the previous flake.lock"
   exit 1
 fi

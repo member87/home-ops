@@ -51,7 +51,8 @@ spec:
               if [ -e /db/server.db ]; then
                 echo "database exists, not seeding"
               else
-                cp /seed/server.db /db/server.db && echo "seeded /db/server.db"
+                # The secret file is 0440; Attic needs to write the database.
+                cp /seed/server.db /db/server.db && chmod 0600 /db/server.db && echo "seeded /db/server.db"
               fi
           securityContext:
             allowPrivilegeEscalation: false

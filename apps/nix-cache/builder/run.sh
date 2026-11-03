@@ -175,15 +175,13 @@ store_checked=true
 rm -f "$CLEAN_MARKER"
 sync
 
-# Bring the image's own Nix (and the tools above) into the persistent store, then put the
-# persistent store in place of the image's. The first run seeds it with a plain copy.
+# Bring the image's own Nix (its default profile, which includes the sandbox's busybox) and
+# the tools above into the persistent store, then put the persistent store in place of the
+# image's. Not --all: the image's base-system path holds /etc files the container runtime
+# rewrites, so its contents no longer match its hash.
 image_profile=$(readlink -f /nix/var/nix/profiles/default)
-if [ -d /mnt/store/nix/store ]; then
-  nix copy --no-check-sigs --to 'local?root=/mnt/store' --all
-else
-  log "seeding the store from the image"
-  cp -a /nix /mnt/store/
-fi
+nix copy --no-check-sigs --to 'local?root=/mnt/store' \
+  "$image_profile" "$UTIL_LINUX" "$E2FSPROGS" "${JQ%/bin/jq}"
 mount --bind /mnt/store/nix /nix
 store_mounted=true
 export PATH="$image_profile/bin:$UTIL_LINUX/bin:$E2FSPROGS/bin"

@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+# Nightly NixOS build (builder-cronjob.yaml): update member87/nixos's flake inputs, build
+# every nixosConfiguration and homeConfiguration, push the outputs to Attic and, only once
+# all of that worked, push the new flake.lock to main. The desktops' 05:00 auto-upgrade then
+# finds every path either here or on a public cache.
+#
+# Runs as root in the pod's Kata VM. The Nix store is persistent: an ext4 image on the NAS,
+# loop-mounted over /nix, so a run only fetches and builds what changed and nothing heavy
+# lands on the node's disk. Builds run in the Nix sandbox as nixbld users, which cannot
+# read /secrets.
+set -euo pipefail
+
+REPO_HTTPS=https://github.com/member87/nixos.git
+REPO_SSH=git@github.com:member87/nixos.git
+CACHE=jackhumes
+ATTIC_ENDPOINT=http://attic.nix-cache.svc.cluster.local:8080
+STORE_IMG=/nas/store.img   # /nas is nix-cache/builder on the NAS
+STORE_SIZE=200G            # sparse: the NAS only holds what the store uses
+STATUS=/nas/status.json    # read by the exporter in attic-deployment.yaml
+PROFILES=/nix/var/nix/profiles/nix-cache
+WORK=/nix/var/nix-cache/work
+
+# Tools the nixos/nix image lacks, pinned to store paths on cache.nixos.org (nixos-unstable
+# 31ecbaca). Bump by evaluating nixpkgs#<pkg>.outPath against a newer nixpkgs.
+UTIL_LINUX=/nix/store/2lgg8jqyzjp60svh7kmp39kqwnig31p2-util-linux-2.42.4-bin
+E2FSPROGS=/nix/store/9l2mjms2iidc51mh6sfyjmhzshxa3v8k-e2fsprogs-1.47.4-bin
+JQ=/nix/store/9l0j15jg8634hkb6d4c9y95mpxl0nhrd-jq-1.8.2-bin/bin/jq
+ATTIC=/nix/store/ki30bh61j71vp2jih6mfxhmfdiqxrr69-attic-0-unstable-2026-07-06/bin/attic
+
+log() { echo "[nix-cache] $*"; }
+
+started=$(date +%s)
+phase=setup
+phase_started=$started
+durations='{}'
+targets='{}'
+inputs='{}'
+lock_changed=false
+inputs_updated=0
+commit=""
+
+# Times the phase that just ended and starts the next one.
+next_phase() {
+  local now
+  now=$(date +%s)
+  durations=$("$JQ" -c --arg p "$phase" --argjson d $((now - phase_started)) '.[$p] = $d' <<<"$durations")
+  phase=$1
+  phase_started=$now
+}
+
+# Written on every exit, so a failed run is as visible as a good one.
+store_mounted=false
+write_status() {
+  local rc=$1 used=0 size=0
+  if [ "$store_mounted" = true ]; then
+    read -r size used < <(df -B1 --output=size,used /nix | tail -1) || true
+  fi
+  "$JQ" -n \
+    --argjson started "$started" --argjson finished "$(date +%s)" \
+    --argjson success "$([ "$rc" = 0 ] && echo true || echo false)" \
+    --arg phase "$phase" --argjson durations "$durations" --argjson targets "$targets" \
+    --argjson inputs "$inputs" --argjson lock_changed "$lock_changed" \
+    --argjson inputs_updated "$inputs_updated" --arg commit "$commit" \
+    --argjson store_size "${size:-0}" --argjson store_used "${used:-0}" \
+    '{started: $started, finished: $finished, success: $success,
+      failed_phase: (if $success then null else $phase end), durations: $durations,
+      targets: $targets, inputs: $inputs, lock_changed: $lock_changed,
+      inputs_updated: $inputs_updated, commit: $commit,
+      store: {size_bytes: $store_size, used_bytes: $store_used}}' \
+    >"$STATUS.tmp" && mv "$STATUS.tmp" "$STATUS"
+}
+on_exit() {
+  local rc=$? failed_phase=$phase
+  [ "$rc" = 0 ] || log "failed during '$phase' (exit $rc)"
+  next_phase "done"
+  phase=$failed_phase
+  write_status "$rc" || log "could not write $STATUS"
+  exit "$rc"
+}
+
+# --- mount the persistent store --------------------------------------------------------
+nix build --no-link "$UTIL_LINUX" "$E2FSPROGS" "${JQ%/bin/jq}"
+trap on_exit EXIT
+export PATH="$PATH:$UTIL_LINUX/bin:$E2FSPROGS/bin"
+
+# Privileged, but the container's /dev still has no loop nodes.
+for i in 0 1 2 3 4 5 6 7; do [ -e /dev/loop$i ] || mknod -m 660 /dev/loop$i b 7 $i; done
+[ -e /dev/loop-control ] || mknod -m 660 /dev/loop-control c 10 237
+
+new_image() {
+  log "creating $STORE_IMG ($STORE_SIZE, sparse)"
+  rm -f "$STORE_IMG"
+  truncate -s "$STORE_SIZE" "$STORE_IMG"
+  mkfs.ext4 -q -m 0 -L nix-store "$STORE_IMG"
+}
+[ -e "$STORE_IMG" ] || new_image
+# A VM killed mid-run leaves the journal to replay; anything e2fsck cannot repair costs a
+# full re-download, not correctness, so start over instead of failing every night.
+fsck_rc=0
+e2fsck -p "$STORE_IMG" || fsck_rc=$?
+if [ "$fsck_rc" -ge 4 ]; then
+  log "e2fsck exit $fsck_rc: store image is damaged"
+  new_image
+fi
+mkdir -p /mnt/store
+mount -o loop,noatime "$STORE_IMG" /mnt/store
+
+# Bring the image's own Nix (and the tools above) into the persistent store, then put the
+# persistent store in place of the image's. The first run seeds it with a plain copy.
+image_profile=$(readlink -f /nix/var/nix/profiles/default)
+if [ -d /mnt/store/nix/store ]; then
+  nix copy --no-check-sigs --to 'local?root=/mnt/store' --all
+else
+  log "seeding the store from the image"
+  cp -a /nix /mnt/store/
+fi
+mount --bind /mnt/store/nix /nix
+store_mounted=true
+export PATH="$image_profile/bin:$UTIL_LINUX/bin:$E2FSPROGS/bin"
+if [ "$(readlink -f /nix/var/nix/profiles/default)" != "$image_profile" ]; then
+  nix-env --profile /nix/var/nix/profiles/default --set "$image_profile" >/dev/null
+fi
+mkdir -p /nix/var/nix/builds "$PROFILES" /nix/var/nix/gcroots/nix-cache
+# GC roots for the tools, so a garbage collection in the middle of a run keeps them.
+nix build --out-link /nix/var/nix/gcroots/nix-cache/tool \
+  "$UTIL_LINUX" "$E2FSPROGS" "${JQ%/bin/jq}" "${ATTIC%/bin/attic}"
+log "store: $(df -h --output=used,size /nix | tail -1 | xargs)"
+
+# --- update the flake -----------------------------------------------------------------
+next_phase update
+rm -rf "$WORK"
+git clone --quiet --depth 1 "$REPO_HTTPS" "$WORK"
+cd "$WORK"
+git remote set-url --push origin "$REPO_SSH"
+git config user.name "nix-cache builder"
+git config user.email "nix-cache@lab.jackhumes.com"
+old_lock=$(cat flake.lock)
+nix flake update
+
+# Input name -> lastModified, for the dashboard's input age panel.
+inputs=$("$JQ" -c '.nodes as $n | .nodes.root.inputs | with_entries(
+  .value |= ($n[if type == "array" then .[0] else . end].locked.lastModified // null))
+  | with_entries(select(.value != null))' flake.lock)
+changes=$("$JQ" -r --argjson old "$old_lock" '.nodes as $n | .nodes.root.inputs | to_entries[]
+  | (.value | if type == "array" then .[0] else . end) as $key
+  | ($old.nodes[$key].locked.rev // "") as $a | ($n[$key].locked.rev // "") as $b
+  | select($a != $b) | "\(.key): \($a[0:7]) -> \($b[0:7])"' flake.lock)
+if ! git diff --quiet -- flake.lock; then
+  lock_changed=true
+  inputs_updated=$(grep -c . <<<"$changes" || true)
+  log "updated inputs:"$'\n'"$changes"
+  # Commit before building, so anything that reads self.rev sees the commit that ships.
+  git commit --quiet -m "chore(flake): update inputs" -m "$changes" -- flake.lock
+else
+  log "flake.lock already current"
+fi
+commit=$(git rev-parse HEAD)
+
+# --- build ----------------------------------------------------------------------------
+next_phase build
+# Plain assignments, so a failed evaluation stops the run (a process substitution would not).
+host_json=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)
+home_json=$(nix eval --json .#homeConfigurations --apply builtins.attrNames)
+mapfile -t hosts < <("$JQ" -r '.[]' <<<"$host_json")
+mapfile -t homes < <("$JQ" -r '.[]' <<<"$home_json")
+if [ "${#hosts[@]}" = 0 ]; then
+  log "the flake has no nixosConfigurations"
+  exit 1
+fi
+outs=()
+failed=0
+build() { # name installable
+  local name=$1 out size
+  log "building $name"
+  if nix build --profile "$PROFILES/$name" "$2"; then
+    out=$(readlink -f "$PROFILES/$name")
+    size=$(nix path-info --closure-size --json "$out" | "$JQ" '[.[]][0].closureSize')
+    outs+=("$out")
+    targets=$("$JQ" -c --arg t "$name" --argjson s "$size" '.[$t] = {success: true, closure_bytes: $s}' <<<"$targets")
+  else
+    failed=1
+    targets=$("$JQ" -c --arg t "$name" '.[$t] = {success: false, closure_bytes: null}' <<<"$targets")
+  fi
+}
+for h in "${hosts[@]}"; do build "$h" ".#nixosConfigurations.\"$h\".config.system.build.toplevel"; done
+for h in "${homes[@]}"; do build "$h" ".#homeConfigurations.\"$h\".activationPackage"; done
+if [ "$failed" != 0 ]; then
+  log "a build failed: nothing is pushed, main keeps the previous flake.lock"
+  exit 1
+fi
+
+# --- push -----------------------------------------------------------------------------
+next_phase push
+export XDG_CONFIG_HOME=/tmp/attic
+"$ATTIC" login --set-default local "$ATTIC_ENDPOINT" "$(cat /secrets/attic-token)" >/dev/null
+"$ATTIC" push "local:$CACHE" "${outs[@]}"
+if [ "$lock_changed" = true ]; then
+  # A push rejected because main moved fails the run; tomorrow's run starts from the new main.
+  GIT_SSH_COMMAND="ssh -i /secrets/deploy-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/config/known_hosts -o StrictHostKeyChecking=yes" \
+    git push --quiet origin HEAD:main
+  log "pushed $commit to main"
+fi
+
+# --- keep the store in bounds ---------------------------------------------------------
+next_phase gc
+for p in "$PROFILES"/*; do
+  case $p in *-link) continue ;; esac   # generations of the profile itself
+  nix profile wipe-history --profile "$p" --older-than 7d
+done
+# Collect only when the store is filling up: between nights it keeps compilers and other
+# build-only inputs, so tomorrow does not download them again.
+read -r size used < <(df -B1 --output=size,used /nix | tail -1)
+if [ $((used * 100 / size)) -ge 60 ]; then
+  log "store at $((used * 100 / size))%, collecting garbage"
+  nix store gc
+fi
+log "done"

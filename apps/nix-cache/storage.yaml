@@ -1,0 +1,58 @@
+---
+# The NAS share. Attic keeps its chunks under nix-cache/attic and the builder keeps its
+# Nix store as an ext4 image under nix-cache/builder (subPath mounts; the kubelet creates
+# the directories on first use). Everything here can be rebuilt, so it is not backed up.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nix-cache-nas-pv
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - proto=tcp
+    - hard
+    - nointr
+  nfs:
+    server: 10.0.0.9
+    path: /volume1/kubernetes
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable
+  name: nix-cache-nas
+  namespace: nix-cache
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-manual
+  volumeName: nix-cache-nas-pv
+  resources:
+    requests:
+      storage: 500Gi
+---
+# Attic's SQLite database: which store paths the cache holds and the cache's signing key.
+# SQLite stays off NFS. If this volume is lost, the seed in nix-cache-attic-secret brings
+# the cache back with the same key and the next build pushes every path again; empty
+# nix-cache/attic on the NAS first, or the old chunks stay there unreferenced.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
+  name: nix-cache-attic-db
+  namespace: nix-cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,33 @@
+# atticd configuration. The JWT signing key comes from ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64
+# (nix-cache-attic-secret); changing anything about it invalidates the builder's token.
+listen = "[::]:8080"
+
+# The desktops reach the cache through Traefik, the builder through the Service.
+allowed-hosts = ["nix-cache.lab.jackhumes.com", "attic.nix-cache.svc.cluster.local:8080"]
+
+# Only the attic client reads this (the desktops use the binary cache URL directly), and
+# the only attic client is the builder: keep its uploads inside the cluster.
+api-endpoint = "http://attic.nix-cache.svc.cluster.local:8080/"
+
+[database]
+url = "sqlite:///db/server.db?mode=rwc"
+
+[storage]
+type = "local"
+path = "/storage"
+
+# Attic's defaults. Changing them breaks deduplication against existing chunks.
+[chunking]
+nar-size-threshold = 65536
+min-size = 16384
+avg-size = 65536
+max-size = 262144
+
+[compression]
+type = "zstd"
+
+# A path nobody has fetched for 30 days is dropped. The builder pushes the full closure
+# every night, so a dropped path that is still part of a current system comes straight back.
+[garbage-collection]
+interval = "12 hours"
+default-retention-period = "30 days"

@@ -93,6 +93,9 @@ pages:
               - title: Terrakube
                 url: https://terrakube.lab.jackhumes.com
                 icon: sh:opentofu
+              - title: Nix Cache
+                url: https://nix-cache.lab.jackhumes.com/jackhumes/nix-cache-info
+                icon: sh:nixos
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection

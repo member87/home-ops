@@ -69,12 +69,19 @@ write_status() {
       store: {size_bytes: $store_size, used_bytes: $store_used}}' \
     >"$STATUS.tmp" && mv "$STATUS.tmp" "$STATUS"
 }
+CLEAN_MARKER=/mnt/store/.stopped-cleanly
 on_exit() {
   local rc=$? failed_phase=$phase
   [ "$rc" = 0 ] || log "failed during '$phase' (exit $rc)"
   next_phase "done"
   phase=$failed_phase
   write_status "$rc" || log "could not write $STATUS"
+  # Reached only when the script itself ends; a VM killed mid-run leaves no marker.
+  if [ "$store_mounted" = true ]; then
+    sync
+    touch "$CLEAN_MARKER"
+    sync
+  fi
   exit "$rc"
 }
 
@@ -93,17 +100,43 @@ new_image() {
   truncate -s "$STORE_SIZE" "$STORE_IMG"
   mkfs.ext4 -q -m 0 -L nix-store "$STORE_IMG"
 }
+mount_image() {
+  # A VM killed mid-run leaves the journal to replay; anything e2fsck cannot repair costs
+  # a full re-download, not correctness, so start over instead of failing every night.
+  local fsck_rc=0
+  e2fsck -p "$STORE_IMG" || fsck_rc=$?
+  if [ "$fsck_rc" -ge 4 ]; then
+    log "e2fsck exit $fsck_rc: store image is damaged"
+    new_image
+  fi
+  mkdir -p /mnt/store
+  # Direct I/O to the image file: without it the guest caches every block twice (the ext4
+  # page cache and the image file's), and guest memory the VM has touched stays charged to
+  # the pod.
+  loop_dev=$(losetup --find --show --direct-io=on "$STORE_IMG")
+  mount -o noatime "$loop_dev" /mnt/store
+}
+unmount_image() {
+  umount /mnt/store
+  losetup -d "$loop_dev"
+}
 [ -e "$STORE_IMG" ] || new_image
-# A VM killed mid-run leaves the journal to replay; anything e2fsck cannot repair costs a
-# full re-download, not correctness, so start over instead of failing every night.
-fsck_rc=0
-e2fsck -p "$STORE_IMG" || fsck_rc=$?
-if [ "$fsck_rc" -ge 4 ]; then
-  log "e2fsck exit $fsck_rc: store image is damaged"
-  new_image
+mount_image
+
+# A store whose last run did not end (VM killed, deadline hit) can hold paths Nix had
+# registered before their contents reached the NAS. Check every path's contents and fetch
+# damaged ones again; if that fails (a damaged .drv cannot be fetched), start over.
+if [ -d /mnt/store/nix/store ] && [ ! -e "$CLEAN_MARKER" ]; then
+  log "the last run did not stop cleanly: verifying the store"
+  if ! nix store verify --store 'local?root=/mnt/store' --all --no-trust --repair; then
+    log "the store could not be repaired: starting a new one"
+    unmount_image
+    new_image
+    mount_image
+  fi
 fi
-mkdir -p /mnt/store
-mount -o loop,noatime "$STORE_IMG" /mnt/store
+rm -f "$CLEAN_MARKER"
+sync
 
 # Bring the image's own Nix (and the tools above) into the persistent store, then put the
 # persistent store in place of the image's. The first run seeds it with a plain copy.

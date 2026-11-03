@@ -853,53 +853,6 @@ data:
             labels:
               severity: critical
 
-          - uid: nix-cache-build-stale
-            title: Nix Cache Build Stale
-            condition: C
-            data:
-              - refId: A
-                relativeTimeRange:
-                  from: 600
-                  to: 0
-                datasourceUid: prometheus
-                # Falls back to the CronJob creation time so a builder that has never
-                # succeeded still alerts.
-                model:
-                  expr: time() - (kube_cronjob_status_last_successful_time{namespace="nix-cache",cronjob="nix-cache-builder"} or kube_cronjob_created{namespace="nix-cache",cronjob="nix-cache-builder"})
-                  refId: A
-              - refId: B
-                relativeTimeRange:
-                  from: 600
-                  to: 0
-                datasourceUid: __expr__
-                model:
-                  expression: A
-                  refId: B
-                  type: reduce
-                  reducer: last
-              - refId: C
-                relativeTimeRange:
-                  from: 600
-                  to: 0
-                datasourceUid: __expr__
-                model:
-                  expression: B
-                  refId: C
-                  type: threshold
-                  conditions:
-                    - evaluator:
-                        params:
-                          - 108000
-                        type: gt
-            noDataState: OK
-            execErrState: OK
-            for: 10m
-            annotations:
-              summary: The nightly NixOS build has not succeeded for 30 hours
-              description: CronJob nix-cache/nix-cache-builder last succeeded {{ humanizeDuration $values.B.Value }} ago. The desktops keep upgrading to the last pushed flake.lock, so they are not getting updates; the Nix Cache dashboard shows the failed phase and the job's logs.
-            labels:
-              severity: warning
-
           - uid: jevil-merging-halted
             title: Jevil Merging Halted
             condition: C

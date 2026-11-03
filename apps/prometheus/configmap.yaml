@@ -276,7 +276,6 @@ data:
               minio_s3_requests_ttfb_seconds_distribution|\
               minio_s3_traffic_received_bytes|\
               minio_s3_traffic_sent_bytes|\
-              nix_cache_.+|\
               node_boot_time_seconds|\
               node_context_switches_total|\
               node_cpu_core_throttles_total|\

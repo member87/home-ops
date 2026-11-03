@@ -50,6 +50,11 @@ spec:
               image: nixos/nix:2.35.4
               imagePullPolicy: IfNotPresent
               command: ["bash", "/config/run.sh"]
+              # builder/nix.conf. Not mounted at /etc/nix/nix.conf: the image's /etc/nix is a
+              # link into its base-system store path, which the mount would modify.
+              env:
+                - name: NIX_CONF_DIR
+                  value: /config
               securityContext:
                 privileged: true
               # Kata sizes the VM from the limits: 5 vCPUs, and 16GiB for evaluation plus two
@@ -67,10 +72,6 @@ spec:
               volumeMounts:
                 - name: config
                   mountPath: /config
-                  readOnly: true
-                - name: config
-                  mountPath: /etc/nix/nix.conf
-                  subPath: nix.conf
                   readOnly: true
                 - name: secrets
                   mountPath: /secrets

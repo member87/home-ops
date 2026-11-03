@@ -175,13 +175,12 @@ store_checked=true
 rm -f "$CLEAN_MARKER"
 sync
 
-# Bring the image's own Nix (its default profile, which includes the sandbox's busybox) and
-# the tools above into the persistent store, then put the persistent store in place of the
-# image's. Not --all: the image's base-system path holds /etc files the container runtime
-# rewrites, so its contents no longer match its hash.
+# Bring the image's store into the persistent one (Nix itself, the tools above, and
+# base-system, which /etc/passwd, /etc/group and /etc/nix link into), then put the
+# persistent store in place of the image's. nix.conf comes from NIX_CONF_DIR=/config, not
+# /etc/nix: a file mounted there would land inside base-system and break its hash.
 image_profile=$(readlink -f /nix/var/nix/profiles/default)
-nix copy --no-check-sigs --to 'local?root=/mnt/store' \
-  "$image_profile" "$UTIL_LINUX" "$E2FSPROGS" "${JQ%/bin/jq}"
+nix copy --no-check-sigs --to 'local?root=/mnt/store' --all
 mount --bind /mnt/store/nix /nix
 store_mounted=true
 export PATH="$image_profile/bin:$UTIL_LINUX/bin:$E2FSPROGS/bin"

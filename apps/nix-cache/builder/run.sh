@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Nightly NixOS build (builder-cronjob.yaml): update member87/nixos's flake inputs, build
-# every nixosConfiguration and homeConfiguration, push the outputs to Attic and, only once
-# all of that worked, push the new flake.lock to main. The desktops' 05:00 auto-upgrade then
-# finds every path either here or on a public cache.
+# every nixosConfiguration (Home Manager runs inside them), push the outputs to Attic and,
+# only once all of that worked, push the new flake.lock to main. The desktops' 05:00
+# auto-upgrade then finds every path either here or on a public cache.
 #
 # Runs as root in the pod's Kata VM. The Nix store is persistent: an ext4 image on the NAS,
 # loop-mounted over /nix, so a run only fetches and builds what changed and nothing heavy
@@ -233,9 +233,7 @@ commit=$(git rev-parse HEAD)
 next_phase build
 # Plain assignments, so a failed evaluation stops the run (a process substitution would not).
 host_json=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)
-home_json=$(nix eval --json .#homeConfigurations --apply builtins.attrNames)
 mapfile -t hosts < <("$JQ" -r '.[]' <<<"$host_json")
-mapfile -t homes < <("$JQ" -r '.[]' <<<"$home_json")
 if [ "${#hosts[@]}" = 0 ]; then
   log "the flake has no nixosConfigurations"
   exit 1
@@ -245,10 +243,6 @@ installables=()
 for h in "${hosts[@]}"; do
   names+=("$h")
   installables+=(".#nixosConfigurations.\"$h\".config.system.build.toplevel")
-done
-for h in "${homes[@]}"; do
-  names+=("$h")
-  installables+=(".#homeConfigurations.\"$h\".activationPackage")
 done
 
 # One invocation for every target: a package two hosts share is built (or fails) once,

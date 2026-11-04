@@ -824,11 +824,24 @@ lists pods cluster-wide for this, read-only), the longest unscanned first, and f
 CVEs the newer tag it could move to: the one an open Renovate pull request moves it to, else, for
 a plain `X.Y.Z` tag, the registry's newest stable `X.Y.Z` tag (a tag with a variant such as
 `3.15-alpine` is not compared with another flavour). The daily report's
-**Image CVEs** lists each running image with CVEs (counts, the most severe IDs, its namespaces) and
-whether that newer tag fixes them, and the images not scanned yet.
+**Image CVEs** lists each running image with CVEs, its namespaces and whether that newer tag fixes
+them, and the images not scanned yet. Its counts and named IDs are the CVEs a fixed package version
+is out for; the rest are counted after them, with how many of those the distro will not fix
+(Trivy's `will_not_fix`/`fix_deferred`, Debian's ignored or postponed: mostly code its package does
+not ship, like zlib's minizip CVE-2023-45853, or too minor for an update). "Fixes N of the M with a
+fix" counts M from the CVEs with a fix out. Cards mark those the same way in their tables.
+
+Trivy cannot judge every match. A Go binary whose own module is stamped `v0.0.0-<time>-<hash>`
+was built without its tags (CoreDNS's images are), so Trivy holds v0.0.0 against every advisory
+of the project; Jevil drops those matches unless the fixed version is a pseudo-version too (two
+commit times compare, as with the frozen bitnamilegacy MinIO build). Go standard-library CVEs are
+matched by the Go release a binary was built with, not by whether it calls the affected package
+(an entrypoint helper such as lldap's `gosu`, built with Go 1.18, carries dozens); telling those
+apart needs `govulncheck` and the source.
 
 A scan is reused for `rescanHours` (24: the database changes, a tag rarely does) and kept in the
-state file. `maxScansPerPoll` (4) and `maxScansPerDay` (200) cap the time a poll spends scanning and
+state file; one stored by an older Jevil that parsed Trivy's report differently is rescanned first.
+`maxScansPerPoll` (4) and `maxScansPerDay` (200) cap the time a poll spends scanning and
 the registry traffic: past them a card says the image is not scanned yet and which limit holds it,
 and a later poll scans it. A failed scan (a missing image, an unreachable server) is said on the
 card with Trivy's error and retried an hour later. `timeoutMinutes` (10) bounds one scan.

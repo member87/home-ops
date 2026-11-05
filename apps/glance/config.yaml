@@ -73,6 +73,9 @@ pages:
                 icon: sh:prometheus
                 alt-status-codes:
                   - 401
+              - title: Jevil
+                url: https://jevil.lab.jackhumes.com
+                icon: https://jevil.lab.jackhumes.com/jevil.svg
               - title: Grafana
                 url: https://grafana.lab.jackhumes.com
                 icon: sh:grafana

@@ -1,4 +1,5 @@
 {
+  "dashboardUrl": "https://jevil.lab.jackhumes.com",
   "repository": "member87/home-ops",
   "baseBranch": "main",
   "renovateLogin": "chore-bore[bot]",

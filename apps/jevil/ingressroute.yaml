@@ -1,0 +1,46 @@
+---
+# jevil:auth open on the internal network by design: the dashboard is read-only and has no login.
+# It lists CVEs in what the cluster runs, so it must never get an frpc proxy or a public hostname.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: jevil
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jevil
+  namespace: jevil
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`jevil.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: jevil
+          port: 80
+  tls:
+    secretName: jevil-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jevil-http
+  namespace: jevil
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`jevil.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: jevil
+          port: 80

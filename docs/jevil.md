@@ -358,9 +358,10 @@ still pending; Jevil looks again next poll).
   stays under GitHub's comment limit.
   Mentions are broken and issue references and links go through `redirect.github.com`, so the
   notes ping nobody and leave no cross-references on this repository's or upstream's issues.
-- In the card, a collapsed **🛡️ HIGH/CRITICAL CVEs** section on every Renovate image update: per
-  image, the CVEs the new image fixes and, as a warning, the ones it brings (CVE, severity,
-  packages with installed and fixed versions, title), or why the two are not compared yet.
+- In the card, on every Renovate image update Jevil scanned, one **🛡️** line pointing at the pull
+  request's page on [the dashboard](#dashboard): this repository is public, so the CVEs the new
+  image fixes and brings (CVE, severity, packages with installed and fixed versions, title) are
+  listed there, not on GitHub.
 
 Commands are accepted from the logins in `commanders` only; the policy sets that to `member87`
 alone, and Jevil refuses to start with an empty list. Anyone else gets a 😕 and a refusal in the card. Jevil
@@ -386,7 +387,7 @@ same table the parser uses; an unknown `/jevil <word>` gets a reply pointing to 
 | `/jevil explain` | On a Chore Bore pull request: re-ask Jev with each part of the release notes left out (paragraphs, then down to one line inside the strongest) and show in the card what drives each flagged answer. At most 40 Jev calls a pass, about $0.005 in all |
 | `/jevil hold` | Add `hold` (and dequeue): never merge this pull request |
 | `/jevil unhold` | Remove `hold` |
-| `/jevil park <app>` | On any pull request or the daily report issue: open a proposal (`jevil/park/<app>`) that sets every Deployment and StatefulSet in `apps/<app>` to `replicas: 0`, adds `apps/<app>/**` to the disabled "Parked" rule in `renovate.json`, and comments out its Glance entries. The pull request records the replica counts it replaced. Refused for an unknown app, a Helm wrapper chart, or one already parked |
+| `/jevil park <app>` | On any pull request: open a proposal (`jevil/park/<app>`) that sets every Deployment and StatefulSet in `apps/<app>` to `replicas: 0`, adds `apps/<app>/**` to the disabled "Parked" rule in `renovate.json`, and comments out its Glance entries. The pull request records the replica counts it replaced. Refused for an unknown app, a Helm wrapper chart, or one already parked |
 | `/jevil unpark <app>` | The reverse (`jevil/unpark/<app>`): restores the replica counts the merged park pull request recorded (1 for an app parked by hand), drops the app from the Renovate rule and uncomments its Glance entries. Refused when no workload is at `replicas: 0` |
 
 ## Major updates: the checklist issue
@@ -710,7 +711,9 @@ to get the commit list. When `main` pins the newest build, or no longer pins
 the image at a sha, an open pin proposal is closed with a comment (not a "no"). Merging a `jevil`
 pin redeploys Jevil itself.
 
-**Daily report** (issue "Jevil daily report", `report`, edited in place): first, **since the
+**Daily report** (the Cluster and Security pages of [the dashboard](#dashboard); it was the
+issue "Jevil daily report" until the repository went public, and Jevil closes that issue on
+start): first, **since the
 last report**: what is new or gone in each section below compared with the last complete report.
 Then parked apps
 (every workload at `replicas: 0`, last change, volumes held), Longhorn volumes detached for over
@@ -812,7 +815,7 @@ hunk that shows the package's `repository:`. Only the policy's `severities` coun
 (HIGH and CRITICAL). A CVE the old image has and the new one has in no package is **fixed**: the
 pull request gets `security` and goes ahead of the updates without fixes in the merge line. It
 still waits the 72h release age and every other gate. A CVE only the new image has is listed as a
-⚠️ warning on the card and changes nothing else. Neither changes the ruling.
+⚠️ warning on the pull request's dashboard page and changes nothing else. Neither changes the ruling.
 
 The client reads the image's layers from the registry itself (private `ghcr.io/member87` images
 with the `jevil-ghcr-pull` credentials) and sends what it found to the server, which remembers each
@@ -829,7 +832,8 @@ them, and the images not scanned yet. Its counts and named IDs are the CVEs a fi
 is out for; the rest are counted after them, with how many of those the distro will not fix
 (Trivy's `will_not_fix`/`fix_deferred`, Debian's ignored or postponed: mostly code its package does
 not ship, like zlib's minizip CVE-2023-45853, or too minor for an update). "Fixes N of the M with a
-fix" counts M from the CVEs with a fix out. Cards mark those the same way in their tables.
+fix" counts M from the CVEs with a fix out. A pull request's dashboard page marks those the same
+way in its tables.
 
 Trivy cannot judge every match. A Go binary whose own module is stamped `v0.0.0-<time>-<hash>`
 was built without its tags (CoreDNS's images are), so Trivy holds v0.0.0 against every advisory
@@ -859,6 +863,16 @@ longest endoflife.date cycle the version starts with), its support end and the n
 it; ⛔ past, ⚠️ within `eol.soonDays` (90). endoflife.date has no Talos product, so the Talos row
 says so: check [Sidero's support matrix](https://www.talos.dev/latest/introduction/support-matrix/)
 by hand. A product nothing runs says so too.
+
+## Dashboard
+
+`https://jevil.lab.jackhumes.com` (`apps/jevil/ingressroute.yaml`): read-only and with no login,
+so it stays on the internal network; it lists CVEs and must never get an frpc proxy or a public
+hostname. It shows what Jevil saw at its last poll: the merge line and why each pull request
+waits, the deploys under watch, cluster health, every open pull request with its full card (CVEs
+included), the daily report (Cluster and Security pages), the periodic jobs and the last 100
+merges, deploy checks, reverts and dequeues. `/snapshot.json` is the same data. Act on GitHub:
+the dashboard has no buttons. `dashboardUrl` in the policy is where the cards link.
 
 ## State
 

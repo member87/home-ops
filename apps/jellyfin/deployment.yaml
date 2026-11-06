@@ -132,7 +132,7 @@ spec:
               memory: 64Mi
       containers:
         - name: jellyfin
-          image: lscr.io/linuxserver/jellyfin:12.4ubu2604-ls57
+          image: lscr.io/linuxserver/jellyfin:12.4ubu2604-ls58
           ports:
             - containerPort: 8096
               name: http

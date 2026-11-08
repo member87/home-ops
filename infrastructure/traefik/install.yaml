@@ -183,7 +183,8 @@ spec:
             # per-app request rate, status and latency for the Traefik dashboard.
             - --metrics.prometheus=true
             - --metrics.prometheus.addRoutersLabels=true
-            # Enable CrowdSec bouncer plugin
+            # Enable CrowdSec bouncer plugin (downloaded from plugins.traefik.io at
+            # startup; see startupProbe for what happens when that fails)
             - --experimental.plugins.bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
             - --experimental.plugins.bouncer.version=v1.4.6
           ports:
@@ -193,12 +194,33 @@ spec:
               containerPort: 443
             - name: admin
               containerPort: 8080
-          # Plugin download happens before /ping is served; allow up to 2 minutes.
+          # Traefik downloads the plugin once per process and does not retry: if that
+          # download fails (a node that just booted and has no egress yet), it logs
+          # "Plugins are disabled", keeps running, and disables each plugin Middleware
+          # with "invalid middleware type", so every route behind crowdsec-bouncer
+          # (Pocket ID) 404s while /ping stays green. Startup therefore waits for the
+          # CRD routes (see readinessProbe) and fails while a plugin Middleware is
+          # disabled that way. After 2 minutes (60 x 2s) kubelet restarts the container,
+          # whose new process downloads again, and keeps restarting it until a download
+          # succeeds: one attempt every 2-7 minutes (the 2-minute window plus kubelet's
+          # restart backoff, capped at 5m). The pod stays out of the Service meanwhile,
+          # so the other replica takes the traffic. With
+          # maxUnavailable 0 a rollout that cannot load the plugin stops before it
+          # replaces a working replica. Only Middlewares with a plugin section match,
+          # so a broken Middleware of any other type cannot hold Traefik back.
           startupProbe:
-            httpGet:
-              path: /ping
-              port: admin
+            exec:
+              command:
+                - sh
+                - -c
+                - >-
+                  wget -qO /dev/null http://127.0.0.1:8080/ping &&
+                  wget -qO- 'http://127.0.0.1:8080/api/http/routers?search=%40kubernetescrd&per_page=1'
+                  | grep -q '"provider":"kubernetescrd"' &&
+                  ! wget -qO- 'http://127.0.0.1:8080/api/http/middlewares?status=disabled&per_page=1000'
+                  | sed 's/},{"/}\n{"/g' | grep '"plugin":{' | grep -q 'invalid middleware type'
             periodSeconds: 2
+            timeoutSeconds: 3
             failureThreshold: 60
           livenessProbe:
             httpGet:

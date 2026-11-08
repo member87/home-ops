@@ -304,11 +304,12 @@ just talos-sync     # break-glass: upgrade nodes by hand when tuppr cannot
 - Grafana dashboard stale: check Flux status, dashboard ConfigMap, dashboard sidecar logs, and Grafana folder annotations.
 - Loki duplicate logs: filter queries to a single log collection job.
 
-### A Traefik Replica Serving 404 For Every Route On One Entrypoint
+### A Traefik Replica Serving 404 For Every Route Behind CrowdSec
 
-- Symptom: a host 404s roughly half the time. `auth.jackhumes.com` and `dawarich.jackhumes.com` 404'd while `headscale.jackhumes.com` (which bypasses Traefik) was fine, and Pocket ID answered 200 from inside the cluster.
-- Diagnose: curl each Traefik pod IP directly with a `Host:` header. One replica answered 200 and the other 404 for the same request, while `/api/http/routers` on both reported an identical 64-router config - the router tree for the `web` entrypoint was never built. The bad pod had restarted 7 times during an apiserver outage.
-- Fix: `kubectl -n traefik delete pod <replica>`; it rebuilds its config on start.
+- Symptom: a host 404s roughly half the time, or always after a node returns. `auth.jackhumes.com` (and `dawarich.jackhumes.com` while it existed) 404'd while `headscale.jackhumes.com` (which bypasses Traefik) and routes without the bouncer were fine, and Pocket ID answered 200 from inside the cluster. Seen after an apiserver outage and again after a node was unplugged without a drain.
+- Cause: Traefik downloads the CrowdSec bouncer plugin from `plugins.traefik.io` once per process and never retries. A start without egress (a node still booting) timed out, Traefik logged `Plugins are disabled because an error has occurred` and kept running, every route using `crowdsec-bouncer` failed with `invalid middleware type or middleware does not exist`, and `/ping` kept liveness green. The router count in `/api/http/routers` looks normal; the error is on `/api/http/middlewares?status=disabled`.
+- Handled now: the startup probe in `infrastructure/traefik/install.yaml` fails while a plugin Middleware is disabled that way, so kubelet restarts the container and it downloads again, every 2-7 minutes (2-minute probe window plus restart backoff) until egress is back. The pod is not Ready meanwhile, so the other replica serves. If both replicas start without internet (whole-cluster power cut with the WAN down), no Traefik is Ready and every ingress route, LAN-only ones included, is down until the download succeeds.
+- Check: `kubectl -n traefik get pods` shows the replica not Ready with startup-probe restarts; its log has the plugin error.
 - Related trap: a client using a public resolver bypasses Pi-hole's `*.lab.jackhumes.com` wildcard and hits the public edge, which 404s for internal-only hosts. Test internal hosts with `curl --resolve <host>:443:10.0.0.200`.
 
 ### Renovate Bumped An Image Inside A Vendored Upstream Manifest

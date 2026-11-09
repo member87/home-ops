@@ -193,16 +193,20 @@ spec:
           - name: CustomTerraformReleasesUrl
             value: "http://terrakube-api-service:8080/terraform/index.json"
           # tofu runs as a child process in this container, so the limit keeps headroom
-          # above the heap for it.
+          # above the heap for it. 512m ran out (`OutOfMemoryError: Java heap space`) on the
+          # first job of a fresh pod, while restoring the tofu binary from MinIO. Any restart
+          # is fatal here: since 2.34.0 the executor reads its secrets once from an
+          # in-memory volume and removes them, so a restarted container crash-loops on
+          # `Access key ID cannot be blank` until the pod is deleted.
           - name: JAVA_TOOL_OPTIONS
-            value: "-Xmx512m"
+            value: "-Xmx1024m"
         resources:
           requests:
             cpu: 100m
-            memory: 1088Mi
+            memory: 1600Mi
           limits:
             cpu: "1"
-            memory: 2Gi
+            memory: 3Gi
         # The aws-edge workspace SSHes to the edge over the tailnet (edge_tailnet_ip). Pods
         # only reach 100.64.0.0/10 on nodes with a host-network Tailscale instance and its
         # tailscale0 routes: lox (tailscale-subnet-router) and tug (tailscale-dns), both

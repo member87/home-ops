@@ -187,20 +187,21 @@ resource "grafana_contact_point" "discord" {
   depends_on = [grafana_message_template.discord]
 }
 
-# Grafana has exactly one policy tree per org; this resource owns all of it.
+# Grafana has exactly one policy tree per org; this resource owns all of it. An alert that
+# is still firing is posted again every repeat_interval until it resolves.
 resource "grafana_notification_policy" "this" {
   contact_point   = grafana_contact_point.discord.name
   group_by        = ["alertname", "cluster", "namespace"]
   group_wait      = "30s"
   group_interval  = "5m"
-  repeat_interval = "4h"
+  repeat_interval = "1h"
 
   policy {
     contact_point   = grafana_contact_point.discord.name
     continue        = false
     group_wait      = "10s"
     group_interval  = "5m"
-    repeat_interval = "12h"
+    repeat_interval = "1h"
 
     matcher {
       label = "severity"

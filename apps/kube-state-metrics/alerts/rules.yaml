@@ -162,7 +162,7 @@ rules:
     for: 5m
     annotations:
       summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} memory usage near limit
-      description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is using {{ $value }}% of its memory limit. Risk of OOM kill.
+      description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is using {{ printf "%.1f" $values.B.Value }}% of its memory limit. Risk of OOM kill.
     labels:
       severity: warning
 
@@ -297,7 +297,7 @@ rules:
     for: 5m
     annotations:
       summary: PersistentVolume {{ $labels.persistentvolumeclaim }} is nearly full
-      description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value }}% full
+      description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ printf "%.1f" $values.B.Value }}% full
     labels:
       severity: warning
 
@@ -342,7 +342,7 @@ rules:
     for: 10m
     annotations:
       summary: PersistentVolume {{ $labels.persistentvolumeclaim }} is critically full
-      description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is above 95% usage (current value {{ $value }}%)
+      description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is above 95% usage (current value {{ printf "%.1f" $values.B.Value }}%)
     labels:
       severity: critical
 

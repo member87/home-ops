@@ -6,9 +6,11 @@ resources:
   - sealedsecret.yaml
   - admin-secret.yaml
   - db-secret.yaml
+  - renderer-secret.yaml
   - configmap.yaml
   - datasources.yaml
   - deployment.yaml
   - service.yaml
+  - renderer.yaml
   - certificate.yaml
   - ingressroute.yaml

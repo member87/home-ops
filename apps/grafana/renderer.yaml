@@ -1,0 +1,84 @@
+---
+# grafana-image-renderer: headless Chromium that Grafana calls to screenshot a panel. Alert
+# notifications attach the rule's graph from the Alert Rules dashboard (terraform/grafana/
+# alerting.tf) through it. The renderer loads the panel back from Grafana's Service with a
+# short-lived render key, so it needs no Grafana credentials of its own.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-image-renderer
+  namespace: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-image-renderer
+  template:
+    metadata:
+      labels:
+        app: grafana-image-renderer
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: renderer
+          image: grafana/grafana-image-renderer:v5.12.10
+          ports:
+            - containerPort: 8081
+              name: http
+          env:
+            - name: AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-renderer-secret
+                  key: token
+            - name: API_SILENCE_REQUEST_LOG_PATH
+              value: /healthz
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # Chromium is idle between alerts; one screenshot briefly takes ~200Mi and a core.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 1000m
+              memory: 768Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-image-renderer
+  namespace: grafana
+spec:
+  selector:
+    app: grafana-image-renderer
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http

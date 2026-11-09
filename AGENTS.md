@@ -132,6 +132,12 @@ Final step, in a follow-up PR: flip the root `Kustomization` to `prune: true` (k
 for the cutover so nothing can be deleted), and move the raw manifests still inside the five
 Git-sourced chart dirs out to their own Kustomizations - their `helm.sh/resource-policy: keep`
 annotations are the prerequisite that makes that safe.
+
+Adopted objects keep fields that `helm-controller` owns, and kustomize-controller's
+server-side apply never removes a field it does not own. Deleting a key from a manifest
+therefore leaves it live if Helm wrote it: `grafana-alerting` kept a stale `policies.yaml`
+that crash-looped Grafana. Check with `kubectl get <kind> <name> --show-managed-fields` and
+remove such keys by hand.
 ## Public Access & AWS Lightsail Edge (FRP)
 
 External access for `<app>.jackhumes.com` is routed through the AWS Lightsail edge (`18.171.34.111`, built by `terraform/aws-edge`) over FRP. Full chain: client -> Caddy (TLS) -> frps remote port -> frpc tunnel -> Traefik -> app IngressRoute.
@@ -232,6 +238,8 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Folders carry `prevent_destroy`: deleting a Grafana folder deletes everything inside it, alert rules included.
 - Alert rules live next to the component they watch, in `apps/<app>/alerts/*.yaml` or `infrastructure/<component>/alerts/*.yaml`, and are applied by `terraform/grafana/alerting.tf`. Each directory is one rule group named after it in the Alerts folder, evaluated every minute; the fields are Grafana's file-provisioning rule format (`uid`, `title`, `condition`, `data`, `for`, `labels`, `annotations`). Give every rule a stable, unique `uid`. Kustomize never reads `alerts/`, and the chart-version check ignores it, so alert edits inside chart dirs (`infrastructure/longhorn`) need no `Chart.yaml` bump.
 - Notifications go to Discord: contact point `discord` (webhook in the workspace's sensitive `discord_webhook_url` variable), title and message from `terraform/grafana/templates/discord.tpl`, routed by `grafana_notification_policy.this`. Anything labelled `severity=critical|warning` notifies; there is no file provisioning or `grafana-alerting` ConfigMap any more, so nothing needs a Grafana restart.
+- Every rule gets a graph: `alerting.tf` generates the *Alert Rules* dashboard (uid `alert-rules`, one timeseries of the rule's own query per rule, threshold dashed) and points each rule at its panel with `__dashboardUid__`/`__panelId__`. With `GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE`, Grafana screenshots that panel through `grafana-image-renderer` (`apps/grafana/renderer.yaml`, token in `grafana-renderer-secret`) and attaches it to the Discord post. Annotations read the reduced value as `$values.B.Value`; a bare `{{ $value }}` prints every expression's debug string in Grafana-managed rules.
+- Both Grafana replicas evaluate every rule. Their alertmanagers gossip over the headless `grafana-alerting-ha` Service (port 9094 TCP+UDP); without it each replica posts its own copy of every notification.
 - The Grafana provider authenticates as the admin user over API basic auth, because Grafana cannot provision a service account token declaratively. The password is sealed in `grafana-admin-secret` and mirrored into the workspace's sensitive `grafana_auth` variable. `GF_SECURITY_ADMIN_PASSWORD` only takes effect when the admin user is first created, so rotating it on an existing database also needs `grafana cli admin reset-admin-password` once inside a Grafana pod.
 - Avoid alert fatigue. Add alerts only for actionable service availability, high error rate, severe latency, resource exhaustion, data integrity, or security issues.
 - Existing cluster alerts already cover basic pod health, restarts, CPU, memory, and disk.

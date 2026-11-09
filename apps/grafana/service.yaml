@@ -12,3 +12,26 @@ spec:
       port: 3000
       targetPort: http
   type: ClusterIP
+---
+# Headless: resolves to every Grafana pod, so the alertmanagers find each other and share
+# one notification log (GF_UNIFIED_ALERTING_HA_PEERS). Not-ready pods are included so a
+# starting replica joins before it serves traffic.
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-alerting-ha
+  namespace: grafana
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: grafana
+  ports:
+    - name: alerting-ha
+      port: 9094
+      targetPort: alerting-ha
+      protocol: TCP
+    - name: alerting-ha-udp
+      port: 9094
+      targetPort: alerting-ha-udp
+      protocol: UDP

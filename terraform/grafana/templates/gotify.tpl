@@ -4,8 +4,9 @@
   discord.links from discord.tpl.
 
   - message: markdown (client::display), each alert with its panel screenshot inline.
-  - priority: 10 critical, 8 warning, 4 resolved. The Android app gives >= 8 a heads-up
-    notification with sound; allow its "High priority" channel to override Do Not Disturb.
+  - priority: 10 firing, 4 resolved. Only severity=critical reaches this contact point (see
+    the policy in alerting.tf); allow the app's "High priority" channel to override Do Not
+    Disturb so they ring at night.
   - client::notification: tapping opens the rule; the first screenshot is the expanded
     notification's big picture.
 */ -}}
@@ -38,7 +39,7 @@ _{{ if eq .Status "firing" }}firing since {{ .StartsAt.UTC.Format "Mon 2 Jan 15:
 {{- range .Alerts.Firing }}{{ if and .ImageURL (eq $image "") }}{{ $image = .ImageURL }}{{ end }}{{ end -}}
 {{- range .Alerts.Resolved }}{{ if and .ImageURL (eq $image "") }}{{ $image = .ImageURL }}{{ end }}{{ end -}}
 {{- $priority := 4 -}}
-{{- if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}{{ $priority = 10 }}{{ else }}{{ $priority = 8 }}{{ end }}{{ end -}}
+{{- if eq .Status "firing" }}{{ $priority = 10 }}{{ end -}}
 {{- $click := coll.Dict "url" (index .Alerts 0).GeneratorURL -}}
 {{- $notification := coll.Dict "click" $click -}}
 {{- if $image }}{{ $notification = coll.Dict "click" $click "bigImageUrl" $image }}{{ end -}}

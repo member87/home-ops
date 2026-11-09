@@ -224,7 +224,7 @@ resource "grafana_notification_policy" "this" {
   group_interval  = "5m"
   repeat_interval = "1h"
 
-  # Every alert goes to Discord and, through continue, to the phone as well.
+  # Every alert goes to Discord; through continue, critical ones also go to the phone.
   policy {
     contact_point   = grafana_contact_point.discord.name
     continue        = true
@@ -246,10 +246,11 @@ resource "grafana_notification_policy" "this" {
     group_interval  = "5m"
     repeat_interval = "1h"
 
+    # The phone only gets critical alerts; warnings stay on Discord.
     matcher {
       label = "severity"
-      match = "=~"
-      value = "critical|warning"
+      match = "="
+      value = "critical"
     }
   }
 }

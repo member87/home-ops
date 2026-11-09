@@ -316,3 +316,55 @@ rules:
       description: Node {{ $labels.instance }} has a TCP retransmit rate of {{ printf "%.1f" $values.B.Value }}%, indicating network quality issues or packet loss
     labels:
       severity: warning
+
+  # etcd and Longhorn share each node's single SATA SSD, and a large Longhorn rebuild can
+  # stall etcd. The join keeps only the disk holding /var (EPHEMERAL), not the Longhorn
+  # iSCSI devices. Over 30 days the 5m average peaked at 34ms and never stayed above 20ms
+  # for more than 5 minutes.
+  - uid: system-disk-write-latency
+    title: System Disk Write Latency High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            1000 * (rate(node_disk_write_time_seconds_total[5m]) / rate(node_disk_writes_completed_total[5m]))
+            * on(instance, device) group_left()
+            (max by (instance, device) (label_replace(node_filesystem_size_bytes{mountpoint="/var"}, "device", "$1", "device", "/dev/([a-z]+)[0-9]+")) * 0 + 1)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 20
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 10m
+    annotations:
+      summary: System disk {{ $labels.device }} on {{ $labels.instance }} is slow
+      description: Writes to {{ $labels.device }} on {{ $labels.instance }}, the disk etcd shares with Longhorn, have averaged {{ printf "%.1f" $values.B.Value }}ms for 10 minutes (normally under 1ms), which risks etcd leader elections. Look for a Longhorn rebuild or other heavy writer on that node in the Longhorn UI and the node's disk panels.
+    labels:
+      severity: warning

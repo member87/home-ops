@@ -390,3 +390,103 @@ rules:
       description: Kubernetes node {{ $labels.node }} has reported NotReady for more than 10 minutes.
     labels:
       severity: critical
+
+  # Every other rule in this group reads kube-state-metrics and treats no data as OK, so
+  # without this one they all go quiet together when it is down.
+  - uid: kube-state-metrics-down
+    title: Kube State Metrics Down
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: absent(up{job="kube-state-metrics"} == 1)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: kube-state-metrics is not being scraped
+      description: Prometheus has had no successful kube-state-metrics scrape for 5 minutes. Node Not Ready, Pod Not Ready, Pod Restarting Frequently, Workload Unavailable, Immich Backup Stale and Nix Cache Build Stale all read it and stay silent until it is back. Check the kube-state-metrics pod in its namespace.
+    labels:
+      severity: critical
+
+  # Catches pods that are Running but not Ready, which Pod Not Ready (Pending/Failed/Unknown
+  # phases only) misses. Rollouts, drains and qbittorrent's 30m shutdown leave a workload
+  # short for up to ~25 minutes, hence the 30m hold.
+  - uid: workload-unavailable
+    title: Workload Unavailable
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            max by (namespace, workload) (
+            label_replace(kube_deployment_status_replicas_unavailable, "workload", "Deployment/$1", "deployment", "(.+)")
+            or label_replace(kube_statefulset_replicas - kube_statefulset_status_replicas_ready, "workload", "StatefulSet/$1", "statefulset", "(.+)")
+            or label_replace(kube_daemonset_status_number_unavailable, "workload", "DaemonSet/$1", "daemonset", "(.+)")
+            ) > 0
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 30m
+    annotations:
+      summary: '{{ $labels.namespace }}/{{ $labels.workload }} is missing replicas'
+      description: '{{ $labels.namespace }}/{{ $labels.workload }} has had {{ printf "%.0f" $values.B.Value }} replica(s) unavailable or not Ready for 30 minutes. Check its pods with kubectl describe and their readiness probe and logs.'
+    labels:
+      severity: warning

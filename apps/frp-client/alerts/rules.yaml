@@ -1,0 +1,51 @@
+# Grafana alert rules for frp-client, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "frp-client" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  # The edge's Prometheus agent remote-writes through the FRP tunnel (remote port 9091), so
+  # its series stop arriving when the edge box is down or the tunnel is broken, which is
+  # also when every public host behind it stops answering.
+  - uid: edge-metrics-missing
+    title: Edge Metrics Missing
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: absent_over_time(up{job="aws-edge-node"}[5m])
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: No metrics from the AWS edge for 10 minutes
+      description: Nothing has been remote-written by the edge's Prometheus agent for 10 minutes, so the Lightsail edge (18.171.34.111) is down or the FRP tunnel is broken, and auth, headscale, gotify and the other public hosts are probably unreachable. Check the frp-client pod logs in its namespace, then ssh ubuntu@100.64.0.21 (or Lightsail browser SSH) and the frps and Caddy containers.
+    labels:
+      severity: critical

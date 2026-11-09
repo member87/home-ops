@@ -1,0 +1,67 @@
+# Grafana alert rules for traefik, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "traefik" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  # A replica whose routes cannot load a middleware (the CrowdSec plugin failing to download)
+  # answers 404 while the other replica serves. Fires when one replica's 404 ratio on
+  # an entrypoint is above 50% while another replica's stays below 20%, which a scanner
+  # hitting both replicas evenly does not produce. The "or ... * 0" gives a replica that has
+  # never served a 404 a ratio of 0 instead of no series.
+  - uid: traefik-replica-404
+    title: Traefik Replica Serving 404
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            (
+            (sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total{code="404"}[10m]))
+            or sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total[10m])) * 0)
+            / sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total[10m]))
+            > 0.5
+            and on(kubernetes_pod_name, entrypoint) sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total[10m])) > 0.01
+            )
+            and on(entrypoint) (
+            min by (entrypoint) (
+            (sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total{code="404"}[10m]))
+            or sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total[10m])) * 0)
+            / sum by (kubernetes_pod_name, entrypoint) (rate(traefik_entrypoint_requests_total[10m]))
+            ) < 0.2
+            )
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0.5
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 10m
+    annotations:
+      summary: Traefik {{ $labels.kubernetes_pod_name }} answers 404 on {{ $labels.entrypoint }}
+      description: Traefik replica {{ $labels.kubernetes_pod_name }} has answered {{ humanizePercentage $values.B.Value }} of requests on the {{ $labels.entrypoint }} entrypoint with 404 for 10 minutes while another replica serves them, so roughly half the requests to every host on it fail (web carries the public FRP traffic). The startup probe did not catch it; check the pod's log and /api/http/middlewares?status=disabled for a disabled plugin, then delete that pod in the traefik namespace. See "A Traefik Replica Serving 404" in AGENTS.md.
+    labels:
+      severity: critical

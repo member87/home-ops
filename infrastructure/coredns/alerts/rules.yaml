@@ -1,0 +1,51 @@
+# Grafana alert rules for coredns, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "coredns" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  # CoreDNS health-checks an upstream only after queries to it fail, and keeps doing so
+  # (counting failures) until it answers again, so a non-zero rate held for 5 minutes is an
+  # upstream that stayed down. The upstream is Pi-hole on 10.0.0.201.
+  - uid: coredns-upstream-down
+    title: CoreDNS Upstream Down
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: sum by (to) (rate(coredns_proxy_healthcheck_failures_total[2m]))
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: CoreDNS cannot reach its upstream {{ $labels.to }}
+      description: CoreDNS health checks against {{ $labels.to }} have been failing for 5 minutes, so nothing in the cluster can resolve external names (image pulls and chart fetches fail too). Check that the pihole-dns Services are still LoadBalancer on 10.0.0.201 and that the Pi-hole pods are Ready; see "Pi-hole Deployed With Chart Defaults" in AGENTS.md.
+    labels:
+      severity: critical

@@ -47,5 +47,96 @@ rules:
     labels:
       severity: critical
 
-  # +Inf when the CronJob does not exist; a CronJob that never succeeded counts from its
-  # creation.
+  # longhorn_volume_robustness has one series per state per volume, 1 for the current state.
+  # Detached volumes report unknown and never alert.
+  - uid: longhorn-volume-faulted
+    title: Longhorn Volume Faulted
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: max by (pvc_namespace, pvc) (longhorn_volume_robustness{state="faulted"})
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 2m
+    annotations:
+      summary: Longhorn volume {{ $labels.pvc_namespace }}/{{ $labels.pvc }} is faulted
+      description: Longhorn volume {{ $labels.pvc_namespace }}/{{ $labels.pvc }} has no healthy replica, so its workload cannot read or write it. Check the volume and its replicas in the Longhorn UI before deleting anything; salvaging a replica or restoring from the NAS backup target may be needed.
+    labels:
+      severity: critical
+
+  # Every node drain degrades the volumes it held while replicas rebuild; the longest such
+  # rebuild in 30 days took 30 minutes.
+  - uid: longhorn-volume-degraded
+    title: Longhorn Volume Degraded
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: max by (pvc_namespace, pvc) (longhorn_volume_robustness{state="degraded"})
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 2h
+    annotations:
+      summary: Longhorn volume {{ $labels.pvc_namespace }}/{{ $labels.pvc }} has been degraded for 2 hours
+      description: Longhorn volume {{ $labels.pvc_namespace }}/{{ $labels.pvc }} has been missing a replica for 2 hours without finishing a rebuild, so one more failure loses it, and tuppr will not upgrade a node while it is degraded. Check in the Longhorn UI why the rebuild is not progressing (disk space, a node unschedulable, the instance manager).
+    labels:
+      severity: warning

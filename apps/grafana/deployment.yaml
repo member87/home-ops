@@ -55,11 +55,6 @@ spec:
             # Grafana, so a pin here would break on the next image bump instead.
             - name: GF_PLUGINS_PREINSTALL
               value: loki
-            - name: DISCORD_WEBHOOK_URL
-              valueFrom:
-                secretKeyRef:
-                  name: grafana-alerting-secrets
-                  key: discord_webhook_url
             # Dashboards are applied over the HTTP API by terraform/grafana. Grafana
             # cannot provision a service account token declaratively, so the admin
             # user authenticates the provider over API basic auth instead; the login
@@ -84,8 +79,6 @@ spec:
               mountPath: /var/lib/grafana
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
-            - name: alerting
-              mountPath: /etc/grafana/provisioning/alerting
           livenessProbe:
             httpGet:
               path: /api/health
@@ -121,6 +114,3 @@ spec:
         - name: datasources
           configMap:
             name: grafana-datasources
-        - name: alerting
-          configMap:
-            name: grafana-alerting

@@ -126,7 +126,7 @@ resource "aws_lightsail_instance_public_ports" "edge" {
     ipv6_cidrs = ["::/0"]
   }
 
-  # Caddy TLS: auth/headscale/terrakube-hook/gotify public entrypoints.
+  # Caddy TLS: auth/headscale/terrakube-hook public entrypoints.
   port_info {
     protocol   = "tcp"
     from_port  = 443

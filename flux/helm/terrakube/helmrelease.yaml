@@ -163,6 +163,12 @@ spec:
         env:
           - name: JAVA_TOOL_OPTIONS
             value: "-Xmx768m"
+          # 2.34.0 added an SSRF guard on agent URLs that by default rejects private
+          # addresses, which includes the executor's own ClusterIP Service: every job then
+          # fails with "agent URL blocked: destination resolves to a prohibited address".
+          # Link-local and metadata addresses stay blocked either way.
+          - name: IO_TERRAKUBE_AGENT_SSRF_BLOCKPRIVATENETWORKS
+            value: "false"
         resources:
           requests:
             cpu: 100m

@@ -46,11 +46,3 @@ type = "tcp"
 localIP = "traefik.traefik.svc.cluster.local"
 localPort = 80
 remotePort = 8084
-
-# Gotify tunnel - routes through Traefik for CrowdSec protection (apps/gotify).
-[[proxies]]
-name = "gotify"
-type = "tcp"
-localIP = "traefik.traefik.svc.cluster.local"
-localPort = 80
-remotePort = 8085

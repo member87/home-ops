@@ -22,12 +22,3 @@ terrakube-hook.jackhumes.com {
 		output file /var/log/caddy/terrakube-hook.log
 	}
 }
-
-# Gotify push notifications (via Traefik -> CrowdSec -> Gotify). The Android app keeps a
-# WebSocket open to /stream; Caddy proxies it without extra configuration.
-gotify.jackhumes.com {
-	reverse_proxy localhost:8085
-	log {
-		output file /var/log/caddy/gotify.log
-	}
-}

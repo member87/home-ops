@@ -866,20 +866,3 @@ spec:
     kind: GitRepository
     name: home-ops
     namespace: flux-system
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: gotify
-  namespace: flux-system
-spec:
-  interval: 15m0s
-  retryInterval: 2m0s
-  timeout: 5m0s
-  path: ./apps/gotify
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: home-ops
-    namespace: flux-system

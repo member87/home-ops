@@ -122,7 +122,7 @@ spec:
               drop: ["ALL"]
         # jevil:no-probe a sleep loop that serves nothing; nginx above carries the probes
         - name: prune
-          image: busybox:1.37.0
+          image: busybox:1.38.0
           command:
             - sh
             - -c

@@ -40,10 +40,8 @@ resource "grafana_folder" "this" {
       error_message = "dashboards/${each.value}/ has no title in var.folders; add one before applying."
     }
 
-    # The Kubernetes folder also holds the provisioned alert rules from
-    # apps/grafana/alerting.yaml, and deleting a Grafana folder deletes the rules
-    # inside it. Renaming a folder is an in-place update, so this only blocks an
-    # actual destroy - which for a dashboards-only change is always a mistake.
+    # Renaming a folder is an in-place update, so this only blocks an actual destroy -
+    # which for a dashboards-only change is always a mistake.
     prevent_destroy = true
   }
 }

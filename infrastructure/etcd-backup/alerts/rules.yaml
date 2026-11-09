@@ -1,0 +1,48 @@
+# Grafana alert rules for etcd-backup, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "etcd-backup" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  - uid: etcd-snapshot-stale
+    title: Etcd Snapshot Stale
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: max(jevil_etcd_snapshot_age_seconds)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 129600
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 10m
+    annotations:
+      summary: No etcd snapshot newer than 36 hours
+      description: CronJob etcd-backup/etcd-snapshot last succeeded {{ humanizeDuration $values.B.Value }} ago (or does not exist). Without a recent snapshot, losing etcd quorum loses the cluster state; check the latest job's logs and the Talos API access patch. See docs/etcd-backup.md.
+    labels:
+      severity: critical

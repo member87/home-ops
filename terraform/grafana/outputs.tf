@@ -10,3 +10,8 @@ output "dashboard_urls" {
     key => "${var.grafana_url}${dash.url}"
   }
 }
+
+output "alert_rule_count" {
+  description = "Number of alert rules managed here, across every */alerts/*.yaml."
+  value       = length(local.alert_rule_uids)
+}

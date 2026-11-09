@@ -77,6 +77,10 @@ spec:
             # dashboard, rendered by grafana-image-renderer (renderer.yaml).
             - name: GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE
               value: "true"
+            # A panel screenshot loads the whole Grafana frontend in Chromium: ~10s in
+            # this cluster, right at the 10s default, so most captures 408'd. 30s is the max.
+            - name: GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE_TIMEOUT
+              value: 30s
             - name: GF_RENDERING_SERVER_URL
               value: http://grafana-image-renderer.grafana.svc.cluster.local:8081/render
             - name: GF_RENDERING_CALLBACK_URL

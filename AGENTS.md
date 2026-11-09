@@ -143,9 +143,9 @@ remove such keys by hand.
 External access for `<app>.jackhumes.com` is routed through the AWS Lightsail edge (`18.171.34.111`, built by `terraform/aws-edge`) over FRP. Full chain: client -> Caddy (TLS) -> frps remote port -> frpc tunnel -> Traefik -> app IngressRoute.
 
 Three places must agree when exposing a new public service (the cluster side alone is not enough):
-1. `apps/frp-client/configmap.yaml` — add a `[[proxies]]` TCP entry whose `remotePort` forwards to Traefik `:80`.
+1. `apps/frp-client/config/frpc.toml` — add a `[[proxies]]` TCP entry whose `remotePort` forwards to Traefik `:80`.
 2. `terraform/aws-edge/config/Caddyfile` — add the site block reverse-proxying the host to `localhost:<remotePort>`. Terrakube deploys and validates the edge config over SSH after merge; never edit the live file as the source of truth.
-3. Cloudflare DNS — an A record for the host pointing at the edge IP, managed by `terraform/aws-edge-dns` (`public_hostnames`). Keep proxying off: ACME HTTP-01 and DERP need the real IP.
+3. Cloudflare DNS — an A record for the host pointing at the edge IP, declared in `terraform/aws-edge-dns` (`public_hostnames`). Keep proxying off: ACME HTTP-01 and DERP need the real IP. That stack has no Terrakube workspace, so nothing applies it on merge: create the matching record by hand (Cloudflare API with the cert-manager token in `cloudflare-api-token-secret`, or the dashboard) until a workspace exists.
 
 Tunnel map:
 
@@ -154,6 +154,7 @@ Tunnel map:
 |`auth.jackhumes.com`|`8081`|Traefik -> Pocket ID|
 |`headscale.jackhumes.com`|`8082`|Headscale (direct)|
 |`terrakube-hook.jackhumes.com`|`8084`|Traefik -> Terrakube webhook gatekeeper|
+|`gotify.jackhumes.com`|`8085`|Traefik -> Gotify (and `/alert-images/` for alert screenshots)|
 |Edge-local metrics receiver|`9091`|Prometheus remote-write API; bound to loopback and closed by the Lightsail firewall|
 
 ### SSH to the edge
@@ -270,7 +271,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 - MetalLB address pool is `10.0.0.200-10.0.0.250`.
 - External access uses FRP through the AWS Lightsail edge (`18.171.34.111`); see Public Access & AWS Lightsail Edge (FRP) for the full chain, tunnel map, and SSH steps.
 - Public traffic for `auth.jackhumes.com` must route through Traefik so CrowdSec can block banned IPs.
-- FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Terrakube webhook gate `8084` (via Traefik).
+- FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Terrakube webhook gate `8084` (via Traefik), Gotify `8085` (via Traefik).
 - Headscale public URL is `https://headscale.jackhumes.com`.
 - Headscale internal URL is `https://headscale.lab.jackhumes.com`.
 - Home Assistant runs Home Assistant, OTBR, and Matter Server together and uses `hostNetwork`; preserve the Thread dataset because losing it requires factory-resetting Thread devices.

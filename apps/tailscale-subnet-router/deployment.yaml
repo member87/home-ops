@@ -20,8 +20,9 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: tailscale
-      # The TUN device is known-good on this node; talos-t8o-8d5 cannot create
-      # tailscale0 and leaves the router in CrashLoopBackOff.
+      # One host-network tailscaled per node: two on one host fight over routing table 52.
+      # apps/tailscale-node covers every node except this one and tailscale-dns's, so moving
+      # this pod means updating that DaemonSet's node list too.
       nodeSelector:
         kubernetes.io/hostname: talos-lox-1n1
       containers:

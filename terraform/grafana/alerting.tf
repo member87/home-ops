@@ -187,6 +187,34 @@ resource "grafana_contact_point" "discord" {
   depends_on = [grafana_message_template.discord]
 }
 
+resource "grafana_message_template" "gotify" {
+  name     = "gotify"
+  template = file("${path.module}/templates/gotify.tpl")
+}
+
+# Gotify (apps/gotify) for the Android app. A webhook posting Gotify's message JSON, built by
+# the gotify.payload template: markdown text with the alert's screenshot, priority by
+# severity, and the screenshot as the expanded notification's big picture. Grafana reaches
+# the Service in-cluster; the screenshot URL is public (gotify.jackhumes.com/alert-images/).
+resource "grafana_contact_point" "gotify" {
+  name = "gotify"
+
+  webhook {
+    url                       = "http://gotify.gotify.svc.cluster.local/message"
+    http_method               = "POST"
+    authorization_scheme      = "Bearer"
+    authorization_credentials = var.gotify_app_token
+    disable_resolve_message   = false
+
+    payload {
+      template = "{{ template \"gotify.payload\" . }}"
+    }
+  }
+
+  # gotify.payload reuses the title and label/link helpers from the discord template.
+  depends_on = [grafana_message_template.discord, grafana_message_template.gotify]
+}
+
 # Grafana has exactly one policy tree per org; this resource owns all of it. An alert that
 # is still firing is posted again every repeat_interval until it resolves.
 resource "grafana_notification_policy" "this" {
@@ -196,8 +224,23 @@ resource "grafana_notification_policy" "this" {
   group_interval  = "5m"
   repeat_interval = "1h"
 
+  # Every alert goes to Discord and, through continue, to the phone as well.
   policy {
     contact_point   = grafana_contact_point.discord.name
+    continue        = true
+    group_wait      = "10s"
+    group_interval  = "5m"
+    repeat_interval = "1h"
+
+    matcher {
+      label = "severity"
+      match = "=~"
+      value = "critical|warning"
+    }
+  }
+
+  policy {
+    contact_point   = grafana_contact_point.gotify.name
     continue        = false
     group_wait      = "10s"
     group_interval  = "5m"

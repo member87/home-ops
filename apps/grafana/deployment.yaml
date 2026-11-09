@@ -90,6 +90,17 @@ spec:
                 secretKeyRef:
                   name: grafana-renderer-secret
                   key: token
+            # Screenshots are uploaded to the alert image store in apps/gotify and sent as a
+            # public URL (gotify.jackhumes.com/alert-images/<random>.png), which the Gotify
+            # app can load away from home and Discord embeds, instead of as an attachment.
+            - name: GF_UNIFIED_ALERTING_SCREENSHOTS_UPLOAD_EXTERNAL_IMAGE_STORAGE
+              value: "true"
+            - name: GF_EXTERNAL_IMAGE_STORAGE_PROVIDER
+              value: webdav
+            - name: GF_EXTERNAL_IMAGE_STORAGE_WEBDAV_URL
+              value: http://alert-images-upload.gotify.svc.cluster.local
+            - name: GF_EXTERNAL_IMAGE_STORAGE_WEBDAV_PUBLIC_URL
+              value: https://gotify.jackhumes.com/alert-images/{{file}}
             # Dashboards are applied over the HTTP API by terraform/grafana. Grafana
             # cannot provision a service account token declaratively, so the admin
             # user authenticates the provider over API basic auth instead; the login

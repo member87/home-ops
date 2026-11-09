@@ -43,6 +43,6 @@ rules:
     for: 1m
     annotations:
       summary: CrowdSec is actively banning IPs
-      description: CrowdSec has issued {{ $value }} ban decisions in the last 15 minutes.
+      description: CrowdSec has issued {{ $values.B.Value }} ban decisions in the last 15 minutes.
     labels:
       severity: warning

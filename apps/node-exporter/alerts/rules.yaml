@@ -43,7 +43,7 @@ rules:
     for: 15m
     annotations:
       summary: Node {{ $labels.instance }} memory usage is high
-      description: Node {{ $labels.instance }} memory usage is above 90% with less than 1Gi available memory (current value {{ $value }}%)
+      description: Node {{ $labels.instance }} memory usage is above 90% with less than 1Gi available memory (current value {{ printf "%.1f" $values.B.Value }}%)
     labels:
       severity: warning
 
@@ -88,7 +88,7 @@ rules:
     for: 5m
     annotations:
       summary: Node {{ $labels.instance }} CPU usage is high
-      description: Node {{ $labels.instance }} CPU usage is above 80% (current value {{ $value }}%)
+      description: Node {{ $labels.instance }} CPU usage is above 80% (current value {{ printf "%.1f" $values.B.Value }}%)
     labels:
       severity: warning
 
@@ -133,7 +133,7 @@ rules:
     for: 5m
     annotations:
       summary: Node {{ $labels.instance }} disk usage is high
-      description: Node {{ $labels.instance }} disk usage on /var is above 80% (current value {{ $value }}%)
+      description: Node {{ $labels.instance }} disk usage on /var is above 80% (current value {{ printf "%.1f" $values.B.Value }}%)
     labels:
       severity: warning
 
@@ -178,7 +178,7 @@ rules:
     for: 5m
     annotations:
       summary: Node {{ $labels.instance }} temperature is high
-      description: Temperature sensor {{ $labels.sensor }} on node {{ $labels.instance }} is above 75°C (current value {{ $value }}°C)
+      description: Temperature sensor {{ $labels.sensor }} on node {{ $labels.instance }} is above 75°C (current value {{ printf "%.1f" $values.B.Value }}°C)
     labels:
       severity: warning
 
@@ -223,7 +223,7 @@ rules:
     for: 5m
     annotations:
       summary: Network errors detected on {{ $labels.instance }}
-      description: Interface {{ $labels.device }} on node {{ $labels.instance }} is experiencing network errors (current rate {{ $value }}/s)
+      description: Interface {{ $labels.device }} on node {{ $labels.instance }} is experiencing network errors (current rate {{ printf "%.3g" $values.B.Value }}/s)
     labels:
       severity: warning
 
@@ -268,7 +268,7 @@ rules:
     for: 5m
     annotations:
       summary: High packet drops on {{ $labels.instance }}
-      description: Interface {{ $labels.device }} on node {{ $labels.instance }} is dropping packets (current rate {{ $value }}/s). This may indicate network congestion or hardware issues.
+      description: Interface {{ $labels.device }} on node {{ $labels.instance }} is dropping packets (current rate {{ printf "%.3g" $values.B.Value }}/s). This may indicate network congestion or hardware issues.
     labels:
       severity: warning
 
@@ -313,6 +313,6 @@ rules:
     for: 5m
     annotations:
       summary: High TCP retransmit rate on {{ $labels.instance }}
-      description: Node {{ $labels.instance }} has a TCP retransmit rate of {{ $value }}%, indicating network quality issues or packet loss
+      description: Node {{ $labels.instance }} has a TCP retransmit rate of {{ printf "%.1f" $values.B.Value }}%, indicating network quality issues or packet loss
     labels:
       severity: warning

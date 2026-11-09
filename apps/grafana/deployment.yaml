@@ -42,6 +42,12 @@ spec:
           ports:
             - containerPort: 3000
               name: http
+            - containerPort: 9094
+              name: alerting-ha
+              protocol: TCP
+            - containerPort: 9094
+              name: alerting-ha-udp
+              protocol: UDP
           env:
             - name: GF_PATHS_CONFIG
               value: /etc/grafana/grafana.ini
@@ -55,6 +61,31 @@ spec:
             # Grafana, so a pin here would break on the next image bump instead.
             - name: GF_PLUGINS_PREINSTALL
               value: loki
+            # Both replicas evaluate every rule; gossiping their notification log over the
+            # grafana-alerting-ha Service is what stops each one sending its own copy.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: GF_UNIFIED_ALERTING_HA_PEERS
+              value: grafana-alerting-ha.grafana.svc.cluster.local:9094
+            - name: GF_UNIFIED_ALERTING_HA_LISTEN_ADDRESS
+              value: $(POD_IP):9094
+            - name: GF_UNIFIED_ALERTING_HA_ADVERTISE_ADDRESS
+              value: $(POD_IP):9094
+            # Alert notifications attach a screenshot of the rule's panel on the Alert Rules
+            # dashboard, rendered by grafana-image-renderer (renderer.yaml).
+            - name: GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE
+              value: "true"
+            - name: GF_RENDERING_SERVER_URL
+              value: http://grafana-image-renderer.grafana.svc.cluster.local:8081/render
+            - name: GF_RENDERING_CALLBACK_URL
+              value: http://grafana.grafana.svc.cluster.local:3000/
+            - name: GF_RENDERING_RENDERER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-renderer-secret
+                  key: token
             # Dashboards are applied over the HTTP API by terraform/grafana. Grafana
             # cannot provision a service account token declaratively, so the admin
             # user authenticates the provider over API basic auth instead; the login

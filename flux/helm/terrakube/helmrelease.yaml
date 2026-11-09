@@ -158,7 +158,7 @@ spec:
         # the API sync public registry modules on every start.
         loadSampleData: false
         # renovate: datasource=docker depName=azbuilder/api-server
-        version: "2.33.3"
+        version: "2.34.0"
         replicaCount: "1"
         env:
           - name: JAVA_TOOL_OPTIONS
@@ -175,7 +175,7 @@ spec:
         enabled: true
         existingSecret: true
         # renovate: datasource=docker depName=azbuilder/executor
-        version: "2.33.3"
+        version: "2.34.0"
         replicaCount: "1"
         # Upstream wires the executor's tofu list through the API proxy
         # (tofuReleasesUrl=${AzBuilderApiUrl}/tofu/index.json) but sends the terraform
@@ -207,7 +207,7 @@ spec:
       ui:
         enabled: true
         # renovate: datasource=docker depName=azbuilder/terrakube-ui
-        version: "2.33.3"
+        version: "2.34.0"
         replicaCount: "1"
         resources:
           requests:

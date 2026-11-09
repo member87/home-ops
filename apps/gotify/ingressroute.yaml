@@ -1,0 +1,30 @@
+---
+# gotify.jackhumes.com, public via the edge: Caddy terminates TLS and forwards over the FRP
+# tunnel (frpc remotePort 8085) to Traefik's web entrypoint, so every request passes the
+# CrowdSec bouncer. There is no internal *.lab host: OIDC needs one fixed redirect URL, and
+# on the LAN the public name resolves to the edge as well.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gotify-external
+  namespace: gotify
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`gotify.jackhumes.com`) && PathPrefix(`/alert-images/`)
+      kind: Rule
+      services:
+        - name: alert-images
+          port: 80
+      middlewares:
+        - name: crowdsec-bouncer
+          namespace: gotify
+    - match: Host(`gotify.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: gotify
+          port: 80
+      middlewares:
+        - name: crowdsec-bouncer
+          namespace: gotify

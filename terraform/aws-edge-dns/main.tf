@@ -53,7 +53,7 @@ variable "public_domain" {
 variable "public_hostnames" {
   description = "Hostnames that must point at the edge static IP."
   type        = list(string)
-  default     = ["headscale", "auth", "terrakube-hook"]
+  default     = ["headscale", "auth", "terrakube-hook", "gotify"]
 }
 
 variable "dns_proxied" {

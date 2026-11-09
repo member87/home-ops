@@ -1,0 +1,33 @@
+---
+# Gotify's SQLite database: users (from Pocket ID), applications, clients and messages.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gotify-data
+  namespace: gotify
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Alert screenshots Grafana uploads for notifications (alert-images.yaml). Rebuildable and
+# pruned after 7 days, so not worth more than a small volume.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alert-images
+  namespace: gotify
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

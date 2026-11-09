@@ -1,0 +1,154 @@
+---
+# Alert screenshots for notifications. Grafana renders each rule's panel (see
+# grafana-image-renderer) and uploads the PNG here over WebDAV
+# (GF_EXTERNAL_IMAGE_STORAGE_*); the notification then carries a public URL,
+# https://gotify.jackhumes.com/alert-images/<random>.png, which the Gotify Android app shows
+# in the message and the expanded notification, and Discord embeds. Grafana names files
+# with 20 random characters and nothing lists the directory, so a URL is only known to
+# whoever received the alert. Images older than 7 days are deleted.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alert-images-nginx
+  namespace: gotify
+data:
+  nginx.conf: |
+    worker_processes 1;
+    pid /tmp/nginx.pid;
+    events { worker_connections 256; }
+    http {
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path /tmp/proxy_temp;
+      fastcgi_temp_path /tmp/fastcgi_temp;
+      uwsgi_temp_path /tmp/uwsgi_temp;
+      scgi_temp_path /tmp/scgi_temp;
+      access_log /dev/stdout;
+      error_log /dev/stderr warn;
+      server_tokens off;
+
+      # Public, read-only. Only *.png directly under /alert-images/ is served.
+      server {
+        listen 8080;
+        location = /health { access_log off; return 200 "ok\n"; }
+        location ~ ^/alert-images/([A-Za-z0-9]+\.png)$ {
+          alias /data/$1;
+          default_type image/png;
+          limit_except GET HEAD { deny all; }
+          add_header Cache-Control "public, max-age=604800, immutable";
+        }
+        location / { return 404; }
+      }
+
+      # Upload, cluster-internal (alert-images-upload Service, NetworkPolicy).
+      server {
+        listen 8081;
+        client_max_body_size 10m;
+        location = /health { access_log off; return 200 "ok\n"; }
+        location / {
+          root /data;
+          dav_methods PUT;
+          create_full_put_path off;
+          dav_access user:rw group:r all:r;
+          limit_except PUT { deny all; }
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-images
+  namespace: gotify
+  labels:
+    app: alert-images
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: alert-images
+  template:
+    metadata:
+      labels:
+        app: alert-images
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.31.2-alpine3.23
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8081
+              name: upload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+        # jevil:no-probe a sleep loop that serves nothing; nginx above carries the probes
+        - name: prune
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - while true; do find /data -maxdepth 1 -type f -name '*.png' -mtime +7 -delete; sleep 3600; done
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 1m
+              memory: 4Mi
+            limits:
+              cpu: 50m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: config
+          configMap:
+            name: alert-images-nginx
+        - name: data
+          persistentVolumeClaim:
+            claimName: alert-images
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

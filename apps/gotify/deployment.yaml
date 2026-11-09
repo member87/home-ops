@@ -1,0 +1,114 @@
+---
+# Gotify: push notifications for Grafana alerts, reached by the Android app at
+# https://gotify.jackhumes.com (edge Caddy -> FRP -> Traefik with CrowdSec).
+#
+# There are no local accounts. GOTIFY_LOCALAUTH_ENABLED=false disables password login
+# everywhere (WebUI and API basic auth) and, because Gotify only creates its default admin
+# while local auth is on, no default user is ever created. The only way in is Pocket ID:
+# the "Gotify" OIDC client there is restricted to the admin group, and Gotify itself only
+# admits members of that group (GOTIFY_OIDC_GROUPS_*).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gotify
+  namespace: gotify
+  labels:
+    app: gotify
+spec:
+  replicas: 1
+  # SQLite on a ReadWriteOnce volume.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gotify
+  template:
+    metadata:
+      labels:
+        app: gotify
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gotify
+          image: gotify/server:3.1.1
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: GOTIFY_SERVER_PORT
+              value: "8080"
+            # Traefik and frpc forward from pod and node addresses.
+            - name: GOTIFY_SERVER_TRUSTEDPROXIES
+              value: "[10.0.0.0/8]"
+            - name: GOTIFY_SERVER_SECURECOOKIE
+              value: "true"
+            - name: GOTIFY_REGISTRATION
+              value: "false"
+            - name: GOTIFY_LOCALAUTH_ENABLED
+              value: "false"
+            - name: GOTIFY_OIDC_ENABLED
+              value: "true"
+            - name: GOTIFY_OIDC_ISSUER
+              value: https://auth.jackhumes.com
+            - name: GOTIFY_OIDC_CLIENTID
+              value: b353eecb-481e-47b8-8456-21a78baef652
+            - name: GOTIFY_OIDC_CLIENTSECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gotify-secrets
+                  key: GOTIFY_OIDC_CLIENTSECRET
+            - name: GOTIFY_OIDC_REDIRECTURL
+              value: https://gotify.jackhumes.com/auth/oidc/callback
+            - name: GOTIFY_OIDC_IDP_NAME
+              value: Pocket ID
+            - name: GOTIFY_OIDC_AUTO_REDIRECT
+              value: "true"
+            # The user is created on first Pocket ID login; the group checks below decide
+            # who may log in at all.
+            - name: GOTIFY_OIDC_AUTOREGISTER
+              value: "true"
+            - name: GOTIFY_OIDC_SCOPES
+              value: openid,profile,email,groups
+            - name: GOTIFY_OIDC_GROUPS_CLAIM
+              value: groups
+            - name: GOTIFY_OIDC_GROUPS_USER
+              value: admin
+            - name: GOTIFY_OIDC_GROUPS_ADMIN
+              value: admin
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gotify-data

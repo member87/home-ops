@@ -29,6 +29,9 @@ pages:
               - title: Pocket ID
                 url: https://auth.jackhumes.com
                 icon: sh:pocket-id
+              - title: Gotify
+                url: https://gotify.jackhumes.com
+                icon: sh:gotify
               - title: LLDAP
                 url: https://lldap.lab.jackhumes.com
                 icon: sh:lldap

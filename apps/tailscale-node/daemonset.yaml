@@ -1,0 +1,117 @@
+---
+# A Tailscale client on every node, so pods anywhere can reach tailnet addresses
+# (100.64.0.0/10), for example the Terrakube executor deploying to the edge at 100.64.0.21.
+# Pods use their node's routing table, and only a host-network tailscaled installs the
+# tailscale0 routes (routing table 52); before this, t8o had none and its pods could not
+# reach the tailnet at all.
+#
+# lox and tug are skipped: they already run a host-network tailscaled
+# (tailscale-subnet-router and tailscale-dns), and two instances on one host fight over
+# routing table 52. Those two provide the same routes there. Move or add a host-network
+# Tailscale workload elsewhere and this list has to follow.
+#
+# A plain client: it advertises nothing and does not accept subnet routes, so the nodes
+# keep reaching 10.0.0.0/24 and 192.168.1.0/24 directly rather than through the tailnet.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: tailscale-node
+  namespace: tailscale-node
+spec:
+  selector:
+    matchLabels:
+      app: tailscale-node
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: tailscale-node
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: tailscale
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: ["talos-lox-1n1", "talos-tug-zp7"]
+      containers:
+        # Same OOM tier reasoning as tailscale-subnet-router: remote access is infrastructure.
+        - name: tailscale
+          image: tailscale/tailscale:v1.104.4
+          command:
+            - /bin/sh
+            - -c
+            - |
+              ln -sf xtables-nft-multi /usr/sbin/iptables
+              ln -sf xtables-nft-multi /usr/sbin/iptables-save
+              ln -sf xtables-nft-multi /usr/sbin/iptables-restore
+              ln -sf xtables-nft-multi /usr/sbin/ip6tables
+              ln -sf xtables-nft-multi /usr/sbin/ip6tables-save
+              ln -sf xtables-nft-multi /usr/sbin/ip6tables-restore
+              exec /usr/local/bin/containerboot
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-node-auth
+                  key: TS_AUTHKEY
+            - name: TS_HOSTNAME
+              value: k8s-node-$(NODE_NAME)
+            - name: TS_KUBE_SECRET
+              value: tailscale-node-$(NODE_NAME)
+            - name: TS_STATE_DIR
+              value: /var/lib/tailscale
+            - name: TS_USERSPACE
+              value: "false"
+            - name: TS_ACCEPT_DNS
+              value: "false"
+            - name: TS_EXTRA_ARGS
+              value: "--login-server=https://headscale.lab.jackhumes.com --accept-routes=false"
+            - name: TS_TAILSCALED_EXTRA_ARGS
+              value: "--port=41641"
+            # /healthz answers 200 once the node holds a tailnet address.
+            - name: TS_ENABLE_HEALTH_CHECK
+              value: "true"
+            - name: TS_LOCAL_ADDR_PORT
+              value: $(POD_IP):9002
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9002
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          volumeMounts:
+            - name: tailscale-state
+              mountPath: /var/lib/tailscale
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+      volumes:
+        - name: tailscale-state
+          emptyDir: {}
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice

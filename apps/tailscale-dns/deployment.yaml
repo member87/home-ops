@@ -22,7 +22,8 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: tailscale
-      # A separate TUN-capable node avoids sharing the subnet router's host netns.
+      # A separate node avoids sharing the subnet router's host netns (one host-network
+      # tailscaled per node). apps/tailscale-node skips this node; keep its list in step.
       nodeSelector:
         kubernetes.io/hostname: talos-tug-zp7
       containers:

@@ -11,8 +11,9 @@ volume data.
 - The talos.dev `ServiceAccount` `etcd-snapshot` gets a Talos client certificate with the
   `os:etcd:backup` role only: it can take snapshots and nothing else. Talos issues it only
   because `talos/patches/etcd-backup-api-access.yaml` is on every node.
-- The CronJob's `talosctl` container asks one control-plane node (Service `default/talos`)
-  for the snapshot; a busybox container copies it to the NAS and deletes the oldest
+- The CronJob's `talosctl` container asks the control plane (Service `default/talos`) for a
+  snapshot of the node the pod runs on (`--nodes` from `status.hostIP`; every node is a
+  control-plane node); a busybox container copies it to the NAS and deletes the oldest
   beyond 14. A run succeeds only once the file is on the NAS.
 - The `talosctl` image follows `siderolabs/talos` in the Talos and Kubernetes pull request.
 

@@ -1,7 +1,8 @@
 ---
 # Daily etcd snapshot to the NAS (/volume1/kubernetes/etcd-backups), keeping the newest 14.
-# talosctl asks one control-plane node (behind Service default/talos) for a consistent
-# snapshot with the os:etcd:backup certificate from talos-serviceaccount.yaml; the job
+# talosctl asks the control plane behind Service default/talos for a consistent snapshot of
+# the node the pod runs on (every node is a control-plane node) with the os:etcd:backup
+# certificate from talos-serviceaccount.yaml; the job
 # succeeds only once the file is on the NAS, so Jevil reads the CronJob's last successful
 # run as the newest snapshot (backups.etcd in apps/jevil/policy.json; alert "Etcd Snapshot
 # Stale"). Restore: docs/etcd-backup.md.
@@ -28,21 +29,28 @@ spec:
           restartPolicy: Never
           initContainers:
             # The talosctl image is scratch: no shell, so it writes into the shared emptyDir.
+            # The talosconfig Talos issues sets endpoints but no nodes, so --nodes is required.
+            # uid 0 like store: talosctl writes the snapshot 0600, and store, root without
+            # CAP_DAC_OVERRIDE, can read it only as its owner. No capabilities either way.
             - name: snapshot
               image: ghcr.io/siderolabs/talosctl:v1.14.5
               imagePullPolicy: IfNotPresent
               args:
                 - --talosconfig=/var/run/secrets/talos.dev/config
+                - --nodes=$(NODE_IP)
                 - etcd
                 - snapshot
                 - /work/etcd.snapshot
               env:
                 - name: HOME
                   value: /work
+                - name: NODE_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.hostIP
               securityContext:
-                runAsNonRoot: true
-                runAsUser: 65532
-                runAsGroup: 65532
+                runAsUser: 0
+                runAsGroup: 0
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities:

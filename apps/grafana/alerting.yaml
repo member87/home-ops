@@ -1,68 +1,1175 @@
 ---
-# One-off: removes everything file provisioning created, so terraform/grafana (which now owns
-# alerting) can create the same rules, contact point, template and policy over the API.
-# Grafana refuses API writes to file-provisioned objects and does not drop them when their
-# file disappears, hence the explicit deletes. Remove this ConfigMap once it has run.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-alerting
   namespace: grafana
 data:
-  unprovision.yaml: |
+  contactpoints.yaml: |
     apiVersion: 1
-    resetPolicies:
-      - 1
-    deleteTemplates:
+    contactPoints:
       - orgId: 1
         name: discord
-    deleteContactPoints:
+        receivers:
+          - uid: discord-webhook
+            type: discord
+            settings:
+              url: $DISCORD_WEBHOOK_URL
+              title: '{{ template "discord.title" . }}'
+              message: '{{ template "discord.message" . }}'
+              use_discord_username: true
+            disableResolveMessage: false
+
+  # Source: https://gist.github.com/ulexxander/213ffc7ce267fe3f1a29f4cae0b0d500
+  templates.yaml: |
+    apiVersion: 1
+    templates:
       - orgId: 1
-        uid: discord-webhook
+        name: discord
+        template: |
+          {{ define "__discord_subject" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ if gt (.Alerts.Resolved | len) 0 }}, RESOLVED:{{ .Alerts.Resolved | len }}{{ end }}{{ end }}] {{ .GroupLabels.SortedPairs.Values | join " " }} {{ if gt (len .CommonLabels) (len .GroupLabels) }}({{ with .CommonLabels.Remove .GroupLabels.Names }}{{ .Values | join " " }}{{ end }}){{ end }}{{ end }}
+
+          {{ define "__discord_values_list" }}{{ if len .Values }}{{ $first := true }}{{ range $refID, $value := .Values -}}
+          {{ if $first }}{{ $first = false }}{{ else }}, {{ end }}{{ $refID }}={{ $value }}{{ end -}}
+          {{ else }}[no value]{{ end }}{{ end }}
+
+          {{ define "__discord_alert_list" }}
+          {{ range . -}}
+          Value: {{ template "__discord_values_list" . }}
+          {{ if len .Labels -}}
+          Labels:
+          {{ range .Labels.SortedPairs -}}
+          - {{ .Name }} = {{ .Value }}
+          {{ end -}}
+          {{ end -}}
+          {{ if len .Annotations -}}
+          Annotations:
+          {{ range .Annotations.SortedPairs -}}
+          - {{ .Name }} = {{ .Value }}
+          {{ end -}}
+          {{ end -}}
+          {{ if .GeneratorURL -}}
+          Source: {{ .GeneratorURL }}
+          {{ end -}}
+          {{ if and false .SilenceURL -}}{{/* Disabled, takes too much place. */}}
+          Silence: {{ .SilenceURL }}
+          {{ end -}}
+          {{ if .DashboardURL -}}
+          Dashboard: {{ .DashboardURL }}
+          {{ end -}}
+          {{ if .PanelURL -}}
+          Panel: {{ .PanelURL }}
+          {{ end }}
+          {{ end -}}
+          {{ end -}}
+
+          {{ define "discord.title" }}{{ template "__discord_subject" . }}{{ end }}
+
+          {{ define "discord.message" -}}
+          {{ if gt (len .Alerts.Firing) 0 }}# Firing{{ template "__discord_alert_list" .Alerts.Firing }}{{ end -}}
+          {{ if gt (len .Alerts.Resolved) 0 }}# Resolved{{ template "__discord_alert_list" .Alerts.Resolved }}{{ end -}}
+          {{ end -}}
+  
+  policies.yaml: |
+    apiVersion: 1
+    policies:
+      - orgId: 1
+        receiver: discord
+        group_by: ['alertname', 'cluster', 'namespace']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        routes:
+          - receiver: discord
+            matchers:
+              - severity=~"critical|warning"
+            continue: false
+            group_wait: 10s
+            group_interval: 5m
+            repeat_interval: 12h
+  
+  rules.yaml: |
+    apiVersion: 1
     deleteRules:
       - orgId: 1
-        uid: pod-not-ready
+        uid: network-interface-down
+    groups:
       - orgId: 1
-        uid: network-errors-high
-      - orgId: 1
-        uid: network-packet-drop-high
-      - orgId: 1
-        uid: tcp-retransmit-high
-      - orgId: 1
-        uid: crowdsec-ban-activity
-      - orgId: 1
-        uid: pod-cpu-throttling
-      - orgId: 1
-        uid: pod-memory-near-limit
-      - orgId: 1
-        uid: pod-oom-killed
-      - orgId: 1
-        uid: persistent-volume-full
-      - orgId: 1
-        uid: persistent-volume-critical
-      - orgId: 1
-        uid: node-memory-high
-      - orgId: 1
-        uid: node-not-ready
-      - orgId: 1
-        uid: node-cpu-high
-      - orgId: 1
-        uid: node-disk-high
-      - orgId: 1
-        uid: pod-restart-high
-      - orgId: 1
-        uid: node-temp-high
-      - orgId: 1
-        uid: immich-backup-stale
-      - orgId: 1
-        uid: nix-cache-build-stale
-      - orgId: 1
-        uid: nix-cache-build-failed
-      - orgId: 1
-        uid: jevil-merging-halted
-      - orgId: 1
-        uid: jevil-hygiene-problem
-      - orgId: 1
-        uid: longhorn-backup-stale
-      - orgId: 1
-        uid: etcd-snapshot-stale
+        name: kubernetes-alerts
+        folder: Kubernetes
+        interval: 1m
+        rules:
+          - uid: pod-not-ready
+            title: Pod Not Ready
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 120
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: kube_pod_status_phase{phase=~"Pending|Failed|Unknown"} * on(namespace,pod,uid) group_left(owner_kind) kube_pod_owner{owner_kind!="Job"} > 0
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 120
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - A
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 120
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: B
+                  refId: C
+                  type: threshold
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready
+              description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in {{ $labels.phase }} phase for more than 10 minutes. This alert excludes Jobs and only fires on sustained non-ready states.
+            labels:
+              severity: warning
+
+          - uid: network-errors-high
+            title: Network Errors High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 0.01
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.01
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Network errors detected on {{ $labels.instance }}
+              description: Interface {{ $labels.device }} on node {{ $labels.instance }} is experiencing network errors (current rate {{ $value }}/s)
+            labels:
+              severity: warning
+
+          - uid: network-packet-drop-high
+            title: Network Packet Drops High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(node_network_receive_drop_total[5m]) + rate(node_network_transmit_drop_total[5m]) > 0.1
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.1
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: High packet drops on {{ $labels.instance }}
+              description: Interface {{ $labels.device }} on node {{ $labels.instance }} is dropping packets (current rate {{ $value }}/s). This may indicate network congestion or hardware issues.
+            labels:
+              severity: warning
+
+          - uid: tcp-retransmit-high
+            title: TCP Retransmits High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: rate(node_netstat_Tcp_RetransSegs[5m]) / rate(node_netstat_Tcp_OutSegs[5m]) * 100 > 5
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 5
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: High TCP retransmit rate on {{ $labels.instance }}
+              description: Node {{ $labels.instance }} has a TCP retransmit rate of {{ $value }}%, indicating network quality issues or packet loss
+            labels:
+              severity: warning
+
+          - uid: crowdsec-ban-activity
+            title: CrowdSec Ban Activity
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 900
+                  to: 0
+                datasourceUid: loki
+                model:
+                  expr: 'sum(count_over_time({namespace="crowdsec", filename=~".+"} |~ "ban on Ip" [15m]))'
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 900
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 900
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 1m
+            annotations:
+              summary: CrowdSec is actively banning IPs
+              description: CrowdSec has issued {{ $value }} ban decisions in the last 15 minutes.
+            labels:
+              severity: warning
+
+          - uid: pod-cpu-throttling
+            title: Pod CPU Throttling
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: sum by (namespace,pod,container,instance,node) (rate(container_cpu_cfs_throttled_seconds_total{namespace!~"podinfo|node-exporter",container!="",image!=""}[5m])) * on(namespace,pod) group_left() max by (namespace,pod) (kube_pod_status_phase{phase="Running"} == 1)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.2
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} experiencing CPU throttling
+              description: Running container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is sustaining high CPU throttling (more than 0.2s/s) for 10 minutes. Consider increasing CPU limits.
+            labels:
+              severity: warning
+
+          - uid: pod-memory-near-limit
+            title: Pod Memory Near Limit
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100 > 90 < Inf
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 90
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} memory usage near limit
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is using {{ $value }}% of its memory limit. Risk of OOM kill.
+            labels:
+              severity: warning
+
+          - uid: pod-oom-killed
+            title: Pod OOM Killed
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: kube_pod_container_status_terminated_reason{reason="OOMKilled"} > 0
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 1m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} was OOM killed
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} was killed due to Out Of Memory. Increase memory limits.
+            labels:
+              severity: critical
+
+          - uid: persistent-volume-full
+            title: Persistent Volume Nearly Full
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 85
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 85
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: PersistentVolume {{ $labels.persistentvolumeclaim }} is nearly full
+              description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value }}% full
+            labels:
+              severity: warning
+
+          - uid: persistent-volume-critical
+            title: Persistent Volume Critically Full
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 95
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 95
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: PersistentVolume {{ $labels.persistentvolumeclaim }} is critically full
+              description: PersistentVolume {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is above 95% usage (current value {{ $value }}%)
+            labels:
+              severity: critical
+
+          - uid: node-memory-high
+            title: Node Memory Usage High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: ((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100) and on(instance,job) (node_memory_MemAvailable_bytes < 1073741824)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 90
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 15m
+            annotations:
+              summary: Node {{ $labels.instance }} memory usage is high
+              description: Node {{ $labels.instance }} memory usage is above 90% with less than 1Gi available memory (current value {{ $value }}%)
+            labels:
+              severity: warning
+
+          - uid: node-not-ready
+            title: Node Not Ready
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: eq
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: Node {{ $labels.node }} is not ready
+              description: Kubernetes node {{ $labels.node }} has reported NotReady for more than 10 minutes.
+            labels:
+              severity: critical
+
+          - uid: node-cpu-high
+            title: Node CPU Usage High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 80
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} CPU usage is high
+              description: Node {{ $labels.instance }} CPU usage is above 80% (current value {{ $value }}%)
+            labels:
+              severity: warning
+
+          - uid: node-disk-high
+            title: Node Disk Usage High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/var",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/var",fstype!="tmpfs"}) * 100) > 80
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 80
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} disk usage is high
+              description: Node {{ $labels.instance }} disk usage on /var is above 80% (current value {{ $value }}%)
+            labels:
+              severity: warning
+
+          - uid: pod-restart-high
+            title: Pod Restarting Frequently
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: (rate(kube_pod_container_status_restarts_total{namespace!="longhorn-system"}[15m]) * 3600) * on(namespace,pod) group_left(owner_kind) kube_pod_owner{owner_kind!="Job"} > 5
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 5
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting frequently
+              description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} (excluding Job pods) is restarting more than 5 times per hour
+            labels:
+              severity: critical
+
+          - uid: node-temp-high
+            title: Node Temperature High
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: node_hwmon_temp_celsius{sensor!="temp5"} > 75
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 75
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 5m
+            annotations:
+              summary: Node {{ $labels.instance }} temperature is high
+              description: Temperature sensor {{ $labels.sensor }} on node {{ $labels.instance }} is above 75°C (current value {{ $value }}°C)
+            labels:
+              severity: warning
+
+          - uid: immich-backup-stale
+            title: Immich Backup Stale
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                # Falls back to the CronJob creation time so a backup that has never
+                # succeeded still alerts once it is two days old.
+                model:
+                  expr: time() - (kube_cronjob_status_last_successful_time{namespace="immich",cronjob="immich-backup"} or kube_cronjob_created{namespace="immich",cronjob="immich-backup"})
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 172800
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: Immich off-site backup has not succeeded for 48 hours
+              description: CronJob immich/immich-backup last succeeded {{ humanizeDuration $values.B.Value }} ago. Photos added since then exist only on the NAS; check the latest job's logs.
+            labels:
+              severity: critical
+
+          - uid: nix-cache-build-stale
+            title: Nix Cache Build Stale
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                # Falls back to the CronJob creation time so a builder that has never
+                # succeeded still alerts.
+                model:
+                  expr: time() - (kube_cronjob_status_last_successful_time{namespace="nix-cache",cronjob="nix-cache-builder"} or kube_cronjob_created{namespace="nix-cache",cronjob="nix-cache-builder"})
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 108000
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: The nightly NixOS build has not succeeded for 30 hours
+              description: CronJob nix-cache/nix-cache-builder last succeeded {{ humanizeDuration $values.B.Value }} ago. The desktops keep upgrading to the last pushed flake.lock, so they are not getting updates; the Nix Cache dashboard shows the failed phase and the job's logs.
+            labels:
+              severity: warning
+
+          - uid: nix-cache-build-failed
+            title: Nix Cache Build Failed
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                # The exporter only publishes this series while the last builder run
+                # failed, so the alert resolves on the next successful run.
+                model:
+                  expr: max by (phase) (nix_cache_build_failed_phase{kubernetes_namespace="nix-cache"})
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 0s
+            annotations:
+              summary: The nightly NixOS build failed during {{ $labels.phase }}
+              description: The last nix-cache/nix-cache-builder run failed in its {{ $labels.phase }} phase, so flake.lock was not pushed and the desktops will not get updates until a run succeeds. The Nix Cache dashboard shows which targets failed; check the job's logs, or rerun with kubectl -n nix-cache create job --from=cronjob/nix-cache-builder nix-cache-builder-manual.
+            labels:
+              severity: critical
+
+          - uid: jevil-merging-halted
+            title: Jevil Merging Halted
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: max(jevil_queue_halted)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 0m
+            annotations:
+              summary: Jevil merged an update whose deploy came up unhealthy
+              description: A pull request Jevil merged failed its deploy check and is labelled merged-unhealthy. Jevil opened a revert pull request (labelled revert); it merges that revert by itself when the bad merge was one Jevil made on its own, otherwise it waits for your /jevil merge. Nothing else merges until the label is removed. See docs/jevil.md.
+            labels:
+              severity: critical
+
+          - uid: jevil-hygiene-problem
+            title: Jevil Hygiene Problem
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: max by (kind, namespace, name, problem) (jevil_hygiene_problem)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 0m
+            annotations:
+              summary: '{{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} is {{ $labels.problem }}'
+              description: Jevil's daily report found a cert-manager Certificate that is not Ready or expires within 14 days without renewing, or a SealedSecret the controller could not unseal (usually sealed against another key; reseal it against the live controller). The "Jevil daily report" issue has cert-manager's or the controller's message. See docs/jevil.md.
+            labels:
+              severity: warning
+
+          # Jevil reads Longhorn's backup volumes every hour (backups in apps/jevil/policy.json).
+          # Volumes no backup recurring job selects (Prometheus) have no series, so they never
+          # alert; a volume never backed up counts from its creation.
+          - uid: longhorn-backup-stale
+            title: Longhorn Backup Stale
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: max by (namespace, pvc) (jevil_backup_age_seconds)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 129600
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: A Longhorn volume has no backup newer than 36 hours
+              description: The newest Longhorn backup of {{ $labels.namespace }}/{{ $labels.pvc }} is {{ humanizeDuration $values.B.Value }} old; backup-daily runs at 12:00. Check the volume's backups in the Longhorn UI and the NAS backup target. The Jevil daily report lists every stale volume.
+            labels:
+              severity: critical
+
+          # +Inf when the CronJob does not exist; a CronJob that never succeeded counts from its
+          # creation.
+          - uid: etcd-snapshot-stale
+            title: Etcd Snapshot Stale
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: max(jevil_etcd_snapshot_age_seconds)
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: A
+                  refId: B
+                  type: reduce
+                  reducer: last
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  expression: B
+                  refId: C
+                  type: threshold
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 129600
+                        type: gt
+            noDataState: OK
+            execErrState: OK
+            for: 10m
+            annotations:
+              summary: No etcd snapshot newer than 36 hours
+              description: CronJob etcd-backup/etcd-snapshot last succeeded {{ humanizeDuration $values.B.Value }} ago (or does not exist). Without a recent snapshot, losing etcd quorum loses the cluster state; check the latest job's logs and the Talos API access patch. See docs/etcd-backup.md.
+            labels:
+              severity: critical

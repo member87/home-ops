@@ -54,14 +54,16 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
-          # Chromium is idle between alerts; one screenshot briefly takes ~200Mi and a core.
+          # Chromium is idle between alerts. A screenshot is CPU-bound (the 1-core limit
+          # throttled it past Grafana's capture timeout), and both Grafana replicas ask for
+          # the same panel at once, so allow bursts of two cores.
           resources:
             requests:
-              cpu: 50m
-              memory: 192Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
-              cpu: 1000m
-              memory: 768Mi
+              cpu: 2000m
+              memory: 1Gi
           volumeMounts:
             - name: tmp
               mountPath: /tmp

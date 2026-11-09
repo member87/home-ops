@@ -1,6 +1,6 @@
 ---
 # Jevil (github.com/member87/jevil): rules on Chore Bore pull requests with Jev, labels them and
-# merges what the policy passes, one at a time. Policy: policy.json here. Ops: docs/jevil.md.
+# merges what the policy passes, in groups. Policy: policy.json here. Ops: docs/jevil.md.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,7 +39,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: jevil
-          image: ghcr.io/member87/jevil:c47fccd71362eb569d5048563d989e10df1b972d
+          image: ghcr.io/member87/jevil:aef7765dbec8a3da605e635e28ae1495c7c340a2
           imagePullPolicy: IfNotPresent
           args:
             - -policy=/etc/jevil/config/policy.json

@@ -163,10 +163,24 @@ already in the group; then it waits for the next group and keeps its place. A gr
 pull requests. They merge back to back, their deploys are checked together, and nothing else
 merges until all of them are live. A revert stays with the pull request whose deploy failed.
 Reverts, Talos/Kubernetes upgrades, anything that deploys `infrastructure/` (a Kustomization or
-chart there, such as Longhorn) and pull requests queued with `--alone` always merge by
-themselves. Each queued pull request's comment carries a `⏳ Waiting…` line naming what holds it,
-for example `merging is halted: #612 is merged-unhealthy`, `#613's deploy is being checked`
-or `waits for the next group: overlaps #608 (namespace radarr)`; `/jevil status` reads it back.
+chart there, such as Longhorn) and pull requests queued with `--alone` or `--now` always merge by
+themselves.
+
+Once a merge is live, its watch (see [After a merge](#after-a-merge)) no longer holds the whole
+line: a later poll merges the next group, and only a pull request that deploys to one of the
+watched merge's namespaces, Kustomizations, HelmReleases or Terrakube workspaces waits for that
+watch to end, keeping its place. A restart or regression the watch finds therefore still belongs
+to the pull request that caused it, as within a group. Two exceptions hold everything: a watched
+merge that merged by itself (above) holds every merge until its watch ends, and a pull request
+that must merge by itself waits for every watch to end and holds the line behind it meanwhile, so
+a steady stream of small merges cannot starve it. The merge comment records `alone=1` for the
+first; merges made before that marker count as alone only when they are a revert or deploy
+`infrastructure/`.
+
+Each queued pull request's comment carries a `⏳ Waiting…` line naming what holds it,
+for example `merging is halted: #612 is merged-unhealthy`, `#613's deploy is being checked`,
+`waits for the next group: overlaps #608 (namespace radarr)` or
+`waits for the watch of #610: it deploys to namespace radarr too`; `/jevil status` reads it back.
 Commanded merges ignore the 08:00-22:00 window and Jevil's own `review` ruling (the command is the
 human decision that ruling asks for). `/jevil cancel` takes a pull request out of the queue.
 
@@ -257,9 +271,9 @@ flowchart LR
   D -->|ok| J[Jev on release notes]
   J -->|flagged| R
   J -->|clean| S[pass]
-  S -->|scope in merge mode,<br/>08:00-22:00 London| M[merge, one at a time]
+  S -->|scope in merge mode,<br/>08:00-22:00 London| M[merge, in groups]
   M --> V[deploy check]
-  V -->|ok| SK[soaking<br/>15m watch: restarts,<br/>5xx, latency, error logs]
+  V -->|ok| SK[soaking<br/>15m watch: restarts,<br/>5xx, latency, error logs;<br/>merges deploying elsewhere go]
   SK -->|no restart,<br/>no regression| OK[merged-ok]
   V -->|unhealthy or 30m timeout| H[merged-unhealthy<br/>revert PR, queue halted]
   SK -->|container restarted<br/>or regression| H
@@ -435,7 +449,7 @@ from the policy to turn the feature off.
 `modes` in `apps/jevil/policy.json` is `shadow` or `merge` per scope (`app`, `terraform`, `helm`,
 `infrastructure`). In `merge`, a Chore Bore pull request Jevil rules `pass` (every check in
 [What passes](#what-passes), the pre-merge checks and the health gate) merges on its own, between
-08:00 and 22:00 London, one at a time, after any `/jevil merge` requests. Anything else still waits
+08:00 and 22:00 London, in groups (see [Merging a pull request](#merging-a-pull-request-jevil-merge)), after any `/jevil merge` requests. Anything else still waits
 for `/jevil merge`; a major update always goes to review. In `shadow` Jevil labels and comments
 only. `app`, `terraform` and `helm` are in `merge`; `infrastructure` starts in `shadow`.
 
@@ -454,9 +468,13 @@ rest only follow once it has proven itself live. The live group is `home-operati
 `ghcr.io/home-operations/charts/...`). While updates in the group have passed and none has proven
 itself, one merges first, alone, as the canary: the update for `apps/bazarr` when there is one,
 otherwise the oldest. Its merge comment says so and its watch lasts the group's `soakMinutes` (60)
-instead of 15 minutes. The others wait, and their card and `⏳` line say for what: `canary group
+instead of 15 minutes. The canary merges by itself, but once live its watch, like any other,
+holds only the merges that deploy where it does; the rest of its group keeps waiting until it
+is `merged-ok`, and no second canary goes meanwhile. The others wait, and their card and `⏳` line say for what: `canary group
 home-operations: #640, the update for apps/bazarr, goes first, alone, watched for 60 minutes;
-this goes once an update in the group is merged-ok at the same version, or any within 24h`. They
+this goes once an update in the group is merged-ok at the same version, or any within 24h`, or,
+once it merged, `canary group home-operations: its canary #640 is merged and its deploy is being
+checked; ...`. They
 go once an update in the group was `merged-ok` at the same new version, or any update in the group
 was `merged-ok` in the last `withinHours` (24). Only updates Jevil merges on its own take part: a
 `/jevil merge` goes when you ask.
@@ -473,7 +491,7 @@ was `merged-ok` in the last `withinHours` (24). Only updates Jevil merges on its
 
 Jevil adds `verifying` before merging (so a restart cannot lose the check), comments on the
 pull request with the merge commit and what it is waiting for, and merges nothing else until the
-deploy settles:
+deploy is live:
 
 - Flux: every Kustomization a changed file belongs to has applied the merge commit (or a later
   one) and is Ready. Ready False is unhealthy immediately. A new app waits until Flux has created
@@ -491,8 +509,10 @@ deploy settles:
 
 Ready is not the end: a readiness probe passing says nothing about the first real requests. Once
 the deploy is Ready, Jevil posts the live comment, swaps `verifying` for `soaking`
-(merged and live, still watched) and keeps the queue held for `verify.soakMinutes` (15), or
-`infrastructure.soakMinutes` (60) when the merge deploys `infrastructure/`. Each
+(merged and live, still watched) and watches it for `verify.soakMinutes` (15), or
+`infrastructure.soakMinutes` (60) when the merge deploys `infrastructure/`. Meanwhile only merges
+that deploy to the same namespaces or targets wait, unless it merged by itself (see
+[Merging a pull request](#merging-a-pull-request-jevil-merge)); the live comment says which. Each
 poll it reads `kube_pod_container_status_restarts_total` from Prometheus for the pods of what the
 merge deployed: the Deployments, StatefulSets, DaemonSets, Jobs and CronJobs in each
 Kustomization's inventory, and every pod in the target namespace of a HelmRelease (an upgraded one

@@ -16,6 +16,12 @@ variable "discord_webhook_url" {
   sensitive   = true
 }
 
+variable "gotify_app_token" {
+  description = "Token of the \"Grafana\" application in Gotify, owned by the Pocket ID user who reads alerts on the phone. Set as a sensitive variable on the Terrakube workspace, never committed."
+  type        = string
+  sensitive   = true
+}
+
 variable "folders" {
   description = "Maps each directory under dashboards/ to the Grafana folder title it is provisioned into. A directory with no entry here fails the plan rather than silently landing dashboards in the General folder."
   type        = map(string)

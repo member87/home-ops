@@ -39,6 +39,15 @@ spec:
                   key: token
             - name: API_SILENCE_REQUEST_LOG_PATH
               value: /healthz
+            # By default the renderer captures once no panel query has started within 3s.
+            # Right after a Grafana restart the frontend takes longer than that to boot, so
+            # alerts got a screenshot of Grafana's "Loading ..." page, and an alert keeps its
+            # first screenshot until it resolves. Wait up to 20s for the panel's query to
+            # start; Grafana allows 30s per capture.
+            - name: BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY
+              value: 20s
+            - name: BROWSER_READINESS_PRIOR_WAIT
+              value: 2s
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

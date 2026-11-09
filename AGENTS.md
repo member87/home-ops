@@ -93,7 +93,7 @@ sops --input-type yaml --output-type yaml talos/talosconfig
 - A Deployment that mounts a ReadWriteOnce PVC (every Longhorn volume) uses `strategy.type: Recreate`: a RollingUpdate pod landing on another node waits on Multi-Attach forever. Jevil's lint blocks it and suggests the fix.
 - For OIDC apps, create a Pocket ID client and seal the client secret.
 - For non-OIDC apps, add Tiny Auth ForwardAuth middleware. Jevil blocks a new IngressRoute with a route that has neither (an HTTPS-redirect route is fine); an app with its own login, or a route meant to be open, says so with `# jevil:auth <why>` in its manifests.
-- Only add Grafana dashboards or app alerts when the app exposes Prometheus metrics or has a real exporter.
+- Only add Grafana dashboards or app alerts when the app exposes Prometheus metrics or has a real exporter. Alerts go in `apps/<app>/alerts/*.yaml` (see Monitoring).
 
 ## Helm To Kustomize Cutover (one-off, in progress)
 
@@ -168,7 +168,7 @@ Everything under `terraform/` is planned and applied by Terrakube in-cluster. Th
 
 - Organization `homeops`. Three workspaces, each with its own state, webhook and commit-status context:
   - `aws-edge` -> `terraform/aws-edge`, the Lightsail edge box and its FRP/Caddy config.
-  - `grafana` -> `terraform/grafana`, every Grafana dashboard and folder.
+  - `grafana` -> `terraform/grafana`, every Grafana dashboard and folder, plus all alerting: the rules in `apps/*/alerts/` and `infrastructure/*/alerts/`, the Discord contact point, its message template and the notification policy. Its webhook rules therefore match `terraform/grafana/**,apps/*/alerts/*,infrastructure/*/alerts/*` (comma-separated globs), so an alert-only pull request still gets a plan.
   - `b2-backup` -> `terraform/b2-backup`, the Backblaze B2 bucket for the Immich off-site backup. Provider credentials are the sensitive ENV variables `B2_APPLICATION_KEY_ID`/`B2_APPLICATION_KEY`.
 - All are OpenTofu with remote execution, so `iacType` must be `tofu`; setting it to `terraform` with an OpenTofu version fails the job with "Invalid Terraform version range". State lives in Terrakube (MinIO-backed), never in a local `terraform.tfstate`.
 - Each workspace registers its own GitHub webhook, and the v1 HMAC secret is `base64(workspaceId)`, so the gatekeeper takes a comma-separated `GITHUB_WEBHOOK_SECRETS` and accepts any of them. Adding a workspace means adding its secret there too, bumping `checksum/secrets` in `apps/terrakube/webhook-gate.yaml` so the gate restarts with it (plus the `apps/terrakube/Chart.yaml` version, or the change never deploys), and pointing the new GitHub hook at `https://terrakube-hook.jackhumes.com/webhook/v1/<webhookId>` (Terrakube registers it with the LAN-only API URL).
@@ -229,7 +229,9 @@ The private key exists only in the Terrakube database and wherever it was backed
 - Grafana dashboards live in `terraform/grafana/dashboards/<folder>/<name>.json` and are applied over the Grafana HTTP API by the `grafana` Terrakube workspace. They are not ConfigMaps and there is no dashboard sidecar; do not reintroduce either.
 - To add a dashboard: drop the JSON in the right folder directory, give it a stable `uid`, strip `id`/`version`/`iteration`, and open a pull request. The plan runs on the PR, the apply runs on merge.
 - A new folder directory also needs a title in `var.folders`, or the plan fails on its precondition instead of quietly using General.
-- Folders carry `prevent_destroy`. The Kubernetes folder holds the provisioned alert rules from `apps/grafana/alerting.yaml`, and deleting a Grafana folder deletes the rules inside it.
+- Folders carry `prevent_destroy`: deleting a Grafana folder deletes everything inside it, alert rules included.
+- Alert rules live next to the component they watch, in `apps/<app>/alerts/*.yaml` or `infrastructure/<component>/alerts/*.yaml`, and are applied by `terraform/grafana/alerting.tf`. Each directory is one rule group named after it in the Alerts folder, evaluated every minute; the fields are Grafana's file-provisioning rule format (`uid`, `title`, `condition`, `data`, `for`, `labels`, `annotations`). Give every rule a stable, unique `uid`. Kustomize never reads `alerts/`, and the chart-version check ignores it, so alert edits inside chart dirs (`infrastructure/longhorn`) need no `Chart.yaml` bump.
+- Notifications go to Discord: contact point `discord` (webhook in the workspace's sensitive `discord_webhook_url` variable), title and message from `terraform/grafana/templates/discord.tpl`, routed by `grafana_notification_policy.this`. Anything labelled `severity=critical|warning` notifies; there is no file provisioning or `grafana-alerting` ConfigMap any more, so nothing needs a Grafana restart.
 - The Grafana provider authenticates as the admin user over API basic auth, because Grafana cannot provision a service account token declaratively. The password is sealed in `grafana-admin-secret` and mirrored into the workspace's sensitive `grafana_auth` variable. `GF_SECURITY_ADMIN_PASSWORD` only takes effect when the admin user is first created, so rotating it on an existing database also needs `grafana cli admin reset-admin-password` once inside a Grafana pod.
 - Avoid alert fatigue. Add alerts only for actionable service availability, high error rate, severe latency, resource exhaustion, data integrity, or security issues.
 - Existing cluster alerts already cover basic pod health, restarts, CPU, memory, and disk.
@@ -301,7 +303,7 @@ just talos-sync     # break-glass: upgrade nodes by hand when tuppr cannot
 - OIDC failing: check redirect URI, client secret, supported scopes, audience, Pocket ID logs, and Tiny Auth logs if ForwardAuth is involved.
 - cAdvisor missing on Talos: Prometheus may need kubelet TLS `insecure_skip_verify: true` and RBAC for `nodes/metrics` plus `/metrics/cadvisor`.
 - CrowdSec not blocking: ensure external FRP traffic reaches Traefik, the IngressRoute has the bouncer middleware, and the bouncer is registered with LAPI.
-- Grafana dashboard stale: check Flux status, dashboard ConfigMap, dashboard sidecar logs, and Grafana folder annotations.
+- Grafana dashboard or alert stale: check the `grafana` Terrakube workspace's last apply on `main`; both are applied by Terraform, not by Flux.
 - Loki duplicate logs: filter queries to a single log collection job.
 
 ### A Traefik Replica Serving 404 For Every Route Behind CrowdSec

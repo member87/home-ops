@@ -1,0 +1,97 @@
+# Grafana alert rules for jevil, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "jevil" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  - uid: jevil-merging-halted
+    title: Jevil Merging Halted
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: max(jevil_queue_halted)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 0m
+    annotations:
+      summary: Jevil merged an update whose deploy came up unhealthy
+      description: A pull request Jevil merged failed its deploy check and is labelled merged-unhealthy. Jevil opened a revert pull request (labelled revert); it merges that revert by itself when the bad merge was one Jevil made on its own, otherwise it waits for your /jevil merge. Nothing else merges until the label is removed. See docs/jevil.md.
+    labels:
+      severity: critical
+
+  - uid: jevil-hygiene-problem
+    title: Jevil Hygiene Problem
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: max by (kind, namespace, name, problem) (jevil_hygiene_problem)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 0m
+    annotations:
+      summary: '{{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} is {{ $labels.problem }}'
+      description: Jevil's daily report found a cert-manager Certificate that is not Ready or expires within 14 days without renewing, or a SealedSecret the controller could not unseal (usually sealed against another key; reseal it against the live controller). The "Jevil daily report" issue has cert-manager's or the controller's message. See docs/jevil.md.
+    labels:
+      severity: warning
+
+  # Jevil reads Longhorn's backup volumes every hour (backups in apps/jevil/policy.json).
+  # Volumes no backup recurring job selects (Prometheus) have no series, so they never
+  # alert; a volume never backed up counts from its creation.

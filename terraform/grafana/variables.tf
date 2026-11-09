@@ -10,6 +10,12 @@ variable "grafana_auth" {
   sensitive   = true
 }
 
+variable "discord_webhook_url" {
+  description = "Discord webhook the discord contact point posts to. Set as a sensitive variable on the Terrakube workspace, never committed."
+  type        = string
+  sensitive   = true
+}
+
 variable "folders" {
   description = "Maps each directory under dashboards/ to the Grafana folder title it is provisioned into. A directory with no entry here fails the plan rather than silently landing dashboards in the General folder."
   type        = map(string)

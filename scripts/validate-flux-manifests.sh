@@ -105,11 +105,12 @@ fi
 
 # 5. Git-sourced HelmReleases use reconcileStrategy: ChartVersion, so a change inside one of
 #    those chart dirs only deploys if Chart.yaml's version moves. Catch the silent no-deploy.
+#    alerts/ is not part of the chart: terraform/grafana applies it.
 base="${VALIDATE_BASE:-origin/main}"
 if git rev-parse --verify -q "$base" >/dev/null 2>&1; then
   while read -r chart; do
     dir=$(dirname "$chart")
-    changed=$(git diff --name-only "$base...HEAD" -- "$dir" | grep -v '^$' || true)
+    changed=$(git diff --name-only "$base...HEAD" -- "$dir" ":(exclude)$dir/alerts" | grep -v '^$' || true)
     [ -n "$changed" ] || continue
     if ! git diff -U0 "$base...HEAD" -- "$chart" | grep -q '^[+-]version:'; then
       fail "$dir changed without a Chart.yaml version bump: ChartVersion means it will not deploy"

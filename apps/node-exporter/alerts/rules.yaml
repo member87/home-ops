@@ -1,0 +1,318 @@
+# Grafana alert rules for node-exporter, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "node-exporter" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  - uid: node-memory-high
+    title: Node Memory Usage High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: ((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100) and on(instance,job) (node_memory_MemAvailable_bytes < 1073741824)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 90
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 15m
+    annotations:
+      summary: Node {{ $labels.instance }} memory usage is high
+      description: Node {{ $labels.instance }} memory usage is above 90% with less than 1Gi available memory (current value {{ $value }}%)
+    labels:
+      severity: warning
+
+  - uid: node-cpu-high
+    title: Node CPU Usage High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 80
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: Node {{ $labels.instance }} CPU usage is high
+      description: Node {{ $labels.instance }} CPU usage is above 80% (current value {{ $value }}%)
+    labels:
+      severity: warning
+
+  - uid: node-disk-high
+    title: Node Disk Usage High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/var",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/var",fstype!="tmpfs"}) * 100) > 80
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 80
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: Node {{ $labels.instance }} disk usage is high
+      description: Node {{ $labels.instance }} disk usage on /var is above 80% (current value {{ $value }}%)
+    labels:
+      severity: warning
+
+  - uid: node-temp-high
+    title: Node Temperature High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: node_hwmon_temp_celsius{sensor!="temp5"} > 75
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 75
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: Node {{ $labels.instance }} temperature is high
+      description: Temperature sensor {{ $labels.sensor }} on node {{ $labels.instance }} is above 75°C (current value {{ $value }}°C)
+    labels:
+      severity: warning
+
+  - uid: network-errors-high
+    title: Network Errors High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 0.01
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0.01
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: Network errors detected on {{ $labels.instance }}
+      description: Interface {{ $labels.device }} on node {{ $labels.instance }} is experiencing network errors (current rate {{ $value }}/s)
+    labels:
+      severity: warning
+
+  - uid: network-packet-drop-high
+    title: Network Packet Drops High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: rate(node_network_receive_drop_total[5m]) + rate(node_network_transmit_drop_total[5m]) > 0.1
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0.1
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: High packet drops on {{ $labels.instance }}
+      description: Interface {{ $labels.device }} on node {{ $labels.instance }} is dropping packets (current rate {{ $value }}/s). This may indicate network congestion or hardware issues.
+    labels:
+      severity: warning
+
+  - uid: tcp-retransmit-high
+    title: TCP Retransmits High
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: rate(node_netstat_Tcp_RetransSegs[5m]) / rate(node_netstat_Tcp_OutSegs[5m]) * 100 > 5
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 5
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 5m
+    annotations:
+      summary: High TCP retransmit rate on {{ $labels.instance }}
+      description: Node {{ $labels.instance }} has a TCP retransmit rate of {{ $value }}%, indicating network quality issues or packet loss
+    labels:
+      severity: warning

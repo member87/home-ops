@@ -203,18 +203,6 @@ spec:
           limits:
             cpu: "1"
             memory: 2Gi
-        # The aws-edge workspace SSHes to the edge over the tailnet (edge_tailnet_ip). Pods
-        # only reach 100.64.0.0/10 on nodes with a host-network Tailscale instance and its
-        # tailscale0 routes: lox (tailscale-subnet-router) and tug (tailscale-dns), both
-        # pinned. On t8o every edge deploy timed out on `dial tcp 100.64.0.21:22`.
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: kubernetes.io/hostname
-                      operator: In
-                      values: ["talos-lox-1n1", "talos-tug-zp7"]
 
       # The private module/provider registry is not used: modules come from the public
       # registry and this repo. It is a third JVM costing ~1Gi of requests, so it stays off

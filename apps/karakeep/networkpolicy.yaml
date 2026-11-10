@@ -1,0 +1,68 @@
+---
+# The DevTools port is unauthenticated remote control of the browser: only Karakeep may reach it.
+# Chrome opens bookmarked URLs, so it gets the internet and cluster DNS, nothing else: no pod or
+# Service (policies see pod IPs after kube-proxy DNAT; 10.0.0.0/8 covers pods, Services and the
+# LAN), no node, no NAS, no tailnet. Enforced by infrastructure/kube-network-policies.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: karakeep-chrome
+  namespace: karakeep
+spec:
+  podSelector:
+    matchLabels:
+      app: karakeep-chrome
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: karakeep
+      ports:
+        - protocol: TCP
+          port: 9222
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: karakeep-meilisearch
+  namespace: karakeep
+spec:
+  podSelector:
+    matchLabels:
+      app: karakeep-meilisearch
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: karakeep
+      ports:
+        - protocol: TCP
+          port: 7700

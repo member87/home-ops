@@ -111,6 +111,10 @@ pages:
               # - title: Trek
               #   url: https://trek.lab.jackhumes.com
               #   icon: sh:trek
+              - title: Karakeep
+                url: https://karakeep.lab.jackhumes.com
+                check-url: https://karakeep.lab.jackhumes.com/api/health
+                icon: sh:karakeep
           - type: monitor
             cache: 1m
             title: Media Stack

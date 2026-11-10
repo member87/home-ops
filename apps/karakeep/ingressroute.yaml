@@ -1,0 +1,45 @@
+---
+# jevil:auth Karakeep's own login, Pocket ID OIDC only (password auth disabled in deployment.yaml)
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: karakeep
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: karakeep
+  namespace: karakeep
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`karakeep.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: karakeep
+          port: 3000
+  tls:
+    secretName: karakeep-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: karakeep-http
+  namespace: karakeep
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`karakeep.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: karakeep
+          port: 3000

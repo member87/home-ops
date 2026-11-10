@@ -1,0 +1,262 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karakeep
+  namespace: karakeep
+  labels:
+    app: karakeep
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: karakeep
+  template:
+    metadata:
+      labels:
+        app: karakeep
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        # Web UI and background workers (crawler, search indexing) in one s6-overlay container.
+        - name: karakeep
+          image: ghcr.io/karakeep-app/karakeep:0.34.1
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            - name: DATA_DIR
+              value: "/data"
+            - name: NEXTAUTH_URL
+              value: "https://karakeep.lab.jackhumes.com"
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: NEXTAUTH_SECRET
+            - name: MEILI_ADDR
+              value: "http://karakeep-meilisearch:7700"
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: MEILI_MASTER_KEY
+            - name: BROWSER_WEB_URL
+              value: "http://karakeep-chrome:9222"
+            # Login is Pocket ID only. DISABLE_PASSWORD_AUTH rejects password sign-in, password
+            # sign-up and the password-for-API-key exchange server-side, not just in the UI.
+            # DISABLE_SIGNUPS stays false: it also blocks OAuth sign-ups, so nobody could get an
+            # account; who may sign in is decided by the Pocket ID client.
+            - name: DISABLE_PASSWORD_AUTH
+              value: "true"
+            - name: DISABLE_SIGNUPS
+              value: "false"
+            - name: OAUTH_AUTO_REDIRECT
+              value: "true"
+            - name: OAUTH_PROVIDER_NAME
+              value: "Pocket ID"
+            - name: OAUTH_WELLKNOWN_URL
+              value: "https://auth.jackhumes.com/.well-known/openid-configuration"
+            - name: OAUTH_CLIENT_ID
+              value: "2bf50eab-ca98-4599-9a7e-1f9e82b35323"
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: OAUTH_CLIENT_SECRET
+            - name: DB_WAL_MODE
+              value: "true"
+            - name: LOG_LEVEL
+              value: "info"
+            # Renovate tracks releases.
+            - name: DISABLE_NEW_RELEASE_CHECK
+              value: "true"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "384Mi"
+              cpu: "100m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: karakeep-data
+---
+# Headless Chrome the crawler drives over the DevTools protocol. It loads whatever URL is
+# bookmarked, so networkpolicy.yaml keeps it off the cluster and the LAN.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karakeep-chrome
+  namespace: karakeep
+  labels:
+    app: karakeep-chrome
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: karakeep-chrome
+  template:
+    metadata:
+      labels:
+        app: karakeep-chrome
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      containers:
+        - name: chrome
+          image: ghcr.io/karakeep-app/karakeep-chrome:157.0.8103.38-r1
+          args:
+            - --disable-gpu
+            - --disable-dev-shm-usage
+            - --hide-scrollbars
+            - --disable-blink-features=AutomationControlled
+            - --window-size=1440,900
+          ports:
+            - containerPort: 9222
+              name: devtools
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            tcpSocket:
+              port: 9222
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 9222
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "50m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karakeep-meilisearch
+  namespace: karakeep
+  labels:
+    app: karakeep-meilisearch
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: karakeep-meilisearch
+  template:
+    metadata:
+      labels:
+        app: karakeep-meilisearch
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.55.1
+          ports:
+            - containerPort: 7700
+              name: http
+              protocol: TCP
+          env:
+            - name: MEILI_ENV
+              value: "production"
+            - name: MEILI_NO_ANALYTICS
+              value: "true"
+            # Migrate the index in place when Renovate bumps the version; without it a newer
+            # binary refuses to open the old database.
+            - name: MEILI_UPGRADE_DB
+              value: "true"
+            # Defaults to 2/3 of the node's RAM, not the container limit.
+            - name: MEILI_MAX_INDEXING_MEMORY
+              value: "512MiB"
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: MEILI_MASTER_KEY
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /meili_data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: karakeep-meilisearch

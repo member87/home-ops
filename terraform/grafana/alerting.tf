@@ -224,7 +224,8 @@ resource "grafana_notification_policy" "this" {
   group_interval  = "5m"
   repeat_interval = "1h"
 
-  # Every alert goes to Discord; through continue, critical ones also go to the phone.
+  # Every alert goes to Discord; through continue, critical ones and any rule labelled
+  # notify=phone also go to the phone.
   policy {
     contact_point   = grafana_contact_point.discord.name
     continue        = true
@@ -251,6 +252,22 @@ resource "grafana_notification_policy" "this" {
       label = "severity"
       match = "="
       value = "critical"
+    }
+  }
+
+  # A warning someone should act on soon without being woken, e.g. a tailnet peer stuck on
+  # the relay. The gotify template gives it normal priority, so Do Not Disturb holds.
+  policy {
+    contact_point   = grafana_contact_point.gotify.name
+    continue        = false
+    group_wait      = "10s"
+    group_interval  = "5m"
+    repeat_interval = "1h"
+
+    matcher {
+      label = "notify"
+      match = "="
+      value = "phone"
     }
   }
 }

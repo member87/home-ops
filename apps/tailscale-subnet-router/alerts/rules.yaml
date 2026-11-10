@@ -2,10 +2,12 @@
 # (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
 # "tailscale-subnet-router" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
 rules:
-  # tailscale_peer_active comes from the peer-exporter sidecar and lists only peers with
-  # recent traffic, so a device counts while it is using home apps, the LAN or the exit
-  # node. max_over_time bridges short idle gaps; the unless drops a peer as soon as it has
-  # gone direct, so the 5m hold means 5 minutes in use without a direct path.
+  # Both series come from the peer-exporter sidecar. The value is the peer's WireGuard
+  # traffic in bit/s, kept only while the peer is on a relay: the unless drops it as soon
+  # as it has gone direct, and max_over_time bridges short gaps in tailscaled's Active
+  # flag. A device that wakes up over the relay and goes idle before a direct path forms
+  # (iOS does this all the time) never crosses the threshold, so this fires only for
+  # someone actually using the tailnet through the edge's 4mbit egress cap.
   - uid: tailnet-peer-relayed
     title: Tailnet Peer Relayed
     condition: C
@@ -17,9 +19,15 @@ rules:
         datasourceUid: prometheus
         model:
           expr: >-
-            max by (peer, user, os, path) (max_over_time(tailscale_peer_active{path!="direct"}[2m]))
-            unless on (peer)
-            max by (peer) (max_over_time(tailscale_peer_active{path="direct"}[2m]))
+            8 * sum by (peer, user, os) (
+              rate(tailscale_peer_rx_bytes_total[5m]) + rate(tailscale_peer_tx_bytes_total[5m])
+            )
+            and on (peer)
+            (
+              max by (peer) (max_over_time(tailscale_peer_active{path!="direct"}[2m]))
+              unless on (peer)
+              max by (peer) (max_over_time(tailscale_peer_active{path="direct"}[2m]))
+            )
           refId: A
       - refId: B
         relativeTimeRange:
@@ -43,13 +51,14 @@ rules:
           conditions:
             - evaluator:
                 params:
-                  - 0
+                  - 200000
                 type: gt
     noDataState: OK
     execErrState: OK
     for: 5m
     annotations:
-      summary: '{{ $labels.peer }} ({{ $labels.user }}, {{ $labels.os }}) has used the tailnet for 5 minutes without a direct connection'
-      description: '{{ $labels.peer }} is reaching the subnet router through {{ $labels.path }}, not a direct WireGuard path, so every byte crosses the AWS edge and its 4mbit egress cap. Usually an outdated client app or a network that blocks UDP. Run tailscale ping {{ $labels.peer }} from a tailnet host to confirm, then update or restart the client; see docs/tailnet-vpn.md.'
+      summary: '{{ $labels.peer }} ({{ $labels.user }}, {{ $labels.os }}) has been using the tailnet through the relay for 5 minutes'
+      description: '{{ $labels.peer }} is moving {{ humanize $values.B.Value }}bit/s through the AWS edge relay instead of a direct WireGuard path, so it is capped at about 2 Mbit/s. Run tailscale ping {{ $labels.peer }} from the subnet router; docs/tailnet-vpn.md has the next steps.'
     labels:
       severity: warning
+      notify: phone

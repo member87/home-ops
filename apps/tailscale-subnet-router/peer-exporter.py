@@ -4,6 +4,10 @@ Reads tailscaled's LocalAPI status over the shared unix socket on every scrape a
 exports one series per active peer with the path in use: direct (WireGuard peer to
 peer), derp (relayed through Headscale's embedded DERP on the AWS edge) or peer_relay.
 A peer stuck on derp sends every byte through the edge and its 4mbit egress cap.
+
+It also exports each peer's WireGuard byte counters, without the path label so a path
+change does not split the counter, which tells a relayed peer that is actually moving
+data apart from one that only woke up briefly over the relay.
 """
 
 import http.client
@@ -57,28 +61,37 @@ def path_of(peer):
 def render(st):
     observer = st.get("Self", {}).get("HostName", "")
     users = st.get("User") or {}
+    active = []
+    traffic = []
+    for peer in (st.get("Peer") or {}).values():
+        # Headscale makes DNS names unique; HostName is often just "localhost" on iOS.
+        name = (peer.get("DNSName") or "").split(".")[0] or peer.get("HostName", "")
+        user = users.get(str(peer.get("UserID")), {})
+        base = (
+            ("observer", observer),
+            ("peer", name),
+            ("user", (user.get("DisplayName") or user.get("LoginName") or "").strip()),
+            ("os", peer.get("OS", "")),
+        )
+        labels = ",".join(f'{key}="{label(value)}"' for key, value in base)
+        if peer.get("Active"):
+            active.append(f'tailscale_peer_active{{{labels},path="{path_of(peer)}"}} 1')
+        # Counters reset when tailscaled restarts or the peer gets a new node key; rate()
+        # handles both.
+        if peer.get("RxBytes") or peer.get("TxBytes"):
+            traffic.append((labels, int(peer.get("RxBytes") or 0), int(peer.get("TxBytes") or 0)))
     lines = [
         "# HELP tailscale_peer_active A peer this node exchanged traffic with recently "
         "(tailscaled's Active flag), by path: direct, derp or peer_relay.",
         "# TYPE tailscale_peer_active gauge",
+        *active,
+        "# HELP tailscale_peer_rx_bytes_total WireGuard bytes received from the peer.",
+        "# TYPE tailscale_peer_rx_bytes_total counter",
+        *(f"tailscale_peer_rx_bytes_total{{{labels}}} {rx}" for labels, rx, _ in traffic),
+        "# HELP tailscale_peer_tx_bytes_total WireGuard bytes sent to the peer.",
+        "# TYPE tailscale_peer_tx_bytes_total counter",
+        *(f"tailscale_peer_tx_bytes_total{{{labels}}} {tx}" for labels, _, tx in traffic),
     ]
-    for peer in (st.get("Peer") or {}).values():
-        if not peer.get("Active"):
-            continue
-        # Headscale makes DNS names unique; HostName is often just "localhost" on iOS.
-        name = (peer.get("DNSName") or "").split(".")[0] or peer.get("HostName", "")
-        user = users.get(str(peer.get("UserID")), {})
-        labels = ",".join(
-            f'{key}="{label(value)}"'
-            for key, value in (
-                ("observer", observer),
-                ("peer", name),
-                ("user", (user.get("DisplayName") or user.get("LoginName") or "").strip()),
-                ("os", peer.get("OS", "")),
-                ("path", path_of(peer)),
-            )
-        )
-        lines.append(f"tailscale_peer_active{{{labels}}} 1")
     return "\n".join(lines) + "\n"
 
 

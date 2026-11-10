@@ -368,6 +368,7 @@ data:
               sealed_secrets_controller_unseal_errors_total|\
               sealed_secrets_controller_unseal_requests_total|\
               tailscale_peer_active|\
+              tailscale_peer_(rx|tx)_bytes_total|\
               target_info|\
               traefik_config_last_reload_success|\
               traefik_config_reloads_total|\

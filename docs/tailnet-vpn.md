@@ -108,8 +108,14 @@ Verify both paths with `tailscale ping 100.64.0.2` and
   data-transfer allowance.
 - Devices that refuse direct paths should stay off the VPN or be updated;
   on-LAN devices do not need the VPN at home at all.
-- Alert `tailnet-peer-relayed` (warning, Discord) fires when a device has talked
-  to the subnet router for 5 minutes without a direct path. The `peer-exporter`
-  sidecar in `apps/tailscale-subnet-router` reads tailscaled's status and exports
-  `tailscale_peer_active{path="direct|derp|peer_relay"}`. It sees only traffic to
-  the subnet router (home apps, LAN, exit node), not DNS-only use or device-to-device.
+- Alert `tailnet-peer-relayed` (warning, Discord and Gotify via `notify: phone`)
+  fires when a device has moved more than 200 kbit/s through the relay for 5
+  minutes. The `peer-exporter` sidecar in `apps/tailscale-subnet-router` reads
+  tailscaled's status and exports `tailscale_peer_active{path="direct|derp|peer_relay"}`
+  plus `tailscale_peer_rx_bytes_total`/`tailscale_peer_tx_bytes_total`. The traffic
+  threshold keeps out devices that wake over the relay and go idle before a direct
+  path forms. It sees only traffic to the subnet router (home apps, LAN, exit node),
+  not DNS-only use or device-to-device.
+- Alert `edge-egress-at-cap` (warning, Discord) fires when the edge's egress has
+  averaged more than 2.5 Mbit/s of its 4 Mbit/s cap for 5 minutes, i.e. everything
+  through it is being throttled.

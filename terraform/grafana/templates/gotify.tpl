@@ -4,9 +4,9 @@
   discord.links from discord.tpl.
 
   - message: markdown (client::display), each alert with its panel screenshot inline.
-  - priority: 10 firing, 4 resolved. Only severity=critical reaches this contact point (see
-    the policy in alerting.tf); allow the app's "High priority" channel to override Do Not
-    Disturb so they ring at night.
+  - priority: 10 for firing critical, 5 for any other firing alert (warnings labelled
+    notify=phone, see the policy in alerting.tf), 4 resolved. Allow the app's "High
+    priority" channel to override Do Not Disturb so critical alerts ring at night.
   - client::notification: tapping opens the rule; the first screenshot is the expanded
     notification's big picture.
 */ -}}
@@ -39,7 +39,7 @@ _{{ if eq .Status "firing" }}firing since {{ .StartsAt.UTC.Format "Mon 2 Jan 15:
 {{- range .Alerts.Firing }}{{ if and .ImageURL (eq $image "") }}{{ $image = .ImageURL }}{{ end }}{{ end -}}
 {{- range .Alerts.Resolved }}{{ if and .ImageURL (eq $image "") }}{{ $image = .ImageURL }}{{ end }}{{ end -}}
 {{- $priority := 4 -}}
-{{- if eq .Status "firing" }}{{ $priority = 10 }}{{ end -}}
+{{- if eq .Status "firing" }}{{ $priority = 5 }}{{ if eq .CommonLabels.severity "critical" }}{{ $priority = 10 }}{{ end }}{{ end -}}
 {{- $click := coll.Dict "url" (index .Alerts 0).GeneratorURL -}}
 {{- $notification := coll.Dict "click" $click -}}
 {{- if $image }}{{ $notification = coll.Dict "click" $click "bigImageUrl" $image }}{{ end -}}

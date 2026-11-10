@@ -92,12 +92,15 @@ spec:
                   drop: ["ALL"]
                 seccompProfile:
                   type: RuntimeDefault
+              # The cp to NFS is charged for the page cache it dirties, which stays unreclaimable
+              # until written back to the NAS: the limit must exceed the snapshot (~96MiB in
+              # 2026-11; 64Mi OOM-killed cp). Raise it if the etcd database grows past ~200MiB.
               resources:
                 requests:
                   cpu: 10m
                   memory: 16Mi
                 limits:
-                  memory: 64Mi
+                  memory: 256Mi
               volumeMounts:
                 - name: work
                   mountPath: /work

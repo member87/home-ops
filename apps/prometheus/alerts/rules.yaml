@@ -1,0 +1,55 @@
+# Grafana alert rules for prometheus, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "prometheus" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  # Most rules read noDataState OK, so a dead exporter silences them instead of firing.
+  # Pod discovery keeps scraping finished Job pods (immich-backup) until they are deleted;
+  # those report up == 0 and are dropped here.
+  - uid: scrape-target-down
+    title: Scrape Target Down
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            max by (job, instance, kubernetes_namespace, kubernetes_pod_name) (up == 0)
+            unless on(kubernetes_namespace, kubernetes_pod_name)
+            label_replace(label_replace(kube_pod_status_phase{phase=~"Succeeded|Failed"} == 1,
+            "kubernetes_namespace", "$1", "namespace", "(.*)"), "kubernetes_pod_name", "$1", "pod", "(.*)")
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: eq
+    noDataState: OK
+    execErrState: OK
+    for: 15m
+    annotations:
+      summary: Prometheus cannot scrape {{ $labels.job }} at {{ $labels.instance }}
+      description: Scrape job {{ $labels.job }} has failed against {{ $labels.instance }} {{ $labels.kubernetes_namespace }}/{{ $labels.kubernetes_pod_name }} for 15 minutes, so its metrics, and any alert reading them, have no data. Check the target on the Prometheus targets page and the pod's logs.
+    labels:
+      severity: warning

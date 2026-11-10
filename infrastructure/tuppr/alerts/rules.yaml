@@ -1,0 +1,103 @@
+# Grafana alert rules for tuppr, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "tuppr" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+#
+# tuppr_*_upgrade_phase has one series per phase per upgrade, 1 for the current phase and 0
+# for the rest.
+rules:
+  - uid: tuppr-upgrade-failed
+    title: Tuppr Upgrade Failed
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            label_replace(max by (name) (tuppr_talos_upgrade_phase{phase="Failed"}), "upgrade", "TalosUpgrade", "", "")
+            or label_replace(max by (name) (tuppr_kubernetes_upgrade_phase{phase="Failed"}), "upgrade", "KubernetesUpgrade", "", "")
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 0s
+    annotations:
+      summary: '{{ $labels.upgrade }} {{ $labels.name }} failed'
+      description: tuppr marked {{ $labels.upgrade }} {{ $labels.name }} Failed, so the remaining nodes are not being upgraded. Run kubectl describe talosupgrade cluster (or kubernetesupgrade kubernetes) and check the tuppr logs in system-upgrade. A drain longer than 35m fails the node without rebooting it.
+    labels:
+      severity: critical
+
+  # A three-node Talos run (drain up to 35m, upgrade, reboot and health gate per node) has
+  # taken up to ~2h. Longer means a gate that can never pass, such as a CEL health check
+  # reading spec, which parks the run in HealthChecking indefinitely.
+  - uid: tuppr-upgrade-stuck
+    title: Tuppr Upgrade Stuck
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            label_replace(max by (name) (tuppr_talos_upgrade_phase{phase!~"Completed|Pending|MaintenanceWindow"}), "upgrade", "TalosUpgrade", "", "")
+            or label_replace(max by (name) (tuppr_kubernetes_upgrade_phase{phase!~"Completed|Pending|MaintenanceWindow"}), "upgrade", "KubernetesUpgrade", "", "")
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 3h
+    annotations:
+      summary: '{{ $labels.upgrade }} {{ $labels.name }} has been running for 3 hours'
+      description: '{{ $labels.upgrade }} {{ $labels.name }} has been in an active phase (draining, upgrading, rebooting or health checking) for 3 hours. Run kubectl describe talosupgrade cluster to see the phase and which gate is waiting (every node Ready, every attached Longhorn volume healthy), and check for a PDB refusing a drain.'
+    labels:
+      severity: warning

@@ -1,0 +1,51 @@
+# Grafana alert rules for pihole, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "pihole" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+# alerts/ is not part of the chart, so editing it needs no Chart.yaml bump.
+rules:
+  # pihole_status is 1 while blocking is enabled. The 30m hold lets "disable for a few
+  # minutes" from the UI expire on its own.
+  - uid: pihole-blocking-disabled
+    title: Pi-hole Blocking Disabled
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: min by (kubernetes_pod_name) (pihole_status)
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 1
+                type: lt
+    noDataState: OK
+    execErrState: OK
+    for: 30m
+    annotations:
+      summary: Pi-hole {{ $labels.kubernetes_pod_name }} is not blocking
+      description: Pi-hole replica {{ $labels.kubernetes_pod_name }} has had blocking disabled for 30 minutes, so LAN clients answered by it get ads and trackers. Re-enable blocking in the Pi-hole UI, or restart the pod.
+    labels:
+      severity: warning

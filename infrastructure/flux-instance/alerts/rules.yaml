@@ -1,0 +1,55 @@
+# Grafana alert rules for flux-instance, applied by the grafana Terrakube workspace
+# (terraform/grafana/alerting.tf). Every alerts/*.yaml here joins one rule group named
+# "flux-instance" in the Alerts folder; the rule fields are Grafana's file-provisioning format.
+rules:
+  # flux_resource_info comes from the Flux Operator. DependencyNotReady is left out so only
+  # the failing resource alerts, not everything that depends on it. tuppr-talos health-checks
+  # the TalosUpgrade and fails that check while an upgrade runs; Tuppr Upgrade Stuck covers it.
+  - uid: flux-resource-not-ready
+    title: Flux Resource Not Ready
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: >-
+            max by (kind, exported_namespace, name) (
+            flux_resource_info{ready="False", suspended="False", reason!="DependencyNotReady"}
+            unless on(kind, name, reason) flux_resource_info{kind="Kustomization", name="tuppr-talos", reason="HealthCheckFailed"}
+            )
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 15m
+    annotations:
+      summary: Flux {{ $labels.kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} is not Ready
+      description: Flux {{ $labels.kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} has been failing for 15 minutes, so changes to it are not deploying. Kustomizations have no rollback and are fixed forward. Run flux get all -A and flux events for the reason.
+    labels:
+      severity: warning

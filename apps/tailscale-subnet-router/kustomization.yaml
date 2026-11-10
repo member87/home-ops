@@ -6,3 +6,9 @@ resources:
   - deployment.yaml
   - sealedsecret.yaml
   - rbac.yaml
+# Generated so a peer-exporter.py change gets a new name and rolls the Deployment.
+configMapGenerator:
+  - name: peer-exporter
+    namespace: tailscale-subnet-router
+    files:
+      - peer-exporter.py

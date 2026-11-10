@@ -108,3 +108,8 @@ Verify both paths with `tailscale ping 100.64.0.2` and
   data-transfer allowance.
 - Devices that refuse direct paths should stay off the VPN or be updated;
   on-LAN devices do not need the VPN at home at all.
+- Alert `tailnet-peer-relayed` (warning, Discord) fires when a device has talked
+  to the subnet router for 5 minutes without a direct path. The `peer-exporter`
+  sidecar in `apps/tailscale-subnet-router` reads tailscaled's status and exports
+  `tailscale_peer_active{path="direct|derp|peer_relay"}`. It sees only traffic to
+  the subnet router (home apps, LAN, exit node), not DNS-only use or device-to-device.

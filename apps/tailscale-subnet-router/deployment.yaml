@@ -16,6 +16,11 @@ spec:
     metadata:
       labels:
         app: tailscale-subnet-router
+      # peer-exporter: how each active peer reaches this node (direct or relayed).
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9186"
+        prometheus.io/path: /metrics
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -101,6 +106,59 @@ spec:
               mountPath: /var/lib/tailscale
             - name: dev-net-tun
               mountPath: /dev/net/tun
+            # containerboot puts tailscaled's socket in /tmp; peer-exporter reads it.
+            - name: tailscaled-socket
+              mountPath: /tmp
+        # Exports tailscale_peer_active{path=direct|derp|peer_relay} for the relayed-peer
+        # alert in alerts/rules.yaml. hostNetwork: 9186 is bound on the node.
+        - name: peer-exporter
+          image: python:3.15.2-alpine3.24
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -u
+            - -B
+            - /scripts/peer-exporter.py
+          ports:
+            - containerPort: 9186
+              name: metrics
+              protocol: TCP
+          env:
+            - name: TAILSCALED_SOCKET
+              value: /tmp/tailscaled.sock
+            - name: PORT
+              value: "9186"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 5m
+              memory: 24Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: tailscaled-socket
+              mountPath: /tmp
       volumes:
         - name: tailscale-state
           emptyDir: {}
@@ -108,6 +166,11 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
+        - name: tailscaled-socket
+          emptyDir: {}
+        - name: scripts
+          configMap:
+            name: peer-exporter
 ---
 apiVersion: v1
 kind: ServiceAccount

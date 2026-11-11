@@ -1,0 +1,84 @@
+---
+# Shared Selenium Grid (standalone Chrome) for in-cluster clients. No UI or
+# ingress: clients use http://selenium.selenium.svc.cluster.local:4444/wd/hub.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium
+  namespace: selenium
+  labels:
+    app: selenium
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selenium
+  template:
+    metadata:
+      labels:
+        app: selenium
+    spec:
+      # Each Chrome session costs several hundred MiB; keep it off talos-t8o-8d5 (8GiB, overcommitted).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - talos-t8o-8d5
+      containers:
+        - name: selenium
+          image: selenium/standalone-chrome:4.52.0-20261101
+          ports:
+            - containerPort: 4444
+              name: http
+              protocol: TCP
+          env:
+            # Concurrent browser sessions shared by all clients; further requests queue.
+            - name: SE_NODE_MAX_SESSIONS
+              value: "2"
+            - name: SE_NODE_OVERRIDE_MAX_SESSIONS
+              value: "true"
+            # Free a session a crashed client never closed.
+            - name: SE_NODE_SESSION_TIMEOUT
+              value: "300"
+            # Nobody watches the browsers; skip the VNC/noVNC servers.
+            - name: SE_START_VNC
+              value: "false"
+            - name: SE_SCREEN_WIDTH
+              value: "1920"
+            - name: SE_SCREEN_HEIGHT
+              value: "1080"
+          volumeMounts:
+            # Chrome crashes with the default 64MiB /dev/shm. tmpfs pages count
+            # against the container memory limit.
+            - name: dshm
+              mountPath: /dev/shm
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 4444
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 4444
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi

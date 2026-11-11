@@ -1,3 +1,8 @@
+server:
+  # The config is a ConfigMap from Git; the web UI editor (unauthenticated, no ForwardAuth on
+  # glance.lab) would only offer edits that cannot persist.
+  allow-editing: false
+
 pages:
   - name: Home
 
@@ -19,110 +24,34 @@ pages:
         widgets:
           - type: monitor
             cache: 1m
-            title: Services
+            title: Home
             sites:
-              - title: PiHole
-                url: https://pihole.lab.jackhumes.com/admin
-                icon: sh:pi-hole
-                alt-status-codes:
-                  - 401
-              - title: Pocket ID
-                url: https://auth.jackhumes.com
-                icon: sh:pocket-id
-              - title: Gotify
-                url: https://gotify.jackhumes.com
-                icon: sh:gotify
-              - title: LLDAP
-                url: https://lldap.lab.jackhumes.com
-                icon: sh:lldap
-                alt-status-codes:
-                  - 401
-              - title: Glance
-                url: https://glance.lab.jackhumes.com
-                icon: sh:glance
               - title: Home Assistant
                 url: https://home.lab.jackhumes.com
                 icon: sh:home-assistant
-              - title: IP Checker
-                url: https://ip-checker.lab.jackhumes.com
-                icon: sh:speedtest
-              - title: Podinfo
-                url: https://podinfo.lab.jackhumes.com
-                icon: sh:kubernetes
-              - title: Docs
-                url: https://docs.lab.jackhumes.com
-                icon: sh:book-open
-              - title: K9s
-                url: https://k9s.lab.jackhumes.com
-                icon: sh:kubernetes
-                alt-status-codes:
-                  - 401
-              - title: Headscale
-                url: https://headscale.lab.jackhumes.com/health
-                icon: sh:headscale
-              - title: Headplane
-                url: https://headplane.lab.jackhumes.com
-                icon: sh:headscale
-              - title: Exit Nodes
-                url: https://exit-nodes.lab.jackhumes.com
-                icon: sh:tailscale
-                alt-status-codes:
-                  - 401
               - title: NAS
                 url: https://nas.lab.jackhumes.com
                 icon: sh:ugreen-nas
-              - title: Prometheus
-                url: https://prometheus.lab.jackhumes.com
-                icon: sh:prometheus
-                alt-status-codes:
-                  - 401
-              - title: Jevil
-                url: https://jevil.lab.jackhumes.com
-                icon: https://jevil.lab.jackhumes.com/jevil.svg
-              - title: Grafana
-                url: https://grafana.lab.jackhumes.com
-                icon: sh:grafana
-                alt-status-codes:
-                  - 401
-              - title: Flux
-                url: https://flux.lab.jackhumes.com
-                icon: di:flux-cd
-              # Parked at replicas: 0, replaced by the Flux Web UI - re-enable with the app.
-              # - title: Radar
-              #   url: https://radar.lab.jackhumes.com
-              #   icon: sh:kubernetes
-              #   alt-status-codes:
-              #     - 401
-              - title: Longhorn
-                url: https://longhorn.lab.jackhumes.com
-                icon: sh:rancher-longhorn
-              - title: Terrakube
-                url: https://terrakube.lab.jackhumes.com
-                icon: sh:opentofu
-              - title: Nix Cache
-                url: https://nix-cache.lab.jackhumes.com/jackhumes/nix-cache-info
-                icon: sh:nixos
               - title: Change Detection
                 url: https://changes.lab.jackhumes.com
                 icon: sh:changedetection
-                alt-status-codes:
-                  - 401
-              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
-              # - title: Trek
-              #   url: https://trek.lab.jackhumes.com
-              #   icon: sh:trek
-              - title: Selenium
-                url: https://selenium.lab.jackhumes.com
-                icon: di:selenium
                 alt-status-codes:
                   - 401
               - title: Karakeep
                 url: https://karakeep.lab.jackhumes.com
                 check-url: https://karakeep.lab.jackhumes.com/api/health
                 icon: sh:karakeep
+              - title: Gotify
+                url: https://gotify.jackhumes.com
+                icon: sh:gotify
+              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
+              # - title: Trek
+              #   url: https://trek.lab.jackhumes.com
+              #   icon: sh:trek
+
           - type: monitor
             cache: 1m
-            title: Media Stack
+            title: Watch & Read
             sites:
               - title: Jellyfin
                 url: https://jellyfin.lab.jackhumes.com
@@ -139,6 +68,15 @@ pages:
               - title: Shelfmark
                 url: https://shelfmark.lab.jackhumes.com
                 icon: sh:bookstack
+              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
+              # - title: EPG (IPTV Guide)
+              #   url: https://epg.lab.jackhumes.com/guide.xml
+              #   icon: sh:satellite
+
+          - type: monitor
+            cache: 1m
+            title: Downloads
+            sites:
               - title: Sonarr
                 url: https://sonarr.lab.jackhumes.com
                 icon: sh:sonarr
@@ -157,82 +95,21 @@ pages:
               - title: qBittorrent
                 url: https://qbittorrent.lab.jackhumes.com
                 icon: sh:qbittorrent
-              - title: SABnzbd
-                url: https://sabnzbd.lab.jackhumes.com
-                icon: sh:sabnzbd
               - title: Qui (qBittorrent UI)
                 url: https://qui.lab.jackhumes.com
                 icon: sh:qui
-              # Parked at replicas: 0 until the nodes get more RAM - re-enable with the app.
-              # - title: EPG (IPTV Guide)
-              #   url: https://epg.lab.jackhumes.com/guide.xml
-              #   icon: sh:satellite
+              - title: SABnzbd
+                url: https://sabnzbd.lab.jackhumes.com
+                icon: sh:sabnzbd
 
           - type: hacker-news
             limit: 15
             collapse-after: 5
-                
-          - type: videos
-            channels:
-              - UCUyeluBRhGPCW4rPe_UvBZQ # ThePrimeagen
-              - UCXuqSBlHAE6Xw-yeJA0Tunw # Linus Tech Tips  
-              - UCrUL8K81R4VBzm-KOYwrcxQ # Dreams of Code
-              - UCsBjURrPoezykLs9EqgamOA # Fireship
-            collapse-after: 3
-
-
-          - type: group
-            widgets:
-              - type: reddit
-                subreddit: unixporn
-                show-thumbnails: true
-                limit: 10
-                collapse-after: 5
-              - type: reddit
-                subreddit: technology
-                limit: 10
-                collapse-after: 5
-              - type: reddit
-                subreddit: science
-                limit: 10
-                collapse-after: 5
 
       - size: small
         widgets:
           - type: clock
             hour-format: 24h
-
-          - type: repository
-            repository: member87/home-ops
-            pull-requests-limit: 5
-            issues-limit: 3
-            commits-limit: 3
-
-          - type: custom-api
-            title: Exit Nodes
-            cache: 30s
-            url: http://tailscale-exit-node-manager-api.tailscale-exit-node-manager.svc.cluster.local:8080/api/stats
-            template: |
-              <div class="flex flex-column gap-10">
-                <div class="flex justify-between items-center">
-                  <span>Running</span>
-                  <span class="size-h3 {{ if gt (.JSON.Int "running_count") 0 }}color-positive{{ end }}">{{ .JSON.Int "running_count" }} / {{ .JSON.Int "total_countries" }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>VPN slots</span>
-                  <span class="size-h4">{{ .JSON.Int "slots_used" }} / {{ .JSON.Int "slots_total" }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span>Tailnet devices online</span>
-                  <span class="size-h4">{{ .JSON.Int "tailnet_devices_online" }} / {{ .JSON.Int "tailnet_devices_total" }}</span>
-                </div>
-                {{ if gt (.JSON.Int "error_count") 0 }}
-                <div class="flex justify-between items-center">
-                  <span>Errors</span>
-                  <span class="size-h4 color-negative">{{ .JSON.Int "error_count" }}</span>
-                </div>
-                {{ end }}
-              </div>
 
           - type: custom-api
             title: London Transport Status
@@ -275,6 +152,131 @@ pages:
                   </div>
                 </div>
                 {{ end }}
+
+  - name: Lab
+
+    columns:
+      - size: full
+        widgets:
+          - type: monitor
+            cache: 1m
+            title: Network & Access
+            sites:
+              - title: Pi-hole
+                url: https://pihole.lab.jackhumes.com/admin
+                icon: sh:pi-hole
+                alt-status-codes:
+                  - 401
+              - title: Pocket ID
+                url: https://auth.jackhumes.com
+                icon: sh:pocket-id
+              - title: LLDAP
+                url: https://lldap.lab.jackhumes.com
+                icon: sh:lldap-light
+                alt-status-codes:
+                  - 401
+              - title: Headscale
+                url: https://headscale.lab.jackhumes.com/health
+                icon: sh:headscale
+              - title: Headplane
+                url: https://headplane.lab.jackhumes.com
+                icon: sh:headscale
+              - title: Exit Nodes
+                url: https://exit-nodes.lab.jackhumes.com
+                icon: sh:tailscale
+                alt-status-codes:
+                  - 401
+              - title: IP Checker
+                url: https://ip-checker.lab.jackhumes.com
+                icon: sh:speedtest-light
+
+          - type: monitor
+            cache: 1m
+            title: Cluster & Ops
+            sites:
+              - title: Flux
+                url: https://flux.lab.jackhumes.com
+                icon: di:flux-cd
+              - title: Longhorn
+                url: https://longhorn.lab.jackhumes.com
+                icon: sh:rancher-longhorn
+              - title: K9s
+                url: https://k9s.lab.jackhumes.com
+                icon: sh:kubernetes
+                alt-status-codes:
+                  - 401
+              - title: Terrakube
+                url: https://terrakube.lab.jackhumes.com
+                icon: sh:opentofu
+              - title: Jevil
+                url: https://jevil.lab.jackhumes.com
+                icon: https://jevil.lab.jackhumes.com/jevil.svg
+              - title: Nix Cache
+                url: https://nix-cache.lab.jackhumes.com/jackhumes/nix-cache-info
+                icon: sh:nixos
+              - title: Selenium
+                url: https://selenium.lab.jackhumes.com
+                icon: di:selenium
+                alt-status-codes:
+                  - 401
+              - title: Docs
+                url: https://docs.lab.jackhumes.com
+                icon: mdi:book-open-variant
+              # Parked at replicas: 0, replaced by the Flux Web UI - re-enable with the app.
+              # - title: Radar
+              #   url: https://radar.lab.jackhumes.com
+              #   icon: sh:kubernetes
+              #   alt-status-codes:
+              #     - 401
+
+          - type: monitor
+            cache: 1m
+            title: Observability
+            sites:
+              - title: Grafana
+                url: https://grafana.lab.jackhumes.com
+                icon: sh:grafana
+                alt-status-codes:
+                  - 401
+              - title: Prometheus
+                url: https://prometheus.lab.jackhumes.com
+                icon: sh:prometheus
+                alt-status-codes:
+                  - 401
+
+      - size: small
+        widgets:
+          - type: repository
+            repository: member87/home-ops
+            pull-requests-limit: 5
+            issues-limit: 3
+            commits-limit: 3
+
+          - type: custom-api
+            title: Exit Nodes
+            cache: 30s
+            url: http://tailscale-exit-node-manager-api.tailscale-exit-node-manager.svc.cluster.local:8080/api/stats
+            template: |
+              <div class="flex flex-column gap-10">
+                <div class="flex justify-between items-center">
+                  <span>Running</span>
+                  <span class="size-h3 {{ if gt (.JSON.Int "running_count") 0 }}color-positive{{ end }}">{{ .JSON.Int "running_count" }} / {{ .JSON.Int "total_countries" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>VPN slots</span>
+                  <span class="size-h4">{{ .JSON.Int "slots_used" }} / {{ .JSON.Int "slots_total" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>Tailnet devices online</span>
+                  <span class="size-h4">{{ .JSON.Int "tailnet_devices_online" }} / {{ .JSON.Int "tailnet_devices_total" }}</span>
+                </div>
+                {{ if gt (.JSON.Int "error_count") 0 }}
+                <div class="flex justify-between items-center">
+                  <span>Errors</span>
+                  <span class="size-h4 color-negative">{{ .JSON.Int "error_count" }}</span>
+                </div>
+                {{ end }}
+              </div>
 
 theme:
   background-color: 240 15 10

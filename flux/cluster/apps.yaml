@@ -681,6 +681,23 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: selenium
+  namespace: flux-system
+spec:
+  interval: 15m0s
+  retryInterval: 2m0s
+  timeout: 5m0s
+  path: ./apps/selenium
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+    namespace: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: shelfmark
   namespace: flux-system
 spec:

@@ -214,6 +214,12 @@
       "enabled": false
     },
     {
+      "description": "Selenium images are tagged <grid version>-<YYYYMMDD> (4.52.0-20261101). Docker versioning treats the date as a compatibility suffix and never moves it, so a rebuild or a new Grid release would never be offered. The 3-part grid version also keeps the browser-versioned tags (156.0-20261101, 156.0.8078.79-...) out.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["selenium/**"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d{8})$"
+    },
+    {
       "description": "install.yaml/crds.yaml under infrastructure/ are complete upstream manifests vendored whole. Bumping only the image tag leaves probes, RBAC and env vars at the old version - that is how MetalLB 0.16 broke the LoadBalancer (#298). Upgrade by re-vendoring the whole manifest.",
       "matchFileNames": ["infrastructure/**/install.yaml", "infrastructure/**/crds.yaml"],
       "enabled": false

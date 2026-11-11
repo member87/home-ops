@@ -35,9 +35,10 @@ spec:
             # Disable the hide referer feature (not needed with TinyAuth)
             - name: HIDE_REFERER
               value: "false"
-            # Playwright URL for JavaScript rendering (optional, can add later)
-            # - name: PLAYWRIGHT_DRIVER_URL
-            #   value: "ws://playwright-chrome:3000/?stealth=1&--disable-web-security=true"
+            # JavaScript-rendering fetcher: the shared Selenium Grid in apps/selenium.
+            # Pick "WebDriver Chrome/Javascript" as a watch's fetch method to use it.
+            - name: WEBDRIVER_URL
+              value: "http://selenium.selenium.svc.cluster.local:4444/wd/hub"
           volumeMounts:
             - name: data
               mountPath: /datastore

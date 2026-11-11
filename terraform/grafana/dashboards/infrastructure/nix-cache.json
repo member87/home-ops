@@ -184,7 +184,7 @@
       "id": 4,
       "type": "stat",
       "title": "Failed Phase",
-      "description": "Where the last run stopped: setup (store mount), update (flake update), build, push (Attic or the flake.lock push to GitHub) or gc. Empty when it succeeded.",
+      "description": "Where the last run stopped: setup (store mount), update (flake update), build, push (Attic or the flake.lock push to GitHub) or gc. \"none\" when it succeeded.",
       "datasource": {
         "type": "prometheus",
         "uid": "${promDatasource}"
@@ -199,13 +199,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
-          "unit": "none",
-          "noValue": "none"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -236,7 +239,7 @@
             "uid": "${promDatasource}"
           },
           "editorMode": "code",
-          "expr": "max by (phase) (nix_cache_build_failed_phase)",
+          "expr": "max by (phase) (nix_cache_build_failed_phase) or label_replace((max(nix_cache_build_success) == 1) - 1, \"phase\", \"none\", \"\", \"\")",
           "refId": "A",
           "legendFormat": "{{phase}}",
           "instant": true,

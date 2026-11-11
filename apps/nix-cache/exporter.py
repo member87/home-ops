@@ -99,9 +99,13 @@ def collect_cache(m):
 
 
 def collect_build(m):
-    if not os.path.exists(BUILD_STATUS):
+    # Only a missing file means "no run yet". os.path.exists would also answer False for a
+    # file the NAS refuses to show us, hiding every build panel without a word.
+    try:
+        f = open(BUILD_STATUS)
+    except FileNotFoundError:
         return
-    with open(BUILD_STATUS) as f:
+    with f:
         status = json.load(f)
     m.add("nix_cache_build_last_run_timestamp_seconds", "gauge",
           "When the last builder run finished.", status["finished"])

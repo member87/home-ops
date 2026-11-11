@@ -78,6 +78,10 @@ write_status() {
   if [ "$store_mounted" = true ]; then
     read -r size used < <(df -B1 --output=size,used /nix | tail -1) || true
   fi
+  # The exporter reads the status as uid 65534. The NAS can hold a hidden ACL that refuses
+  # that uid while stat still shows 0777 (seen 2026-11: the dashboard's build panels went
+  # blank); a chmod from root replaces the ACL with these mode bits.
+  chmod 0755 /nas || true
   "$JQ" -n \
     --argjson started "$started" --argjson finished "$(date +%s)" \
     --argjson success "$([ "$rc" = 0 ] && echo true || echo false)" \
@@ -90,7 +94,7 @@ write_status() {
       targets: $targets, inputs: $inputs, lock_changed: $lock_changed,
       inputs_updated: $inputs_updated, commit: $commit,
       store: {size_bytes: $store_size, used_bytes: $store_used}}' \
-    >"$STATUS.tmp" && mv "$STATUS.tmp" "$STATUS"
+    >"$STATUS.tmp" && chmod 0644 "$STATUS.tmp" && mv "$STATUS.tmp" "$STATUS"
 }
 CLEAN_MARKER=/mnt/store/.stopped-cleanly
 on_exit() {

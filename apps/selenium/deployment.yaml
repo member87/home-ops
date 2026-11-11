@@ -1,6 +1,7 @@
 ---
-# Shared Selenium Grid (standalone Chrome) for in-cluster clients. No UI or
-# ingress: clients use http://selenium.selenium.svc.cluster.local:4444/wd/hub.
+# Shared Selenium Grid (standalone Chrome) for in-cluster clients at
+# http://selenium.selenium.svc.cluster.local:4444/wd/hub. Only the Grid console is
+# exposed (selenium.lab.jackhumes.com, ingressroute.yaml).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

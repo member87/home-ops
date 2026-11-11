@@ -142,6 +142,8 @@ remove such keys by hand.
 
 External access for `<app>.jackhumes.com` is routed through the AWS Lightsail edge (`18.171.34.111`, built by `terraform/aws-edge`) over FRP. Full chain: client -> Caddy (TLS) -> frps remote port -> frpc tunnel -> Traefik -> app IngressRoute.
 
+Its NixOS replacement (OVH VPS, not live yet) is `nixosConfigurations.edge` in the root `flake.nix`, with modules in `nixos/edge/`. It reuses `terraform/aws-edge/config/Caddyfile`, so the FRP/Caddy/DNS agreement still holds. `just edge-install <user@host>` installs it with nixos-anywhere (wipes the disk), placing the sops-encrypted host key that decrypts `nixos/edge/secrets.yaml` and a one-off Headscale preauth key. Once installed, comin on the box pulls `main` and switches to the new configuration, so a merge that touches the flake deploys the edge.
+
 Three places must agree when exposing a new public service (the cluster side alone is not enough):
 1. `apps/frp-client/config/frpc.toml` — add a `[[proxies]]` TCP entry whose `remotePort` forwards to Traefik `:80`.
 2. `terraform/aws-edge/config/Caddyfile` — add the site block reverse-proxying the host to `localhost:<remotePort>`. Terrakube deploys and validates the edge config over SSH after merge; never edit the live file as the source of truth.

@@ -139,6 +139,13 @@ update-vps reboot="no":
         echo "==> Skipped reboot (run 'just update-vps yes' to reboot)."
     fi
 
+# --- NixOS edge (nixos/edge, replacing the Lightsail box) ---
+
+# Usage: just edge-install ubuntu@203.0.113.10   (add --yes to skip the confirmation)
+# Install NixOS on a fresh VPS as the edge with nixos-anywhere. WIPES the target's disk.
+edge-install target *ARGS:
+    ./scripts/edge-install.sh {{ARGS}} {{target}}
+
 # --- Help ---
 
 # List all available commands

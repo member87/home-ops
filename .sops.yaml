@@ -11,3 +11,14 @@ creation_rules:
     encrypted_regex: "^(ca|crt|key)$"
     mac_only_encrypted: true
     age: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
+
+  # Edge NixOS host SSH key (nixos/edge). Only the operator can decrypt it;
+  # scripts/edge-install.sh places it on the box, where it also serves as the
+  # host's sops-nix age identity.
+  - path_regex: nixos/edge/ssh_host_ed25519_key\.sops\.yaml$
+    age: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj
+
+  # Edge runtime secrets, readable by the operator and by the edge host (the age
+  # recipient derived from nixos/edge/ssh_host_ed25519_key.pub with ssh-to-age).
+  - path_regex: nixos/edge/secrets\.yaml$
+    age: age1wnfn99x23neaczc4a6vpfppga4clsy8c9hdn6yr8y6wq2dfsvgaqtgv3dj,age16kptl2ay5csdetehrrhdktgur7g97529cpx2zm0w2awq3x2rf4qqk6nkzq

@@ -33,7 +33,7 @@ spec:
             # uid 0 like store: talosctl writes the snapshot 0600, and store, root without
             # CAP_DAC_OVERRIDE, can read it only as its owner. No capabilities either way.
             - name: snapshot
-              image: ghcr.io/siderolabs/talosctl:v1.14.5
+              image: ghcr.io/siderolabs/talosctl:v1.14.6
               imagePullPolicy: IfNotPresent
               args:
                 - --talosconfig=/var/run/secrets/talos.dev/config

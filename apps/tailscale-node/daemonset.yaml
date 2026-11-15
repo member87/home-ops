@@ -1,6 +1,6 @@
 ---
 # A Tailscale client on every node, so pods anywhere can reach tailnet addresses
-# (100.64.0.0/10), for example the Terrakube executor deploying to the edge at 100.64.0.21.
+# (100.64.0.0/10), for example the edge's tailnet address.
 # Pods use their node's routing table, and only a host-network tailscaled installs the
 # tailscale0 routes (routing table 52); before this, t8o had none and its pods could not
 # reach the tailnet at all.

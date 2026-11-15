@@ -114,32 +114,19 @@ talos-reencrypt:
     sops updatekeys --yes --input-type yaml --output-type yaml talos/talosconfig
     echo "==> Done."
 
-# --- AWS Lightsail edge (FRP + Caddy, built by terraform/aws-edge) ---
+# --- Edge (NixOS on OVH, nixos/edge; comin deploys main, updates are flake.lock PRs) ---
 
-VPS_SSH := "ubuntu@18.171.34.111"
-VPS_COMPOSE_DIR := "/opt/frp-tunnel"
-
-# Update the edge: OS packages + Docker services, then optionally reboot.
-# Usage: just update-vps          (update only)
-#        just update-vps yes      (update and reboot)
-update-vps reboot="no":
+# Usage: just edge-ssh                     (interactive)
+#        just edge-ssh systemctl --failed  (one command)
+# SSH to the edge as root over the tailnet, through the subnet router pod: no tailnet needed here
+edge-ssh *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "==> Updating VPS OS packages (apt)..."
-    ssh -o BatchMode=yes {{VPS_SSH}} 'sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade && sudo apt-get -y autoremove'
-    echo "==> Updating Docker services (frp-tunnel compose)..."
-    ssh -o BatchMode=yes {{VPS_SSH}} 'cd {{VPS_COMPOSE_DIR}} && sudo docker compose pull && sudo docker compose up -d'
-    echo "==> Service status:"
-    ssh -o BatchMode=yes {{VPS_SSH}} 'cd {{VPS_COMPOSE_DIR}} && sudo docker compose ps'
-    if [ "{{reboot}}" = "yes" ]; then
-        echo "==> Rebooting VPS..."
-        ssh -o BatchMode=yes {{VPS_SSH}} 'sudo reboot' || true
-        echo "==> Reboot triggered; reconnect in ~1 min (ssh {{VPS_SSH}})."
-    else
-        echo "==> Skipped reboot (run 'just update-vps yes' to reboot)."
-    fi
-
-# --- NixOS edge (nixos/edge, replacing the Lightsail box) ---
+    ip=$(kubectl -n headscale exec deploy/headscale -- headscale nodes list -o json \
+      | jq -r '[.[] | select(.given_name == "edge" and .online)][0].ip_addresses[] | select(startswith("100."))')
+    [ -n "$ip" ] || { echo "edge is not online in Headscale" >&2; exit 1; }
+    exec ssh -o "ProxyCommand=kubectl -n tailscale-subnet-router exec -i deploy/tailscale-subnet-router -c tailscale -- nc %h %p" \
+      {{ if ARGS == "" { "-t" } else { "" } }} "root@$ip" {{ARGS}}
 
 # Usage: just edge-install ubuntu@203.0.113.10   (add --yes to skip the confirmation)
 # Install NixOS on a fresh VPS as the edge with nixos-anywhere. WIPES the target's disk.

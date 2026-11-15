@@ -7,7 +7,7 @@
 let
   # The Caddyfile Jevil's FRP/Caddy/DNS lint reads. Validated at build time on a copy whose
   # log files point into the build sandbox, since /var/log/caddy does not exist there.
-  caddyfileSource = ../../terraform/aws-edge/config/Caddyfile;
+  caddyfileSource = ./Caddyfile;
   caddyfile = pkgs.runCommand "edge-caddyfile" { nativeBuildInputs = [ pkgs.caddy ]; } ''
     export HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR
     mkdir -p "$TMPDIR/log"

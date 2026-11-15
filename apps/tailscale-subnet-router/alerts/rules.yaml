@@ -7,7 +7,7 @@ rules:
   # as it has gone direct, and max_over_time bridges short gaps in tailscaled's Active
   # flag. A device that wakes up over the relay and goes idle before a direct path forms
   # (iOS does this all the time) never crosses the threshold, so this fires only for
-  # someone actually using the tailnet through the edge's 4mbit egress cap.
+  # someone actually using the tailnet through the edge relay.
   - uid: tailnet-peer-relayed
     title: Tailnet Peer Relayed
     condition: C
@@ -58,7 +58,7 @@ rules:
     for: 5m
     annotations:
       summary: '{{ $labels.peer }} ({{ $labels.user }}, {{ $labels.os }}) has been using the tailnet through the relay for 5 minutes'
-      description: '{{ $labels.peer }} is moving {{ humanize $values.B.Value }}bit/s through the AWS edge relay instead of a direct WireGuard path, so it is capped at about 2 Mbit/s. Run tailscale ping {{ $labels.peer }} from the subnet router; docs/tailnet-vpn.md has the next steps.'
+      description: '{{ $labels.peer }} is moving {{ humanize $values.B.Value }}bit/s through the edge relay (DERP, over the FRP tunnel and out of the edge twice) instead of a direct WireGuard path. Run tailscale ping {{ $labels.peer }} from the subnet router; docs/tailnet-vpn.md has the next steps.'
     labels:
       severity: warning
       notify: phone

@@ -2,8 +2,8 @@
 
 Reads tailscaled's LocalAPI status over the shared unix socket on every scrape and
 exports one series per active peer with the path in use: direct (WireGuard peer to
-peer), derp (relayed through Headscale's embedded DERP on the AWS edge) or peer_relay.
-A peer stuck on derp sends every byte through the edge and its 4mbit egress cap.
+peer), derp (relayed through Headscale's embedded DERP behind the edge) or peer_relay.
+A peer stuck on derp sends every byte through the edge, out of it twice.
 
 It also exports each peer's WireGuard byte counters, without the path label so a path
 change does not split the counter, which tells a relayed peer that is actually moving

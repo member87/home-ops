@@ -36,27 +36,25 @@ flowchart LR
   manifest stays applied and is fixed forward. Only the six HelmReleases keep
   Helm's remediation/rollback behaviour.
 
-## Edge VM side (Terraform)
+## Edge VPS side (NixOS + comin)
 
 ```mermaid
 flowchart LR
-    TF["terraform/aws-edge"] -->|"tofu apply"| LS["Cloud VPS instance"]
-    TF --> FW["Firewall rules<br/>(22, 80, 443 tcp / 3478 udp)"]
-    TF --> SIP["Static public IP"]
-    TF --> KP["Generated deployment + host SSH keys"]
-    LS -->|"user_data bootstrap"| BOOT["Docker + swap + Tailscale"]
-    TF -->|"validated SSH deployment"| SVC["docker compose:<br/>FRP + TLS + STUN + metrics"]
-    SVC --> CAP["Egress cap (systemd, 4mbit)"]
+    NX["flake.nix + nixos/edge/"] -->|"merge to main"| COMIN["comin on the edge<br/>(polls main, switches)"]
+    COMIN --> SYS["NixOS system on OVH VPS"]
+    SYS --> FW["NixOS firewall<br/>(80, 443, 7000 tcp / 3478, 41641 udp)"]
+    SYS --> SVC["Caddy (TLS) + frps + coturn STUN<br/>+ Tailscale + metrics"]
+    SOPS["nixos/edge/secrets.yaml (sops-nix)"] --> SYS
+    INST["just edge-install (nixos-anywhere)"] -->|"fresh install"| SYS
 ```
 
-- `user_data` bootstraps a replacement VM from the same files used for live
-  configuration, but stays ignored by lifecycle to prevent accidental replacement.
-- `terraform_data.edge_config` hashes, validates, and deploys service files over
-  SSH whenever they change, then recreates the Compose services.
-- Terraform-generated SSH private keys remain in sensitive Terrakube state;
-  additional unlabeled operator public keys are versioned configuration.
-- Other secrets are sensitive Terrakube workspace variables, never committed.
-- DNS records are the one manual island (managed DNS console).
+- comin never reboots; alert `edge-needs-reboot` fires after 6h of
+  `comin_need_to_reboot`, and the reboot is done by hand.
+- Renovate keeps `flake.lock` current weekly (never automerged); Jevil waits
+  for comin to report the merge commit, then runs the edge health checks.
+- Secrets are sops-encrypted in `nixos/edge/`, never committed in plaintext.
+- DNS records (`terraform/aws-edge-dns`) have no Terrakube workspace; they
+  are applied from the workstation through the Cloudflare API.
 
 ## Change flow
 

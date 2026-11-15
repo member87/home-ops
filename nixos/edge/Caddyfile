@@ -6,8 +6,11 @@ auth.jackhumes.com {
 	}
 }
 
-# Headscale control plane + embedded DERP - public access
+# Headscale control plane + embedded DERP - public access. The REST API and its Swagger UI
+# are not: the CLI runs in the pod and the exit-node manager uses the in-cluster Service.
 headscale.jackhumes.com {
+	@admin path /api/* /swagger*
+	respond @admin 404
 	reverse_proxy localhost:8082
 	log {
 		output file /var/log/caddy/headscale.log

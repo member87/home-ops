@@ -1,7 +1,7 @@
 # Home-Ops
 
 A GitOps-managed home platform built around a three-node Talos Kubernetes cluster,
-a private `lab.jackhumes.com` service domain, and a small AWS edge. This directory
+a private `lab.jackhumes.com` service domain, and a small NixOS edge VPS on OVH. This directory
 explains the architecture; the manifests and Terraform in the repository are the
 operational source of truth.
 
@@ -15,7 +15,7 @@ operational source of truth.
 | Home services | Home Assistant, MQTT, Pi-hole, Immich | Home automation, DNS, and personal services |
 | Media automation | Jellyfin, *arr services, qBittorrent, SABnzbd | Media serving, discovery, and download automation |
 | Observability | Prometheus, Grafana, Loki, Alloy, CrowdSec | Metrics, logs, dashboards, and request protection |
-| Public edge | AWS Lightsail, Caddy, FRP | TLS and tightly scoped public access without opening home ports |
+| Public edge | NixOS on OVH, Caddy, FRP, comin | TLS and tightly scoped public access without opening home ports |
 
 ## Architecture at a glance
 
@@ -31,7 +31,7 @@ flowchart LR
 
     GIT --> TK["Terrakube"]
     TK --> TF["OpenTofu"]
-    TF --> EDGE["AWS edge: Caddy + FRP"]
+    GIT -->|"comin polls main"| EDGE["NixOS edge (OVH): Caddy + FRP"]
     EDGE <-->|"outbound tunnel"| K8S
 
     LAN["LAN and Tailnet clients"] --> K8S
@@ -42,7 +42,7 @@ flowchart LR
 
 - **Internal services** use `*.lab.jackhumes.com` and enter through Traefik on
   the LAN or tailnet.
-- **Public services** use `*.jackhumes.com`. Caddy terminates TLS on the AWS
+- **Public services** use `*.jackhumes.com`. Caddy terminates TLS on the NixOS
   edge, then forwards only declared hosts through FRP to the cluster.
 - **Home routers never need application port-forwards.** The in-cluster FRP
   client establishes the connection to the edge.
@@ -58,7 +58,7 @@ flowchart LR
 | [`flux/`](../flux/) | Flux entrypoint, component Kustomizations, and Helm sources/releases |
 | [`charts/`](../charts/) | Wrapper charts for the small set of upstream Helm dependencies |
 | [`talos/`](../talos/) | SOPS-encrypted Talos machine configuration |
-| [`terraform/`](../terraform/) | OpenTofu for the AWS edge, edge DNS, Grafana resources, and the B2 backup bucket |
+| [`terraform/`](../terraform/) | OpenTofu for edge DNS, Grafana resources, and the B2 backup bucket |
 | [`scripts/`](../scripts/) | Flux manifest validation and HelmRelease adoption helpers |
 | [`Justfile`](../Justfile) | Routine Talos, Flux, and maintenance commands |
 
@@ -112,15 +112,14 @@ connection string.
 ## Operational model
 
 Flux reconciles the Kubernetes side from Git. Terrakube plans pull requests and
-applies OpenTofu after changes merge to `main`. For the edge, `user_data`
-bootstraps a fresh Lightsail instance while `terraform_data.edge_config`
-converges the versioned service configuration on the existing VM over SSH.
+applies OpenTofu after changes merge to `main`. The edge is
+`nixosConfigurations.edge` (root `flake.nix`, modules in `nixos/edge/`): comin
+on the box polls `main` and switches to the new system, and
+`just edge-install` (nixos-anywhere) builds a fresh one.
 
-Terraform generates the deployment and host SSH identities into sensitive
-Terrakube state, so state access grants edge SSH access. Only unlabeled
-operator public keys are committed. Every configuration change is validated
-before installation, then Compose services are recreated from the reviewed files
-under `terraform/aws-edge/config/`.
+Edge secrets, including its SSH host key, are sops-encrypted in `nixos/edge/`
+and decrypted on the box with sops-nix. SSH is tailnet-only as `root`
+(`just edge-ssh`); the OVH KVM console is the break-glass path.
 
 ## Architecture notes
 

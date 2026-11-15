@@ -8,24 +8,11 @@ in
       type = lib.types.str;
       description = "Whole disk that nixos-anywhere partitions (disko). Wiped on install.";
     };
-    ipv6 = lib.mkOption {
-      type = lib.types.nullOr (
-        lib.types.submodule {
-          options = {
-            address = lib.mkOption {
-              type = lib.types.str;
-              description = "IPv6 address with prefix length.";
-            };
-            gateway = lib.mkOption {
-              type = lib.types.str;
-              description = "IPv6 gateway, reached on-link.";
-            };
-          };
-        }
-      );
-      default = null;
-      description = "Static IPv6 from the provider panel; null leaves the box IPv4-only.";
-    };
+    ipv6 = lib.mkEnableOption ''
+      the static IPv6 address and gateway from public_ipv6 and public_ipv6_gateway in
+      secrets.yaml (the provider gives no RA/DHCPv6). They live in sops rather than here so
+      this public repo does not publish the box's addresses
+    '';
   };
 
   config = {
@@ -38,11 +25,25 @@ in
     systemd.network.networks."10-wan" = {
       matchConfig.Name = "eth0";
       networkConfig.DHCP = "ipv4";
-      address = lib.optional (cfg.ipv6 != null) cfg.ipv6.address;
-      routes = lib.optional (cfg.ipv6 != null) {
-        Gateway = cfg.ipv6.gateway;
-        GatewayOnLink = true;
-      };
+    };
+
+    # A drop-in for 10-wan.network; networkd reads drop-ins from /run/systemd/network too.
+    sops.secrets = lib.mkIf cfg.ipv6 {
+      public_ipv6 = { };
+      public_ipv6_gateway = { };
+    };
+    sops.templates."edge-ipv6.conf" = lib.mkIf cfg.ipv6 {
+      path = "/run/systemd/network/10-wan.network.d/ipv6.conf";
+      mode = "0444";
+      restartUnits = [ "systemd-networkd.service" ];
+      content = ''
+        [Network]
+        Address=${config.sops.placeholder.public_ipv6}
+
+        [Route]
+        Gateway=${config.sops.placeholder.public_ipv6_gateway}
+        GatewayOnLink=true
+      '';
     };
 
     # No egress shaping: the Lightsail box's 4mbit tbf guarded a 1 TB transfer allowance,

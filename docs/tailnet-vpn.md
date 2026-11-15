@@ -15,8 +15,8 @@ flowchart TD
         EXIT["Exit nodes<br/>(optional egress presets)"]
     end
 
-    subgraph EDGE["Edge VM"]
-        STUN["STUN server :3478/udp<br/>(coturn, host network)"]
+    subgraph EDGE["NixOS edge (OVH VPS)"]
+        STUN["STUN server :3478/udp<br/>(coturn, IPv4)"]
         PUB["Public HTTPS<br/>(control plane via Caddy)"]
     end
 
@@ -91,7 +91,7 @@ Verify both paths with `tailscale ping 100.64.0.2` and
 `tailscale ping 100.64.0.14`, then time
 `dig glance.lab.jackhumes.com @100.64.0.2` and load
 `https://glance.lab.jackhumes.com`. A direct ping shows a peer IP:port;
-`DERP(headscale)` means traffic goes through the bandwidth-capped edge.
+`DERP(headscale)` means traffic is relayed through the edge.
 
 ## Health checks that matter
 
@@ -99,13 +99,13 @@ Verify both paths with `tailscale ping 100.64.0.2` and
 |---|---|
 | `UDP: true` + public IPv4 in netcheck | Endpoint discovery works |
 | `pong ... via <peer-ip>:port` | **Direct** path (desired) |
-| `pong ... via DERP(relay)` | Relaying — every byte bills against edge transfer |
+| `pong ... via DERP(relay)` | Relaying — every byte makes two trips through the edge |
 | Peer advertises no endpoints | Broken/limited client app; fix or update it |
 
 ## Guardrails
 
-- Edge egress is capped (4 mbit) so a relayed/broken client cannot exhaust the
-  data-transfer allowance.
+- The OVH edge's traffic is unmetered and unthrottled, but a relayed client
+  still doubles uplink use and adds latency, so direct paths stay the goal.
 - Devices that refuse direct paths should stay off the VPN or be updated;
   on-LAN devices do not need the VPN at home at all.
 - Alert `tailnet-peer-relayed` (warning, Discord and Gotify via `notify: phone`)
@@ -116,6 +116,3 @@ Verify both paths with `tailscale ping 100.64.0.2` and
   threshold keeps out devices that wake over the relay and go idle before a direct
   path forms. It sees only traffic to the subnet router (home apps, LAN, exit node),
   not DNS-only use or device-to-device.
-- Alert `edge-egress-at-cap` (warning, Discord) fires when the edge's egress has
-  averaged more than 2.5 Mbit/s of its 4 Mbit/s cap for 5 minutes, i.e. everything
-  through it is being throttled.

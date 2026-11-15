@@ -37,7 +37,7 @@ Keep this file short. Prefer discovering current details from the repo over stor
 - No swap on the nodes: Talos only supports swap partitions, and EPHEMERAL fills each node's single disk.
 - Pin container images to explicit versions; never use `latest`.
 - Update Glance dashboard icons/links when adding or removing apps.
-- When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/config/frpc.toml`, the Caddy site block in `terraform/aws-edge/config/Caddyfile` and the hostname in `public_hostnames` (`terraform/aws-edge-dns/main.tf`); see Public Access & AWS Lightsail Edge (FRP). Jevil's lint blocks a PR that leaves the three disagreeing; mark a proxy only the edge box uses `# jevil:edge-local`.
+- When exposing a new service publicly via FRP, add the `frpc` proxy in `apps/frp-client/config/frpc.toml`, the Caddy site block in `nixos/edge/Caddyfile` and the hostname in `public_hostnames` (`terraform/aws-edge-dns/main.tf`); see Public Access & the NixOS Edge (FRP). Jevil's lint blocks a PR that leaves the three disagreeing; mark a proxy only the edge box uses `# jevil:edge-local`.
 - Read files before editing and make targeted changes.
 - Test or validate changes when feasible.
 - Flux reconciles from Git; do not manually mutate cluster state unless troubleshooting or explicitly requested.
@@ -138,16 +138,16 @@ server-side apply never removes a field it does not own. Deleting a key from a m
 therefore leaves it live if Helm wrote it: `grafana-alerting` kept a stale `policies.yaml`
 that crash-looped Grafana. Check with `kubectl get <kind> <name> --show-managed-fields` and
 remove such keys by hand.
-## Public Access & AWS Lightsail Edge (FRP)
+## Public Access & the NixOS Edge (FRP)
 
-External access for `<app>.jackhumes.com` is routed through the AWS Lightsail edge (`18.171.34.111`, built by `terraform/aws-edge`) over FRP. Full chain: client -> Caddy (TLS) -> frps remote port -> frpc tunnel -> Traefik -> app IngressRoute.
+External access for `<app>.jackhumes.com` is routed through the edge, an OVH VPS running NixOS (4 GB RAM, unmetered traffic), over FRP. Full chain: client -> Caddy (TLS, HTTP-01) -> frps remote port -> frpc tunnel -> Traefik -> app IngressRoute. This repo is public, so the edge's addresses never appear in it: they are `public_ipv4`, `public_ipv6` and `public_ipv6_gateway` in `nixos/edge/secrets.yaml` (sops), and the cluster side reads the IPv4 from sealed secrets (`frpc-secrets` `server_addr`, `headscale-edge-secret`). Keep it that way for any new address.
 
-Its NixOS replacement (OVH VPS, not live yet) is `nixosConfigurations.edge` in the root `flake.nix`, with modules in `nixos/edge/`. It reuses `terraform/aws-edge/config/Caddyfile`, so the FRP/Caddy/DNS agreement still holds. `just edge-install <user@host>` installs it with nixos-anywhere (wipes the disk), placing the sops-encrypted host key that decrypts `nixos/edge/secrets.yaml` and a one-off Headscale preauth key. Once installed, comin on the box pulls `main` and switches to the new configuration, so a merge that touches the flake deploys the edge.
+It is `nixosConfigurations.edge` in the root `flake.nix` (+ `flake.lock`), modules in `nixos/edge/`, secrets via sops-nix in `nixos/edge/secrets.yaml` (host key `nixos/edge/ssh_host_ed25519_key.sops.yaml`). It runs Caddy, frps (TLS forced, allowPorts 8081/8082/8084/8085/9091, dashboard `127.0.0.1:7500`), coturn STUN on IPv4 3478, Tailscale, node-exporter and a Prometheus agent (labels kept as `aws-edge-*`/`instance="aws-edge"`). Public firewall: TCP 80, 443, 7000; UDP 3478, 41641. comin on the box polls `main` and switches, so a merge touching `flake.nix`, `flake.lock` or `nixos/**` deploys the edge; Jevil waits for comin, then runs the edge health checks. comin never reboots: `edge-needs-reboot` fires after 6h of `comin_need_to_reboot`; reboot by hand. Updates are Renovate's weekly `flake.lock` PRs. `just edge-install <user@host> [--yes]` (re)installs with nixos-anywhere (wipes the disk, places the host key and a one-off Headscale preauth key).
 
 Three places must agree when exposing a new public service (the cluster side alone is not enough):
 1. `apps/frp-client/config/frpc.toml` — add a `[[proxies]]` TCP entry whose `remotePort` forwards to Traefik `:80`.
-2. `terraform/aws-edge/config/Caddyfile` — add the site block reverse-proxying the host to `localhost:<remotePort>`. Terrakube deploys and validates the edge config over SSH after merge; never edit the live file as the source of truth.
-3. Cloudflare DNS — an A record for the host pointing at the edge IP, declared in `terraform/aws-edge-dns` (`public_hostnames`). Keep proxying off: ACME HTTP-01 and DERP need the real IP. That stack has no Terrakube workspace, so nothing applies it on merge: create the matching record by hand (Cloudflare API with the cert-manager token in `cloudflare-api-token-secret`, or the dashboard) until a workspace exists.
+2. `nixos/edge/Caddyfile` — add the site block reverse-proxying the host to `localhost:<remotePort>`. comin deploys it after merge; never edit the live box as the source of truth.
+3. Cloudflare DNS — an A record for the host pointing at `var.edge_ipv4`, declared in `terraform/aws-edge-dns` (`public_hostnames`). A only (coturn is IPv4-only); keep proxying off: ACME HTTP-01 and DERP need the real IP. That stack has no Terrakube workspace and no saved state, so nothing applies it on merge: apply the record from the workstation (Cloudflare API with the cert-manager token in `cloudflare-api-token-secret`, or `tofu`).
 
 Tunnel map:
 
@@ -157,33 +157,28 @@ Tunnel map:
 |`headscale.jackhumes.com`|`8082`|Headscale (direct)|
 |`terrakube-hook.jackhumes.com`|`8084`|Traefik -> Terrakube webhook gatekeeper|
 |`gotify.jackhumes.com`|`8085`|Traefik -> Gotify (and `/alert-images/` for alert screenshots)|
-|Edge-local metrics receiver|`9091`|Prometheus remote-write API; bound to loopback and closed by the Lightsail firewall|
+|Edge-local metrics receiver|`9091`|Prometheus remote-write via frpc proxy `prometheus-remote-write` to `prometheus-write-gate` (POST /api/v1/write only); loopback on the edge, not opened by the firewall|
 
 ### SSH to the edge
 
 ```bash
-ssh ubuntu@100.64.0.21          # tailnet address; reachable from tailnet clients and from every cluster node (pods included), not from the rest of the LAN. Key-based; prefix system/docker commands with sudo
+just edge-ssh [command]   # root@edge (100.64.0.24) over the tailnet, via the subnet router pod (kubectl ProxyCommand); the workstation needs no tailnet
 ```
 
-Public 22/tcp is open only to Lightsail browser SSH (`lightsail-connect`), the break-glass path if tailscale on the box is down. Terrakube's provisioner also SSHes over the tailnet (`edge_tailnet_ip`), so the home WAN IP, which changes daily, never goes in git. Rebuilding the instance registers a new Headscale node with a new address: update `edge_tailnet_ip` from `headscale nodes list`.
-
-Caddy, FRP, node-exporter, and the Prometheus agent are managed by the `terraform_data.edge_config` resource from files under `terraform/aws-edge/config/`. Terrakube validates and deploys those files over SSH, then recreates the Compose services. Manual edits under `/opt/frp-tunnel` are overwritten by the next applicable Terraform run.
-
-Keep the edge patched with `just update-vps` (optional reboot with `just update-vps yes`).
+Public 22 is closed; SSH is tailnet-only as `root`. Break-glass: the OVH KVM console with the root password from `sops -d --extract '["root_password"]' nixos/edge/secrets.yaml`. A reinstall may change the tailnet IP.
 
 ## Terrakube IaC Pipeline
 
 Everything under `terraform/` is planned and applied by Terrakube in-cluster. There are no GitHub Actions: GitHub only delivers webhooks, and all execution happens in the `terrakube` namespace.
 
-- Organization `homeops`. Three workspaces, each with its own state, webhook and commit-status context:
-  - `aws-edge` -> `terraform/aws-edge`, the Lightsail edge box and its FRP/Caddy config.
+- Organization `homeops`. Two workspaces, each with its own state, webhook and commit-status context:
   - `grafana` -> `terraform/grafana`, every Grafana dashboard and folder, plus all alerting: the rules in `apps/*/alerts/` and `infrastructure/*/alerts/`, the Discord contact point, its message template and the notification policy. Its webhook rules therefore match `terraform/grafana/**,apps/*/alerts/*,infrastructure/*/alerts/*` (comma-separated globs), so an alert-only pull request still gets a plan.
   - `b2-backup` -> `terraform/b2-backup`, the Backblaze B2 bucket for the Immich off-site backup. Provider credentials are the sensitive ENV variables `B2_APPLICATION_KEY_ID`/`B2_APPLICATION_KEY`.
 - All are OpenTofu with remote execution, so `iacType` must be `tofu`; setting it to `terraform` with an OpenTofu version fails the job with "Invalid Terraform version range". State lives in Terrakube (MinIO-backed), never in a local `terraform.tfstate`.
 - Each workspace registers its own GitHub webhook, and the v1 HMAC secret is `base64(workspaceId)`, so the gatekeeper takes a comma-separated `GITHUB_WEBHOOK_SECRETS` and accepts any of them. Adding a workspace means adding its secret there too, bumping `checksum/secrets` in `apps/terrakube/webhook-gate.yaml` so the gate restarts with it (plus the `apps/terrakube/Chart.yaml` version, or the change never deploys), and pointing the new GitHub hook at `https://terrakube-hook.jackhumes.com/webhook/v1/<webhookId>` (Terrakube registers it with the LAN-only API URL).
 - Pull request -> `Plan` template. Push to `main` -> `Plan and apply`. Both carry a file filter so only changes under the workspace's directory trigger a run.
 - Terrakube posts the plan as a pull request comment and sets a GitHub commit status (`pending` -> `success`/`failure`), which is what branch protection requires to block a pull request with a failing plan. `terrakube plan` re-runs a plan from a comment; apply-via-comment is deliberately off.
-- Secrets (`frps_auth_token`, `frps_dashboard_password`, `tailscale_authkey`, and AWS credentials) are sensitive workspace variables in Terrakube, not files in this repo. Terraform generates the edge deployment and host SSH identities into sensitive state; state access therefore grants edge SSH access. Additional operator public keys live in `admin_ssh_public_keys` without labels.
+- Provider secrets are sensitive workspace variables in Terrakube, not files in this repo.
 
 ### Why the webhook gatekeeper exists
 
@@ -197,20 +192,20 @@ Anything else gets a `202` and goes no further. It is the only Terrakube compone
 
 ### Webhook event rules
 
-The webhook (`092e7d85-af89-410d-9b6e-65623fc16676`) carries three event rules, set through the API because the UI cannot express all of them. They are matched in `priority` order and the first match wins:
+The grafana workspace's webhook carries three event rules, set through the API because the UI cannot express all of them. They are matched in `priority` order and the first match wins:
 
 | Priority | Event | Branch | Path | Template |
 | --- | --- | --- | --- | --- |
-| 1 | `PUSH` | `main` | `terraform/aws-edge/*` | Plan and apply |
-| 1 | `PULL_REQUEST` | `.*` | `terraform/aws-edge/*` | Plan |
+| 1 | `PUSH` | `main` | grafana's globs (above) | Plan and apply |
+| 1 | `PULL_REQUEST` | `.*` | grafana's globs (above) | Plan |
 | 2 | `PULL_REQUEST` | `.*` | `**` | No IaC changes ack |
 
 Two things about this are easy to get wrong:
 
 - **`branch` is a Java regex, not a branch name**, and for a `pull_request` event Terrakube matches it against the *head* branch. A pull-request rule with `branch: main` therefore never fires — it silently logs `No valid template found for webhook event pull_request` and no job is created. Pull-request rules must use `.*`.
-- **The priority-2 rule exists to keep branch protection satisfiable.** `main` requires the status check `Terrakube - homeops - aws-edge`, and GitHub blocks a pull request forever if a required check never reports. A pull request touching no terraform would never get a status, so the fallback rule runs a `customScripts` template that does nothing but report success. It has `prWorkflowEnabled: false`, so it posts no comment.
+- **The priority-2 rule exists to keep branch protection satisfiable.** `main` requires the status check `Terrakube - homeops - grafana`, and GitHub blocks a pull request forever if a required check never reports. A pull request touching none of grafana's paths would never get a status, so the fallback rule runs a `customScripts` template that does nothing but report success. It has `prWorkflowEnabled: false`, so it posts no comment.
 
-Branch protection on `main`: required status check `Terrakube - homeops - aws-edge`, `enforce_admins` on, no force pushes, no deletions. A failed plan leaves the pull request `mergeable_state: blocked` and merging returns HTTP 405 even for an admin.
+Branch protection on `main`: required status check `Terrakube - homeops - grafana`, `enforce_admins` on, no force pushes, no deletions. A failed plan leaves the pull request `mergeable_state: blocked` and merging returns HTTP 405 even for an admin.
 
 ### Known upstream defect: duplicated plan comments
 
@@ -274,7 +269,7 @@ The private key exists only in the Terrakube database and wherever it was backed
 - etcd snapshots: `infrastructure/etcd-backup` CronJob (03:30) runs `talosctl etcd snapshot` with a talos.dev ServiceAccount limited to `os:etcd:backup` (needs `talos/patches/etcd-backup-api-access.yaml` on every node) and keeps the newest 14 on the NAS. Jevil reports the newest one's age (alert `etcd-snapshot-stale`) and the age of every Longhorn backup (alert `longhorn-backup-stale`). Restore steps: `docs/etcd-backup.md`.
 - Immich off-site backup: `apps/immich-backup` CronJob (04:00) runs `rclone sync` of `library/`, `upload/`, `profile/` and Immich's DB dumps (`backups/` -> `db/`) to B2 bucket `jackhumes-immich-backup`. The sealed key cannot delete; removed files are only hidden and B2 lifecycle rules purge them after 90 days (30 for `db/`). `thumbs/` and `encoded-video/` are skipped. `immich-backup-exporter` (list-only key) lists the bucket every 15 minutes for the *Immich Backup* dashboard (`terraform/grafana/dashboards/media/immich-backup.json`). Restore steps: `docs/immich-backup.md`.
 - MetalLB address pool is `10.0.0.200-10.0.0.250`.
-- External access uses FRP through the AWS Lightsail edge (`18.171.34.111`); see Public Access & AWS Lightsail Edge (FRP) for the full chain, tunnel map, and SSH steps.
+- External access uses FRP through the NixOS edge on OVH; see Public Access & the NixOS Edge (FRP) for the full chain, tunnel map, and SSH steps.
 - Public traffic for `auth.jackhumes.com` must route through Traefik so CrowdSec can block banned IPs.
 - FRP remote ports: Pocket ID `8081` (via Traefik), Headscale `8082` (direct to `headscale.headscale.svc:8080`), Terrakube webhook gate `8084` (via Traefik), Gotify `8085` (via Traefik).
 - Headscale public URL is `https://headscale.jackhumes.com`.
@@ -286,7 +281,7 @@ Important IPs:
 
 | IP | Purpose |
 | --- | --- |
-| `18.171.34.111` | AWS Lightsail edge / FRP server |
+| `public_ipv4` in `nixos/edge/secrets.yaml` | OVH NixOS edge / FRP server (kept out of the repo) |
 | `10.0.0.200` | Traefik LoadBalancer |
 | `10.0.0.201` | Pi-hole DNS |
 | `100.64.0.0/10` | Headscale Tailnet IPv4 range |

@@ -395,7 +395,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "AWS Lightsail edge host telemetry.",
+      "description": "Public edge host telemetry (NixOS on OVH).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -454,7 +454,7 @@
           "refId": "A"
         }
       ],
-      "title": "AWS edge",
+      "title": "Edge",
       "type": "stat"
     },
     {
@@ -1056,7 +1056,7 @@
           "refId": "B"
         }
       ],
-      "title": "AWS edge CPU and memory",
+      "title": "Edge CPU and memory",
       "type": "timeseries"
     },
     {

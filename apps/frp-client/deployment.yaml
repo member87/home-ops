@@ -22,6 +22,14 @@ spec:
           args:
             - -c
             - /etc/frp/frpc.toml
+          env:
+            # Read by serverAddr in frpc.toml; sealed in frpc-secrets so the repo does not
+            # publish the edge's IP.
+            - name: FRPS_SERVER_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: frpc-secrets
+                  key: server_addr
           volumeMounts:
             - name: frpc-config
               mountPath: /etc/frp

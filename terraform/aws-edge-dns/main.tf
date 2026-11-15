@@ -1,9 +1,8 @@
-# Public DNS for the edge, managed separately from the edge stack so the
-# Cloudflare provider cannot block instance operations. Runs execute in
-# Terrakube (organization homeops, workspace aws-edge-dns) with
-# cloudflare_api_token set as a sensitive workspace variable.
-#
-# The edge IP is read from the aws-edge workspace's state.
+# Public DNS for the edge: an A record per public hostname, pointing at the NixOS edge
+# (nixos/edge). There is no Terrakube workspace for this stack; apply it from the
+# workstation with TF_VAR_cloudflare_api_token and TF_VAR_cloudflare_zone_id set, and
+#   TF_VAR_edge_ipv4=$(sops -d --extract '["public_ipv4"]' nixos/edge/secrets.yaml)
+# so the IP never appears in this public repo. Jevil's edge lint reads public_hostnames here.
 
 terraform {
   required_version = ">= 1.6"
@@ -20,17 +19,10 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
-# The edge IP comes from the aws-edge workspace's state in Terrakube
-# (https://terrakube.lab.jackhumes.com), not a local state file.
-data "terraform_remote_state" "edge" {
-  backend = "remote"
-  config = {
-    hostname     = "terrakube-api.lab.jackhumes.com"
-    organization = "homeops"
-    workspaces = {
-      name = "aws-edge"
-    }
-  }
+variable "edge_ipv4" {
+  description = "Public IPv4 of the edge (nixos/edge), public_ipv4 in nixos/edge/secrets.yaml. Only A records: coturn answers STUN on IPv4 only, so an AAAA record would break STUN lookups by name."
+  type        = string
+  sensitive   = true
 }
 
 variable "cloudflare_api_token" {
@@ -67,7 +59,7 @@ resource "cloudflare_dns_record" "public" {
   zone_id  = var.cloudflare_zone_id
   name     = "${each.key}.${var.public_domain}"
   type     = "A"
-  content  = data.terraform_remote_state.edge.outputs.static_ip
+  content  = var.edge_ipv4
   ttl      = 300
   proxied  = var.dns_proxied
 }

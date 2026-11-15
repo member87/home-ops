@@ -6,8 +6,12 @@ resources:
   - namespace.yaml
   - sealedsecret.yaml
   - deployment.yaml
+  - prometheus-write-gate.yaml
 
 configMapGenerator:
   - name: frpc-config
     files:
       - frpc.toml=config/frpc.toml
+  - name: prometheus-write-gate
+    files:
+      - nginx.conf=config/prometheus-write-gate.conf

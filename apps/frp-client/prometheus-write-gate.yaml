@@ -1,0 +1,81 @@
+---
+# The edge's Prometheus agent remote-writes through the frpc "prometheus-remote-write" proxy.
+# That tunnel used to land on Prometheus itself, so anyone with root on the edge could query
+# every series, write anything, or POST /-/quit (--web.enable-lifecycle). This gate passes
+# only POST /api/v1/write and refuses everything else. Its nginx.conf is
+# config/prometheus-write-gate.conf, generated into a ConfigMap so a change rolls the pod.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-write-gate
+  namespace: frp-client
+  labels:
+    app: prometheus-write-gate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-write-gate
+  template:
+    metadata:
+      labels:
+        app: prometheus-write-gate
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.31.2-alpine3.23
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-write-gate
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-write-gate
+  namespace: frp-client
+spec:
+  selector:
+    app: prometheus-write-gate
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

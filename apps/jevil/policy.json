@@ -14,11 +14,11 @@
   "mergeWindow": { "timeZone": "Europe/London", "startHour": 8, "endHour": 22 },
   "mergeMethod": "squash",
   "eligibleUpdateTypes": ["minor", "patch", "digest"],
-  "requiredContexts": ["Terrakube - homeops - aws-edge", "Terrakube - homeops - grafana"],
+  "requiredContexts": ["Terrakube - homeops - grafana"],
   "stabilityContext": "renovate/stability-days",
   "minimumReleaseAgeHours": 72,
   "terraform": {
-    "workspaces": ["aws-edge", "b2-backup", "grafana"],
+    "workspaces": ["b2-backup", "grafana"],
     "contextPrefix": "Terrakube - homeops - ",
     "maxAdd": 0,
     "maxChange": 0,
@@ -219,12 +219,6 @@
     }
   },
   "edge": {
-    "workspace": "aws-edge",
-    "bumps": {
-      "path": "terraform/aws-edge/config/",
-      "replace": "terraform_data.edge_config",
-      "planCommenter": "terrakube-homeops-bot[bot]"
-    },
     "health": {
       "instance": "aws-edge",
       "jobs": ["aws-edge-node", "aws-edge-prometheus-agent"],
@@ -376,7 +370,7 @@
     ]
   },
   "manualSteps": {
-    "paths": ["infrastructure/", "talos/", "flux/", "terraform/aws-edge/", "apps/frp-client/"],
+    "paths": ["infrastructure/", "talos/", "flux/", "nixos/", "flake.nix", "flake.lock", "apps/frp-client/"],
     "rules": "AGENTS.md",
     "maxDiffBytes": 30000,
     "questions": [

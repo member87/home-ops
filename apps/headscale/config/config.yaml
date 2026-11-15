@@ -32,9 +32,9 @@ derp:
     stun_listen_addr: "0.0.0.0:3478"
     private_key_path: /var/lib/headscale/derp_server_private.key
     automatically_add_embedded_derp_region: true
-    # Publish the AWS edge IP directly so clients reach STUN even when
-    # DNS is not yet working (exit-node bootstrap scenario).
-    ipv4: 18.171.34.111
+    # Publish the edge's IP directly so clients reach STUN even when DNS is not yet
+    # working (exit-node bootstrap scenario). ipv4 comes from HEADSCALE_DERP_SERVER_IPV4
+    # (headscale-edge-secret) so this public repo does not publish it.
   # the same FRP/Traefik HTTPS path already proven reachable for control-plane
   # traffic. Do NOT import the public derp map: clients (including exit nodes)
   # must only ever pick this embedded region, so exit-node relaying stays

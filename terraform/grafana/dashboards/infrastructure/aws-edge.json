@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Host and metrics-forwarding health for the AWS Lightsail public edge running Caddy, FRP, coturn, and Headscale tailnet connectivity.",
+  "description": "Host and metrics-forwarding health for the public edge (NixOS on OVH, nixos/edge) running Caddy, FRP, coturn, and Headscale tailnet connectivity.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -32,7 +32,7 @@
       },
       "id": 1,
       "panels": [],
-      "title": "AWS edge health",
+      "title": "Edge health",
       "type": "row"
     },
     {
@@ -174,7 +174,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Time since the Lightsail host booted.",
+      "description": "Time since the edge host booted.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1708,6 +1708,6 @@
     ]
   },
   "timezone": "browser",
-  "title": "AWS Edge Server",
+  "title": "Edge Server",
   "uid": "aws-edge-server"
 }

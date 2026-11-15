@@ -30,25 +30,25 @@ flowchart TD
 | 2. Direct WireGuard | Remote devices with a healthy client | **Zero** — peer-to-peer; edge only did control-plane work |
 | 3. Relayed | Devices whose client cannot form direct paths | **High** — every byte crosses the edge twice (in + out) |
 
-## Why path 3 is dangerous for budget
+## Why path 3 is still worth avoiding
 
 ```mermaid
 flowchart LR
     POD["Media pod"] -->|"uplink 1"| EDGE["Edge relay"]
-    EDGE -->|"cloud egress 1"| PH["Viewer"]
-    PH -->|"cloud egress 2"| EDGE
+    EDGE -->|"edge egress 1"| PH["Viewer"]
+    PH -->|"edge egress 2"| EDGE
     EDGE -->|"uplink 2"| POD
 ```
 
-A relayed stream consumes the transfer allowance **twice** (the media enters
-the edge from the cluster, then leaves to the viewer). At a typical ~14 Mbit
-stream that is ~12.6 GB of allowance per hour of viewing.
+A relayed stream crosses the edge **twice** (the media enters the edge from
+the cluster, then leaves to the viewer), so it spends the home uplink and adds
+latency. The OVH edge's traffic is unmetered, so there is no transfer
+allowance and no throttle; the cost is speed, not a bill.
 
 ## Guardrails
 
 ```mermaid
 flowchart TD
-    CAP["Edge egress cap 4 mbit<br/>(systemd unit)"] -->|"bounds worst case"| BUD["~3.6 GB/h allowance burn<br/>instead of unbounded"]
     DIRECT["Healthy clients go direct"] -->|"bypass edge entirely"| ZERO["~0 GB/h"]
     OFF["LAN devices: VPN off at home"] --> ZERO
 ```
@@ -59,7 +59,7 @@ flowchart TD
    and free.
 2. On the road, use the VPN with an updated client app; verify the connection
    shows **direct**, not relayed.
-3. If a device must relay, expect the edge egress cap to slow it — that is the
-   budget guard doing its job.
+3. If a device must relay, expect it to be slower than direct: every byte
+   makes two trips over the home uplink.
 4. Acceptance check for any device: its peer entry should show a direct
    address (LAN or public), never a relay with growing byte counters.

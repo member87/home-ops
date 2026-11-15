@@ -142,7 +142,7 @@
     "glanceConfig": "apps/glance/config.yaml",
     "edge": {
       "frpc": "apps/frp-client/config/frpc.toml",
-      "caddyfile": "terraform/aws-edge/config/Caddyfile",
+      "caddyfile": "nixos/edge/Caddyfile",
       "dns": "terraform/aws-edge-dns/main.tf",
       "domain": "jackhumes.com"
     },

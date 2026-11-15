@@ -131,7 +131,7 @@ Like the Aviator merge queue:
    `pollSeconds`).
 2. Last readiness check, on a fresh read: the head is still that commit (a later push dequeues;
    comment again, except a Renovate rebase, below), not a draft, not on `hold`, into `main`, no merge conflict, no failing
-   commit status or check-run, the required statuses or check-runs (`Terrakube - homeops - aws-edge`, `- grafana`, plus the
+   commit status or check-run, the required statuses or check-runs (`Terrakube - homeops - grafana`, plus the
    workspace of any changed `terraform/<workspace>`) reported success, no blocking check finding
    outside `--allow`, and the cluster is healthy. Pending checks and an unhealthy cluster keep it
    queued, with the reason added to the queue comment; anything failing takes it out of the queue
@@ -295,23 +295,12 @@ All of these, checked in code:
 - Every update in Renovate's table is `minor`, `patch` or `digest`.
 - Every commit status and check-run (GitHub Actions and other Apps; a check-run that is not
   completed counts as pending, `cancelled` as error, anything but success/neutral/skipped as
-  failure) is green, and these exist as either: `Terrakube - homeops - aws-edge`,
-  `Terrakube - homeops - grafana`, and for Terraform the workspace's own context; and, for an
+  failure) is green, and these exist as either: `Terrakube - homeops - grafana`, and for Terraform the workspace's own context; and, for an
   update that is otherwise eligible, `renovate/stability-days`. Renovate posts that status only
   where `minimumReleaseAge` applies (`apps/**`, `terraform/**`, `flux/helm/**`, `charts/**`,
   `infrastructure/**`, minor and patch), so majors do not wait for it; they go to review anyway.
   Jevil's own `minimumReleaseAgeHours` gate is unchanged.
-- Terraform: the workspace's plan summary is `0 to add, 0 to change, 0 to destroy`. One
-  exception, the edge (`edge` in the policy): every service on the Lightsail edge runs from
-  `terraform/aws-edge/config/docker-compose.yml`, which `terraform_data.edge_config` pushes, so
-  any change there, an frps, Caddy, coturn, node-exporter or prometheus-agent image bump
-  included, replaces that resource. A pull request whose files are all under `edge.bumps.path`
-  (`terraform/aws-edge/config/`) passes this rule when its plan is exactly `1 to add, 0 to
-  change, 1 to destroy` and Terrakube's plan comment (by `edge.bumps.planCommenter`,
-  `terrakube-homeops-bot[bot]`) for the same run as the status lists `terraform_data.edge_config`
-  `replace` as its only resource. The comment is matched to the status by its run link; until the
-  completed comment for that run is there the pull request waits. Any other replacement, a file
-  elsewhere in the workspace, or a plan replacing more goes to review as before.
+- Terraform: the workspace's plan summary is `0 to add, 0 to change, 0 to destroy`.
 - Apps, Helm releases and infrastructure: every Flux Kustomization a file belongs to exists, has
   `wait: true` and is Ready; every HelmRelease the merge upgrades is Ready, and its rendered diff
   (see [What a pull request changes](#what-a-pull-request-changes)) changes nothing but
@@ -522,10 +511,11 @@ Restarts while the rollout settles (an app failing while a database recreated by
 starts) do not count once its workloads are Ready; a rollout that never gets Ready times out
 unhealthy in the deploy check. If the live comment is deleted, restarts count from the merge.
 Prometheus not answering keeps the watch going rather than passing it. Talos/Kubernetes upgrades
-and Terraform-only merges are not watched, except the edge's.
+and Terraform-only merges are not watched; edge deploys are.
 
-The edge (any merge that Terrakube applies to `edge.workspace`, `aws-edge`) is checked after the
-apply and on every poll of the watch, and is unhealthy on any of:
+The edge (any merge touching `flake.nix`, `flake.lock` or `nixos/**`, shown as `NixOS host edge
+(comin)`) is checked once comin reports `comin_deployment_info{status="done"}` with the merge
+commit, and on every poll of the watch, and is unhealthy on any of:
 
 - An `up` series the edge's Prometheus agent remote-writes (`instance="aws-edge"`, jobs
   `aws-edge-node` and `aws-edge-prometheus-agent`) is missing, 0, older than 2 minutes (the agent,
@@ -537,7 +527,7 @@ apply and on every poll of the watch, and is unhealthy on any of:
 - coturn does not answer a STUN binding request on `headscale.jackhumes.com:3478` (UDP), three
   tries of 3 seconds.
 
-Together these cover each edge container: node-exporter and prometheus-agent by `up`, frps by
+Together these cover each edge service: node-exporter and prometheus-agent by `up`, frps by
 the remote write and the endpoints reaching the cluster through it, Caddy by the endpoints, coturn
 by STUN. Remove `soaking` to end a watch early; `/jevil status` on the merged pull request shows
 how long it has left.
@@ -745,7 +735,7 @@ its requests, with its open right-size pull request, or "not proposed yet" while
 open cleanup pull requests. **Versions nothing updates** takes every image tag and chart version
 Flux deploys (the files under each Kustomization in `flux/cluster`, Git chart directories with
 their `values.yaml`, HelmRelease `spec.values` and chart versions, OCIRepository tags,
-`Chart.yaml` dependencies, plus `terraform/aws-edge/config/docker-compose.yml`; every
+`Chart.yaml` dependencies; every
 Kustomization is also rendered so an image only a kustomize patch sets is caught) and holds it
 against the **Detected Dependencies** of Chore Bore's open "Dependency Dashboard" issue, file by
 file. A version is listed, with file and line, when the dashboard does not list it and no

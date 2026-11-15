@@ -97,3 +97,50 @@ rules:
       description: 'The edge is sending {{ humanize $values.B.Value }}bit/s against the 4mbit tbf in egress-cap.service, so everything through it (relayed tailnet peers, auth, headscale, gotify) is being throttled. Usually a tailnet peer on the relay: check Tailnet Peer Relayed, or tailscale status on the subnet router for peers without a direct address.'
     labels:
       severity: warning
+  # comin switches the edge to every merge but never reboots it, so a new kernel or systemd
+  # waits for someone to reboot. comin's exporter is scraped by the edge's Prometheus agent
+  # (nixos/edge/monitoring.nix, job aws-edge-comin).
+  - uid: edge-needs-reboot
+    title: Edge Needs Reboot
+    condition: C
+    data:
+      - refId: A
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: prometheus
+        model:
+          expr: max(comin_need_to_reboot{job="aws-edge-comin"})
+          refId: A
+      - refId: B
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: A
+          refId: B
+          type: reduce
+          reducer: last
+      - refId: C
+        relativeTimeRange:
+          from: 600
+          to: 0
+        datasourceUid: __expr__
+        model:
+          expression: B
+          refId: C
+          type: threshold
+          conditions:
+            - evaluator:
+                params:
+                  - 0
+                type: gt
+    noDataState: OK
+    execErrState: OK
+    for: 6h
+    annotations:
+      summary: The edge has been running an outdated kernel or systemd for 6 hours
+      description: comin deployed a configuration that only takes full effect after a reboot (a new kernel, initrd or systemd). Reboot it at a quiet time with ssh root@<edge tailnet IP> systemctl reboot; the public hosts and the tailnet relay are down for about a minute.
+    labels:
+      severity: warning

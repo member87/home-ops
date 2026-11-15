@@ -61,7 +61,16 @@ in
         user = "admin";
         password = "{{ .Envs.FRPS_DASHBOARD_PASSWORD }}";
       };
-      transport.tls.force = false;
+      # frpc (v0.50+) dials with TLS by default; refuse anything that does not.
+      transport.tls.force = true;
+      # The remotePorts in apps/frp-client/config/frpc.toml, nothing else.
+      allowPorts = map (port: { single = port; }) [
+        8081 # pocket-id via Traefik
+        8082 # headscale
+        8084 # terrakube-hook via Traefik
+        8085 # gotify via Traefik
+        9091 # prometheus remote-write (edge-local)
+      ];
     };
   };
 
@@ -101,6 +110,9 @@ in
       "--accept-dns=false"
     ];
   };
+  # The key is single-use and expires after 2h, but nothing needs it once the node is up.
+  systemd.services.tailscaled-autoconnect.serviceConfig.ExecStartPost =
+    "${pkgs.coreutils}/bin/rm -f /var/lib/edge/tailscale-authkey";
 
   system.checks = [ frpsVerify ];
 }

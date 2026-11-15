@@ -9,7 +9,8 @@
     "app": "merge",
     "terraform": "merge",
     "helm": "merge",
-    "infrastructure": "shadow"
+    "infrastructure": "shadow",
+    "nixos": "merge"
   },
   "mergeWindow": { "timeZone": "Europe/London", "startHour": 8, "endHour": 22 },
   "mergeMethod": "squash",
@@ -129,7 +130,7 @@
     {"name": "home-operations", "match": "^ghcr\\.io/home-operations/[a-z0-9-]+$", "app": "bazarr", "soakMinutes": 60, "withinHours": 24}
   ],
   "grafana": { "url": "http://grafana.grafana.svc.cluster.local:3000" },
-  "notes": { "minBytes": 40, "maxBytes": 20000 },
+  "notes": { "minBytes": 40, "maxBytes": 20000, "allowMissing": ["patch", "digest"] },
   "upstreams": {
     "longhorn": "longhorn/longhorn",
     "ekofr/pihole-exporter": "eko/pihole-exporter",

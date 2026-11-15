@@ -285,9 +285,14 @@ All of these, checked in code:
 
 - The author and every commit are `chore-bore[bot]`, from a branch in this repository, into `main`.
 - Every file is in one scope: one `apps/<app>` (plain manifests or a Helm wrapper chart), one
-  `terraform/<workspace>` listed in the policy, Helm releases (`flux/helm/<release>`, `charts/<chart>`)
-  or `infrastructure/<component>`. Mixed scopes go to review. Each scope gets its `scope:` label and
-  its own `modes` entry.
+  `terraform/<workspace>` listed in the policy, Helm releases (`flux/helm/<release>`, `charts/<chart>`),
+  `infrastructure/<component>`, or `nixos` (only `flake.nix` and `flake.lock`: Renovate's weekly
+  lock file maintenance and flake input tag bumps, deployed to the edge by comin). Mixed scopes go
+  to review. Each scope gets its `scope:` label and its own `modes` entry. In `nixos`, a tag bump
+  may change only the tag in one `url = "github:…"` line and that input's lock entry; lock file
+  maintenance may change only `locked.rev`/`narHash`/`lastModified` (and nodes added or removed
+  under a moved input), each moved input read like a digest update. nixpkgs on a `nixos-*` branch
+  skips the 72-hour age: the channel only advances after Hydra's tests.
 - Every changed line is the same line with one version token swapped: a tag, a tag and its
   digest, or a digest alone (`ghcr.io/iptv-org/epg:master@sha256:…`). Lockfile hash lines may
   come and go. Anything else (a new env var, an image repository change, a digest moving to
@@ -313,9 +318,13 @@ All of these, checked in code:
   two images were built from, read from their `org.opencontainers.image.source` (a GitHub
   repository) and `org.opencontainers.image.revision` labels through GitHub's compare API. The
   card lists the compare link under "Release notes read". Merge commits are left out; when the
-  full commit messages come to over `notes.maxBytes`, Jev reads their subject lines only. Without
-  those labels (the new image needs both, the deployed one its revision) there are no notes, and
-  the update gets `notes-missing`. A new revision that is behind or diverged from the deployed
+  full commit messages come to over `notes.maxBytes`, Jev reads their subject lines only. With no
+  GitHub releases at all, the notes are the commits between the two version tags (`vX.Y.Z` or
+  `X.Y.Z`). An image with no source anywhere else is matched to the GitHub repository of the same
+  `owner/name` when that repository has the target tag. Without any of these there are no notes,
+  and the update gets `notes-missing`; types listed in `notes.allowMissing` (`patch`, `digest`)
+  still pass, Jev unasked, with every other gate and the post-merge health check. A new revision
+  that is behind or diverged from the deployed
   one, a source repository that changed between the images, or more commits than GitHub lists
   (250) goes to review. An image rebuilt from the same commit is read as a rebuild, like a
   LinuxServer one.

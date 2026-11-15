@@ -51,12 +51,6 @@ spec:
           env:
             - name: TZ
               value: UTC
-            # derp.server.ipv4: the edge's public IP, kept out of the repo.
-            - name: HEADSCALE_DERP_SERVER_IPV4
-              valueFrom:
-                secretKeyRef:
-                  name: headscale-edge-secret
-                  key: HEADSCALE_DERP_SERVER_IPV4
           volumeMounts:
             - name: config
               mountPath: /etc/headscale/config.yaml

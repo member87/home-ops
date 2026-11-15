@@ -1,7 +1,5 @@
 # frp client configuration
-# The NixOS edge (nixos/edge). Its IP comes from frpc-secrets (server_addr) through the
-# FRPS_SERVER_ADDR env var, so this public repo does not publish it.
-serverAddr = "{{ .Envs.FRPS_SERVER_ADDR }}"
+serverAddr = "18.171.34.111"
 serverPort = 7000
 
 # Authentication token (must match server)
@@ -26,7 +24,7 @@ localPort = 8080
 remotePort = 8082
 
 # STUN no longer transits frp: coturn runs directly on the edge box
-# (UDP 3478 on its public IPv4) where it sees clients' real source IPs. A
+# (18.171.34.111:3478/udp) where it sees clients' real source IPs. A
 # proxied STUN reports the frpc pod IP, useless for direct paths.
 
 # Edge metrics reach Prometheus only through the FRP tunnel, and only its remote-write

@@ -4,5 +4,9 @@
   "repositories": ["member87/home-ops"],
   "onboarding": false,
   "requireConfig": "required",
-  "platformCommit": "enabled"
+  "platformCommit": "enabled",
+  "allowedCommands": [
+    "^install-tool nix \\d+\\.\\d+\\.\\d+$",
+    "^nix --extra-experimental-features 'nix-command flakes' flake update [A-Za-z0-9._-]+$"
+  ]
 }

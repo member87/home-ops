@@ -3,7 +3,7 @@
   "extends": ["config:recommended"],
   "automerge": false,
   "prHourlyLimit": 4,
-  "prConcurrentLimit": 10,
+  "prConcurrentLimit": 20,
   "timezone": "Europe/London",
   "kubernetes": {
     "managerFilePatterns": ["/\\.yaml$/"]
@@ -123,9 +123,32 @@
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*(?:tag|version):\\s*[\"']?(?<currentValue>[^\\s\"']+)"
       ]
+    },
+    {
+      "description": "Flake inputs pinned to a release tag in flake.nix (url = \"github:owner/repo/vX.Y.Z\"). Renovate's nix manager only follows branches and lock revisions, so a tag pin would never move; this reads GitHub tags instead, and the postUpgradeTask below relocks the input.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "url = \"github:(?<packageName>[\\w.-]+/(?<depName>[\\w.-]+))/(?<currentValue>v?\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
+    {
+      "description": "A flake.nix tag bump must come with its flake.lock change, or comin would build an input the lock does not match. Renovate's regex manager writes no lock files, so relock the one input here (install-tool is containerbase's, as the nix manager uses; the commands are allowed in apps/chore-bore/config.json).",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["flake.nix"],
+      "postUpgradeTasks": {
+        "commands": [
+          "install-tool nix 2.31.2",
+          "nix --extra-experimental-features 'nix-command flakes' flake update {{{depName}}}"
+        ],
+        "fileFilters": ["flake.lock"],
+        "executionMode": "update"
+      }
+    },
     {
       "description": "Longhorn components must move together with the upstream chart; individual image bumps create unsupported manager and engine version skew.",
       "matchDatasources": ["docker"],

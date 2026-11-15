@@ -11,6 +11,14 @@
   "flux": {
     "managerFilePatterns": ["/^flux/.+\\.yaml$/"]
   },
+  "nix": {
+    "description": "flake.lock for nixosConfigurations.edge. The edge pulls main with comin, so a lock bump is a deploy; never automerged.",
+    "enabled": true,
+    "lockFileMaintenance": {
+      "enabled": true,
+      "schedule": ["before 6am on monday"]
+    }
+  },
   "bumpVersions": [
     {
       "description": "Chart.yaml version is the deploy trigger for Git-sourced charts (reconcileStrategy: ChartVersion), so bump it whenever a chart dependency changes",

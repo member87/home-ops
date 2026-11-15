@@ -10,3 +10,7 @@ keys.txt
 *.tfstate.*
 terraform/**/*.tfvars
 !terraform/**/*.tfvars.example
+
+# Nix build outputs
+result
+result-*

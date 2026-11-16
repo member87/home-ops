@@ -47,7 +47,7 @@ spec:
                         values: ["talos-t8o-8d5"]
           containers:
             - name: builder
-              image: nixos/nix:2.35.5
+              image: nixos/nix:2.35.6
               imagePullPolicy: IfNotPresent
               command: ["bash", "/config/run.sh"]
               # builder/nix.conf. Not mounted at /etc/nix/nix.conf: the image's /etc/nix is a

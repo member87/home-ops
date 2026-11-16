@@ -65,14 +65,16 @@ spec:
             periodSeconds: 20
           # Chromium is idle between alerts. A screenshot is CPU-bound (the 1-core limit
           # throttled it past Grafana's capture timeout), and both Grafana replicas ask for
-          # the same panel at once, so allow bursts of two cores.
+          # the same panel at once, so allow bursts of two cores. Two captures at once peak
+          # near 1Gi: at a 1Gi limit the renderer was OOM-killed on every pair, which made
+          # pod-restart-high fire and ask for more screenshots (November 2026).
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 2000m
-              memory: 1Gi
+              memory: 2Gi
           volumeMounts:
             - name: tmp
               mountPath: /tmp

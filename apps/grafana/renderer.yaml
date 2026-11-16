@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: renderer
-          image: grafana/grafana-image-renderer:v5.12.10
+          image: grafana/grafana-image-renderer:v5.12.11
           ports:
             - containerPort: 8081
               name: http

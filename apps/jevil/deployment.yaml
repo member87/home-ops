@@ -39,7 +39,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: jevil
-          image: ghcr.io/member87/jevil:63e501702ddc2dfcbb3a897f54fb95f18921de87
+          image: ghcr.io/member87/jevil:afa6fb1f3d818e019c0b19c0a6697ef167a920a8
           imagePullPolicy: IfNotPresent
           args:
             - -policy=/etc/jevil/config/policy.json

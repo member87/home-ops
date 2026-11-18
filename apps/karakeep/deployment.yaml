@@ -27,7 +27,7 @@ spec:
       containers:
         # Web UI and background workers (crawler, search indexing) in one s6-overlay container.
         - name: karakeep
-          image: ghcr.io/karakeep-app/karakeep:0.34.1
+          image: ghcr.io/karakeep-app/karakeep:0.35.0
           ports:
             - containerPort: 3000
               name: http

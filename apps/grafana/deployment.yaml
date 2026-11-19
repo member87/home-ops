@@ -81,6 +81,11 @@ spec:
             # this cluster, right at the 10s default, so most captures 408'd. 30s is the max.
             - name: GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE_TIMEOUT
               value: 30s
+            # Off: the alert's own state history drew a dashed line for every pending,
+            # firing and resolved transition, which buried the graph; the threshold line
+            # and the data already show when it crossed.
+            - name: GF_UNIFIED_ALERTING_SCREENSHOTS_INCLUDE_ALERT_HISTORY
+              value: "false"
             - name: GF_RENDERING_SERVER_URL
               value: http://grafana-image-renderer.grafana.svc.cluster.local:8081/render
             - name: GF_RENDERING_CALLBACK_URL

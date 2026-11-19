@@ -1,0 +1,3 @@
+# Grafana alert rules, applied by terraform/grafana. templates/manifests.yaml renders every
+# */*.yaml in the chart, so without this they ship as a kind-less object and the upgrade fails.
+alerts/

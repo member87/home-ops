@@ -39,16 +39,56 @@ locals {
   alert_panel_ids     = { for i, uid in sort(keys(local.alert_rules)) : uid => i + 1 }
   alert_dashboard_uid = "alert-rules"
 
-  # The rule's datasource query, and the first threshold its condition compares against
-  # (null when the condition has none).
+  # The rule's datasource query, and the evaluator of its condition (null when it has none).
+  # Every rule reduces its query with `last` and compares that against one threshold.
   alert_queries = {
     for uid, rule in local.alert_rules : uid => [for d in rule.data : d if d.datasourceUid != "__expr__"][0]
   }
-  alert_thresholds = {
+  alert_evaluators = {
     for uid, rule in local.alert_rules : uid => try(
-      [for d in rule.data : d if d.refId == rule.condition][0].model.conditions[0].evaluator.params[0],
+      [for d in rule.data : d if d.refId == rule.condition][0].model.conditions[0].evaluator,
       null
     )
+  }
+  alert_thresholds = { for uid, ev in local.alert_evaluators : uid => try(ev.params[0], null) }
+
+  # What each graph runs. A notification is about the series that met the condition, so the
+  # panel keeps only those that met it somewhere in the graph's range (`@ end()` pins that
+  # check to the whole range) and draws their full history; graphing the rule's query as-is
+  # drew every series it returns (40 PVCs for longhorn-backup-stale), and a query ending in
+  # its own filter ("... > 0.1") only the samples past the line, as a few fragments. Such a
+  # filter is dropped from what is drawn, unless the base has a top-level and/or/unless the
+  # filter may bind to alone. Loki queries, and rules without a threshold, run as-is.
+  alert_comparisons = {
+    for uid, ev in local.alert_evaluators : uid => try(
+      format("%s %s", { gt = ">", lt = "<", eq = "==" }[ev.type], ev.params[0]),
+      null
+    )
+  }
+  alert_query_bases = {
+    for uid, q in local.alert_queries : uid => try(
+      [for base in regex("(?s)^(.*?)(?:\\s*(?:>=|<=|==|!=|>|<)\\s*(?:[-+]?(?:[0-9]*\\.)?[0-9]+(?:[eE][-+]?[0-9]+)?|[-+]?Inf))+\\s*$", q.model.expr) :
+      base if !can(regex("\\b(and|or|unless)\\b", base))][0],
+      q.model.expr
+    )
+  }
+  alert_panel_exprs = {
+    for uid, q in local.alert_queries : uid => (
+      q.datasourceUid != "prometheus" || local.alert_comparisons[uid] == null ? q.model.expr :
+      format("(%s) and max_over_time(((%s) %s)[$__range:$__interval] @ end())",
+      local.alert_query_bases[uid], q.model.expr, local.alert_comparisons[uid])
+    )
+  }
+
+  # Series are named by the labels the rule's own summary and description print
+  # ({{ $labels.instance }} ...), so the graph matches the notification text; a rule that
+  # names none has a single series and no legend.
+  alert_legend_labels = {
+    for uid, rule in local.alert_rules : uid => distinct(flatten([
+      for key in ["summary", "description"] : [
+        for m in regexall("\\$labels\\.([A-Za-z_][A-Za-z0-9_]*)", try(rule.annotations[key], "")) : m[0]
+      ]
+    ]))
   }
 }
 
@@ -116,9 +156,9 @@ resource "grafana_rule_group" "this" {
   depends_on = [grafana_dashboard.alert_rules]
 }
 
-# Generated from the rules, not from dashboards/: one timeseries per rule running the rule's
-# own query, with its threshold drawn as a line. Notifications carry a screenshot of the
-# panel (grafana-image-renderer) and link to it.
+# Generated from the rules, not from dashboards/: one timeseries per rule drawing the series
+# that met its condition (see alert_panel_exprs), with its threshold as a line.
+# Notifications carry a screenshot of the panel (grafana-image-renderer) and link to it.
 resource "grafana_dashboard" "alert_rules" {
   folder    = grafana_folder.alerts.uid
   overwrite = true
@@ -142,14 +182,20 @@ resource "grafana_dashboard" "alert_rules" {
           type = local.alert_queries[uid].datasourceUid
           uid  = local.alert_queries[uid].datasourceUid
         }
-        targets = [{
+        targets = [merge({
           refId      = "A"
-          expr       = local.alert_queries[uid].model.expr
+          expr       = local.alert_panel_exprs[uid]
           datasource = { type = local.alert_queries[uid].datasourceUid, uid = local.alert_queries[uid].datasourceUid }
-        }]
+          }, length(local.alert_legend_labels[uid]) == 0 ? {} : {
+          legendFormat = join(" / ", [for l in local.alert_legend_labels[uid] : "{{${l}}}"])
+        })]
         fieldConfig = {
           defaults = {
-            custom = { thresholdsStyle = { mode = local.alert_thresholds[uid] == null ? "off" : "dashed" } }
+            custom = {
+              lineWidth       = 2
+              showPoints      = "never"
+              thresholdsStyle = { mode = local.alert_thresholds[uid] == null ? "off" : "dashed" }
+            }
             thresholds = {
               mode = "absolute"
               steps = concat([{ color = "transparent", value = null }],
@@ -158,10 +204,23 @@ resource "grafana_dashboard" "alert_rules" {
           }
           overrides = []
         }
-        options = { legend = { displayMode = "list", placement = "bottom", showLegend = true } }
+        options = { legend = { displayMode = "list", placement = "bottom", showLegend = length(local.alert_legend_labels[uid]) > 0 } }
       }
     ]
   })
+
+  lifecycle {
+    # alert_panel_exprs applies the condition's threshold to the query itself, which is only
+    # what the rule evaluates while nothing but a reduce sits between the two.
+    precondition {
+      condition = alltrue([
+        for rule in values(local.alert_rules) : alltrue([
+          for d in rule.data : contains(["reduce", "threshold"], d.model.type) if d.datasourceUid == "__expr__"
+        ])
+      ])
+      error_message = "An alert rule uses an expression other than reduce and threshold; teach alert_panel_exprs in alerting.tf what it means for the graph first."
+    }
+  }
 }
 
 resource "grafana_message_template" "discord" {

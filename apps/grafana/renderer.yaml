@@ -48,6 +48,10 @@ spec:
               value: 20s
             - name: BROWSER_READINESS_PRIOR_WAIT
               value: 2s
+            # Grafana sends alert screenshot requests without a time zone, so the axis used
+            # the renderer's default, UTC: an hour off London in summer.
+            - name: BROWSER_TIMEZONE
+              value: Europe/London
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

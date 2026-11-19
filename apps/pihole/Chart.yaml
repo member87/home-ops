@@ -1,7 +1,7 @@
 apiVersion: v2
 name: pihole
 type: application
-version: 0.3.0
+version: 0.3.1
 description: Pi-hole with local home-ops manifests.
 dependencies:
   - name: pihole

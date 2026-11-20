@@ -75,10 +75,10 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 512Mi
+              memory: 32Mi
             limits:
               cpu: 2000m
-              memory: 2Gi
+              memory: 2560Mi
           volumeMounts:
             - name: tmp
               mountPath: /tmp

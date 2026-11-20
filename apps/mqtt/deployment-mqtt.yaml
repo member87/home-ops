@@ -37,7 +37,7 @@ spec:
     spec:
       initContainers:
         - name: init-data-permissions
-          image: eclipse-mosquitto:2.1.2-alpine
+          image: eclipse-mosquitto:2.1.4-alpine
           command:
             - chown
             - mosquitto:mosquitto
@@ -53,7 +53,7 @@ spec:
               cpu: 100m
               memory: 64Mi
         - name: setup-auth
-          image: eclipse-mosquitto:2.1.2-alpine
+          image: eclipse-mosquitto:2.1.4-alpine
           command:
             - /bin/sh
             - -c
@@ -80,7 +80,7 @@ spec:
               memory: 64Mi
       containers:
         - name: mqtt
-          image: eclipse-mosquitto:2.1.2-alpine
+          image: eclipse-mosquitto:2.1.4-alpine
           command:
             - /usr/sbin/mosquitto
           args:

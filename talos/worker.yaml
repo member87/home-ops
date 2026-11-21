@@ -190,7 +190,7 @@ machine:
         disk: /dev/sdb
         # Custom installer with iscsi-tools, util-linux-tools, and i915 extensions. Keep the
         # version and schematic in step with talos/controlplane.yaml.
-        image: factory.talos.dev/metal-installer/e6b43ff46963c69f12f495977e1c6e394d4dfec4351821e0e5e1729576aec812:v1.14.5
+        image: factory.talos.dev/metal-installer/e6b43ff46963c69f12f495977e1c6e394d4dfec4351821e0e5e1729576aec812:v1.14.6
         # Indicates if the installation disk should be wiped at installation time.
         wipe: false
         # # Look up disk using disk attributes like model, size, serial and others.

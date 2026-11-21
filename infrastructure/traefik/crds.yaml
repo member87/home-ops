@@ -1,4 +1,4 @@
-# jevil:vendor repo=traefik/traefik version=v3.7.18 url=https://raw.githubusercontent.com/traefik/traefik/{version}/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml
+# jevil:vendor repo=traefik/traefik version=v3.7.19 url=https://raw.githubusercontent.com/traefik/traefik/{version}/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml
 # Upstream's CRDs as released; Jevil re-vendors them with install.yaml.
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition

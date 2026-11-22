@@ -232,15 +232,20 @@ An update whose upstream target exists on GitHub only as prereleases (no stable 
 version) is not eligible to merge on its own and gets `prerelease`: home-operations images
 can track an application's develop channel, so a minor bump there can still be a test build.
 
-`security` comes from a `labelOnly` question: Jev thinks the release fixes a security
-vulnerability (≥ 0.5). It never sends an update to review and no longer jumps the merge line; the
-dashboard's open pull request table shows it under flags.
+`security`, `breaking` and `regression` come from `labelOnly` questions: they label the pull
+request and the card names what Jev read, but they never send an update to review and no longer
+jump the merge line; the dashboard's open pull request table shows them under flags. `breaking`
+and `regression` went label-only in November 2026: over the 90 days before, 12 of the 13 updates
+`breaking` sent to review and all 9 `regression` sent were merged anyway, the flagged upstream
+issues were mostly about another release line or a feature the deployment does not use, and the
+one bad deploy in that time was caught by the post-merge soak, not by a flag. `migration` and
+`data-risk` still send an update to review: a revert cannot undo changed data.
 
 Upstream issues: for every upstream project an update resolves to, Jevil searches the issues
 opened there since the target version's release (the newest `upstreamIssues.maxIssues`, again
 every `refreshMinutes`) and asks Jev about each one: did something that worked in the previous
-version break in this one? Any single issue at ≥ 0.7 adds `regression` and sends the
-update to review, naming the issue; that is what the release-age wait is for. Asking about all
+version break in this one? Any single issue at ≥ 0.7 adds `regression` and names the issue on
+the card; the label never holds the update. Asking about all
 issues at once made every bug report that names the version look like a regression (issue
 templates ask for it). Jev is paid per call, so issues that cannot be a regression report
 (feature, question, docs or translation labels; closed as not planned or duplicate) are skipped
@@ -335,14 +340,14 @@ All of these, checked in code:
   leaves `created` days old). An update whose age cannot be found waits with "release age
   unknown": `renovate/stability-days` passes at once on registries like ghcr.io that publish no
   release dates.
-- Jev answers each policy question inside its threshold: no breaking change (review at 0.9), no
-  manual upgrade step (0.9), no stored-data change (0.7), no text addressed to a bot (0.3). The
-  first three were 0.3 until November 2026: over the 47 Chore Bore updates merged in the 60 days
+- Jev answers each policy question inside its threshold: no manual upgrade step (review at 0.9),
+  no stored-data change (0.7), no text addressed to a bot (0.3); `breaking` (0.9) only labels.
+  Breaking, manual step and stored data were 0.3 until November 2026: over the 47 Chore Bore updates merged in the 60 days
   before, they sent 12, 4 and 4 to review (the highest scores 0.88, 0.89, 0.63), every one was
   merged anyway, and every merge ended `merged-ok`. The bars now sit just above what was merged;
   majors and Talos/Kubernetes are never eligible, and the post-merge health check and soak revert
   what breaks. `drop_in` is gone: it flagged 5 merged updates and nothing that was closed.
-- Jev finds no regression report among the issues opened upstream since the release. "Since the
+- Upstream issues Jev scores as regressions only label the update (`regression`). "Since the
   release" means since the exact time it was published: GitHub's issue search only works by day,
   so Jevil drops issues opened earlier on the release day before Jev reads or counts them, and
   the card shows the time it searched from (`since 2026-11-01 21:47 UTC`). Closed issues still

@@ -6,7 +6,9 @@
 # and the key has no deleteFiles anyway); the bucket lifecycle rules delete hidden and
 # superseded versions after 90 days (30 for db/). thumbs/ and encoded-video/ are left
 # out because Immich regenerates them. --max-delete stops a sync from hiding the backup
-# when the source looks wiped, e.g. an empty NFS mount.
+# when the source looks wiped, e.g. an empty NFS mount: each prefix may hide at most a
+# tenth of the files it holds (never fewer than 200), so Immich emptying its trash of a
+# few thousand assets syncs, while a source that lost most of its files fails the run.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -50,13 +52,18 @@ spec:
                   for pair in library:library upload:upload profile:profile backups:db; do
                     src="${pair%%:*}"
                     dst="${pair##*:}"
-                    echo "syncing /data/${src} -> b2:${BUCKET}/${dst}"
+                    # rclone size counts current versions only, so hidden files do not raise
+                    # the limit. A failed listing leaves count empty and the limit at 200.
+                    count=$(rclone size --json --fast-list "b2:${BUCKET}/${dst}" | sed -n 's/.*"count":\([0-9]*\).*/\1/p')
+                    limit=$(( ${count:-0} / 10 ))
+                    [ "$limit" -lt 200 ] && limit=200
+                    echo "syncing /data/${src} -> b2:${BUCKET}/${dst} (${count:-unknown} files in bucket, hiding at most ${limit})"
                     rclone sync "/data/${src}" "b2:${BUCKET}/${dst}" \
                       --fast-list \
                       --transfers 4 \
                       --checkers 16 \
                       --b2-upload-concurrency 2 \
-                      --max-delete 200 \
+                      --max-delete "$limit" \
                       --metrics-addr :9250 \
                       --stats 10m \
                       --stats-one-line \

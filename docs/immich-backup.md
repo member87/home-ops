@@ -22,8 +22,15 @@ two hours after Immich writes its own database dump. The bucket is defined in
   rule expires.
 - The CronJob's key (`immich-backup-secret`) has no `deleteFiles` capability, so
   nothing in the cluster can delete data outright.
-- `--max-delete 200` makes a run fail instead of hiding more than 200 files, for
-  example when the NFS mount comes up empty.
+- `--max-delete` makes a run fail instead of hiding more than a tenth of the files a
+  prefix holds (at least 200), for example when the NFS mount comes up empty. The
+  limit is computed per prefix from `rclone size` at the start of each sync and
+  logged on its `syncing` line. The trash purge of 21 Nov 2026 (1,883 assets,
+  3,165 files, under 4% of `library/`) failed the old fixed limit of 200 for days.
+- A run stopped by the limit has still uploaded new files (rclone deletes last);
+  only the hiding is held back. After a deletion larger than the limit that you
+  made on purpose, run it once with a higher limit:
+  `kubectl -n immich create job immich-backup-prune --from=cronjob/immich-backup --dry-run=client -o yaml | sed 's/--max-delete "$limit"/--max-delete 20000/' | kubectl apply -f -`
 - Grafana alert `immich-backup-stale` fires when the CronJob has not succeeded for
   48 hours.
 

@@ -302,6 +302,7 @@
     {
       "id": "breaking",
       "label": "breaking",
+      "labelOnly": true,
       "reviewAbove": 0.9,
       "instructions": "Do the release notes in `release_notes` describe a breaking change for an existing deployment of the packages in `package_updates`?",
       "criteria": {
@@ -356,6 +357,7 @@
       {
         "id": "regression",
         "label": "regression",
+        "labelOnly": true,
         "reviewAbove": 0.7,
         "instructions": "Does the issue in `issue`, opened in `project` after `version` was released, report that something which worked in `previous_version` broke in `version` (a crash, a failed start or migration, lost data, a feature that stopped working), in a way that would hit an existing deployment?",
         "criteria": {

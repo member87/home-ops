@@ -31,7 +31,7 @@ spec:
                       - talos-t8o-8d5
       containers:
         - name: selenium
-          image: selenium/standalone-chrome:4.52.0-20261101
+          image: selenium/standalone-chrome:4.53.0-20261120
           ports:
             - containerPort: 4444
               name: http

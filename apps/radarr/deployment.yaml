@@ -16,10 +16,14 @@ spec:
     requests:
       storage: 1Gi
 ---
+# The whole /volume1/kubernetes export, mounted once at /data: downloads land in
+# /data/downloads (remote path mapping /downloads/ -> /data/downloads/ for SABnzbd and
+# qBittorrent) and the library is /data/media/movies. Hardlinks only work within one
+# mount, so two PVs (media, downloads) made every import a full copy over NFS.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: radarr-media-pv
+  name: radarr-data-pv
 spec:
   capacity:
     storage: 1Ti
@@ -34,60 +38,20 @@ spec:
     - nointr
   nfs:
     server: 10.0.0.9
-    path: /volume1/kubernetes/media
+    path: /volume1/kubernetes
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   annotations:
-    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable;
-    # Flux inherited spec.volumeName from Helm's last-applied on some of these, and a
-    # server-side apply that omits it then tries to clear it. Create-only avoids that.
-  name: radarr-media
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable
+  name: radarr-data
   namespace: radarr
 spec:
   accessModes:
     - ReadWriteMany
   storageClassName: nfs-manual
-  volumeName: radarr-media-pv
-  resources:
-    requests:
-      storage: 1Ti
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: radarr-downloads-pv
-spec:
-  capacity:
-    storage: 1Ti
-  accessModes:
-    - ReadWriteMany
-  storageClassName: nfs-manual
-  persistentVolumeReclaimPolicy: Retain
-  mountOptions:
-    - nfsvers=3
-    - proto=tcp
-    - hard
-    - nointr
-  nfs:
-    server: 10.0.0.9
-    path: /volume1/kubernetes/downloads
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  annotations:
-    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent   # bound PVC specs are immutable;
-    # Flux inherited spec.volumeName from Helm's last-applied on some of these, and a
-    # server-side apply that omits it then tries to clear it. Create-only avoids that.
-  name: radarr-downloads
-  namespace: radarr
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: nfs-manual
-  volumeName: radarr-downloads-pv
+  volumeName: radarr-data-pv
   resources:
     requests:
       storage: 1Ti
@@ -181,10 +145,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: media
+            - name: data
               mountPath: /data
-            - name: downloads
-              mountPath: /downloads
           livenessProbe:
             httpGet:
               path: /ping
@@ -208,11 +170,7 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: radarr-config
-        # Shared NFSv3 media storage from UGREEN NAS at 10.0.0.9
-        - name: media
+        # Shared NFSv3 storage from UGREEN NAS at 10.0.0.9 (see radarr-data-pv)
+        - name: data
           persistentVolumeClaim:
-            claimName: radarr-media
-        # Shared NFSv3 downloads storage from UGREEN NAS at 10.0.0.9
-        - name: downloads
-          persistentVolumeClaim:
-            claimName: radarr-downloads
+            claimName: radarr-data

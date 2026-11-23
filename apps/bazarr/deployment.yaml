@@ -93,8 +93,10 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            # Same path as in Sonarr and Radarr (/data/media/{tv,movies}), so the paths
+            # Bazarr syncs from them resolve without path mappings.
             - name: media
-              mountPath: /data
+              mountPath: /data/media
           livenessProbe:
             tcpSocket:
               port: 6767

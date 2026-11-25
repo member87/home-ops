@@ -36,7 +36,9 @@ spec:
         app: prowlarr
     spec:
       # Prowlarr egresses directly. Only the Byparr sidecar (below) routes
-      # its outbound indexer traffic through the shared Gluetun proxy.
+      # its outbound indexer traffic through the qBittorrent pod's Gluetun
+      # HTTP proxy. A second Gluetun on the same Proton WireGuard key made
+      # Proton move the exit IP and drop the forwarded port every ~90s.
       dnsPolicy: ClusterFirst
       securityContext:
         runAsUser: 1000
@@ -184,7 +186,7 @@ spec:
             - name: TZ
               value: "Europe/London"
             - name: PROXY_SERVER
-              value: "http://gluetun.gluetun.svc.cluster.local:8888"
+              value: "http://qbittorrent-gluetun.qbittorrent.svc.cluster.local:8888"
           livenessProbe:
             tcpSocket:
               port: http

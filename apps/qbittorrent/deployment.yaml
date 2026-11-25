@@ -244,7 +244,9 @@ spec:
               memory: "1472Mi"
               cpu: "100m"
             limits:
-              memory: "2Gi"
+              # Download file cache counts against the cgroup: at 2Gi it hit the
+              # limit 126k times in an hour and stalled writes to the NAS.
+              memory: "4Gi"
               cpu: "2000m"
       volumes:
         - name: tun

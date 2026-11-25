@@ -130,6 +130,9 @@ spec:
               value: "protonvpn"
             - name: VPN_TYPE
               value: "wireguard"
+            # Never connect this key from a second tunnel: Proton then moves the
+            # exit IP and drops the forwarded port every minute or two. Other
+            # clients use the http-proxy (Service qbittorrent-gluetun:8888).
             - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:

@@ -221,7 +221,15 @@ rules:
           to: 0
         datasourceUid: prometheus
         model:
-          expr: (rate(kube_pod_container_status_restarts_total{namespace!="longhorn-system"}[15m]) * 3600) * on(namespace,pod) group_left(owner_kind) kube_pod_owner{owner_kind!="Job"} > 5
+          # Real restarts in the last hour, summed per workload (owner_name), so a pod replaced
+          # mid-crash-loop keeps one alert. The old 15m rate fired on 2 restarts (one node reboot).
+          # max by dedupes kube_pod_owner: a pod with two owners otherwise errors the whole query.
+          expr: >-
+            sum by (namespace, owner_name, container) (
+              increase(kube_pod_container_status_restarts_total{namespace!="longhorn-system"}[1h])
+              * on(namespace, pod) group_left(owner_name)
+              max by (namespace, pod, owner_name) (kube_pod_owner{namespace!="longhorn-system", owner_kind!="Job", owner_is_controller="true"})
+            ) > 5
           refId: A
       - refId: B
         relativeTimeRange:
@@ -251,8 +259,8 @@ rules:
     execErrState: OK
     for: 5m
     annotations:
-      summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting frequently
-      description: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} (excluding Job pods) is restarting more than 5 times per hour
+      summary: '{{ $labels.namespace }}/{{ $labels.owner_name }} is restarting frequently'
+      description: Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.owner_name }} (excluding Jobs) restarted {{ printf "%.0f" $values.B.Value }} times in the last hour, summed over its pods.
     labels:
       severity: critical
 

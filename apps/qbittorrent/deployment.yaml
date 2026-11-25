@@ -154,8 +154,10 @@ spec:
               value: "on"
             - name: FIREWALL_DEBUG
               value: "off"
+            # DoH (443), not DoT (853): Proton resets DoT handshakes to Cloudflare,
+            # which fails gluetun's 6s startup check and loops the VPN forever.
             - name: DNS_UPSTREAM_RESOLVER_TYPE
-              value: "dot"
+              value: "doh"
             - name: DNS_UPSTREAM_RESOLVERS
               value: "cloudflare"
             - name: BLOCK_MALICIOUS

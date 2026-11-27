@@ -136,7 +136,7 @@ spec:
         # Major 17 to match the pg_dump in the Sure image (bin/sure-backup); a newer server
         # would make its dumps fail. A major upgrade needs a dump and restore.
         - name: postgres
-          image: postgres:17.12-alpine
+          image: postgres:19.0-alpine
           ports:
             - containerPort: 5432
               name: postgres

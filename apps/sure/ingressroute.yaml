@@ -1,0 +1,45 @@
+---
+# jevil:auth Sure's own login, Pocket ID OIDC only (local password login disabled in configmap.yaml)
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: sure
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sure
+  namespace: sure
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`sure.lab.jackhumes.com`)
+      kind: Rule
+      services:
+        - name: sure
+          port: 3000
+  tls:
+    secretName: sure-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sure-http
+  namespace: sure
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`sure.lab.jackhumes.com`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: sure
+          port: 3000

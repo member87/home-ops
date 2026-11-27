@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sure
+  namespace: sure
+  labels:
+    app: sure
+spec:
+  selector:
+    app: sure
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sure-postgres
+  namespace: sure
+  labels:
+    app: sure-postgres
+spec:
+  selector:
+    app: sure-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sure-redis
+  namespace: sure
+  labels:
+    app: sure-redis
+spec:
+  selector:
+    app: sure-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+  type: ClusterIP

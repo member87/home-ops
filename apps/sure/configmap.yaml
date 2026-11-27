@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sure-config
+  namespace: sure
+data:
+  SELF_HOSTED: "true"
+  RAILS_LOG_LEVEL: "info"
+  # Traefik terminates TLS; the pod speaks plain HTTP, so assume SSL rather than force it
+  # (force_ssl would redirect kubelet's HTTP probes).
+  RAILS_FORCE_SSL: "false"
+  RAILS_ASSUME_SSL: "true"
+  APP_DOMAIN: "sure.lab.jackhumes.com"
+  # Turns on the Host check (DNS-rebinding protection); /up is exempt, so probes still pass.
+  ALLOWED_HOSTS: "sure.lab.jackhumes.com"
+  DB_HOST: "sure-postgres"
+  DB_PORT: "5432"
+  POSTGRES_USER: "sure"
+  POSTGRES_DB: "sure_production"
+  REDIS_URL: "redis://sure-redis:6379/1"
+  # Login is Pocket ID only. The first account to sign in becomes super_admin; later ones are
+  # created on first sign-in (who may sign in is decided by the Pocket ID client).
+  OIDC_ISSUER: "https://auth.jackhumes.com"
+  OIDC_CLIENT_ID: "bbc11387-dba1-47c7-8fb2-2581e4cf4f5f"
+  OIDC_REDIRECT_URI: "https://sure.lab.jackhumes.com/auth/openid_connect/callback"
+  OIDC_BUTTON_LABEL: "Sign in with Pocket ID"
+  AUTH_LOCAL_LOGIN_ENABLED: "false"
+  AUTH_LOCAL_ADMIN_OVERRIDE_ENABLED: "false"
+  AUTH_JIT_MODE: "create_and_link"

@@ -1,0 +1,251 @@
+---
+# jevil:no-probe the worker container is Sidekiq, which has no health endpoint; it exits on a fatal error and kubelet restarts it
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sure
+  namespace: sure
+  labels:
+    app: sure
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sure
+  template:
+    metadata:
+      labels:
+        app: sure
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        # Rails/Puma. The image entrypoint runs db:prepare (create or migrate) before the server.
+        - name: web
+          image: ghcr.io/we-promise/sure:0.7.7-alpha.10
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: sure-config
+            # SECRET_KEY_BASE, ACTIVE_RECORD_ENCRYPTION_*, POSTGRES_PASSWORD, OIDC_CLIENT_SECRET.
+            # Never rotate SECRET_KEY_BASE or the encryption keys on a populated database:
+            # encrypted columns become unreadable.
+            - secretRef:
+                name: sure-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: storage
+              mountPath: /rails/storage
+          startupProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            periodSeconds: 5
+            failureThreshold: 120
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+        # Sidekiq: syncs, imports, market data, scheduled jobs. Same pod as web because both
+        # need the ReadWriteOnce storage volume.
+        - name: worker
+          image: ghcr.io/we-promise/sure:0.7.7-alpha.10
+          args:
+            - bundle
+            - exec
+            - sidekiq
+          envFrom:
+            - configMapRef:
+                name: sure-config
+            # SECRET_KEY_BASE, ACTIVE_RECORD_ENCRYPTION_*, POSTGRES_PASSWORD, OIDC_CLIENT_SECRET.
+            # Never rotate SECRET_KEY_BASE or the encryption keys on a populated database:
+            # encrypted columns become unreadable.
+            - secretRef:
+                name: sure-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: storage
+              mountPath: /rails/storage
+          resources:
+            requests:
+              memory: "384Mi"
+              cpu: "50m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: sure-storage
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sure-postgres
+  namespace: sure
+  labels:
+    app: sure-postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sure-postgres
+  template:
+    metadata:
+      labels:
+        app: sure-postgres
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        # Major 17 to match the pg_dump in the Sure image (bin/sure-backup); a newer server
+        # would make its dumps fail. A major upgrade needs a dump and restore.
+        - name: postgres
+          image: postgres:17.12-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: "sure"
+            - name: POSTGRES_DB
+              value: "sure_production"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sure-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "sure", "-d", "sure_production"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "sure", "-d", "sure_production"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: sure-postgres
+---
+# Sidekiq queue and Action Cable only. No persistence: scheduled jobs are re-enqueued by
+# sidekiq-cron, and a restart drops at most the jobs queued at that moment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sure-redis
+  namespace: sure
+  labels:
+    app: sure-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sure-redis
+  template:
+    metadata:
+      labels:
+        app: sure-redis
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+      containers:
+        - name: redis
+          image: redis:8.12.0-alpine
+          args:
+            - --save
+            - ""
+            - --appendonly
+            - "no"
+            # Sidekiq needs noeviction: evicting a key loses a job silently.
+            - --maxmemory
+            - 192mb
+            - --maxmemory-policy
+            - noeviction
+          ports:
+            - containerPort: 6379
+              name: redis
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "20m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 64Mi

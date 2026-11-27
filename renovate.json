@@ -196,6 +196,14 @@
       "versioning": "regex:^(?<major>\\d+)\\.0\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d+)$"
     },
     {
+      "description": "Sure publishes each build under a semver tag (0.7.7-alpha.10) and calendar aliases (2026.11.25-alpha, 2026.11.26-nightly) of the same image. Docker versioning would read 2026 as a major above 0 and keep -alpha.N as a fixed suffix, so use semver and allow only the semver alpha/rc/stable tags. ignoreUnstable is off because the deployment tracks the alpha channel.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/we-promise/sure"],
+      "versioning": "semver",
+      "allowedVersions": "/^0\\.\\d+\\.\\d+(?:-(?:alpha|rc)\\.\\d+)?$/",
+      "ignoreUnstable": false
+    },
+    {
       "description": "Talos and Kubernetes move in one PR: the tuppr TalosUpgrade/KubernetesUpgrade versions (merging is what upgrades the cluster), the installer image and the control-plane/kubelet images in talos/*.yaml (used for new installs) all change together. The Kubernetes images are found twice (docker datasource by the kubernetes manager, github-releases by the Talos custom managers), so both names are listed to keep them in this group. group.branchTopic is fixed because separateMultipleMinor (below) would otherwise put every minor stream on its own branch (minor-1.14-..., minor-1.37-...) and split Talos and Kubernetes into separate PRs; on one branch Renovate keeps the lowest step per dependency when several minors are pending (latest patch of the current minor, then the next minor), never a skip. A plain branchTopic or groupSlug still gets the per-minor prefix.",
       "matchPackageNames": [
         "siderolabs/talos",

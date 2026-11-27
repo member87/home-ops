@@ -25,7 +25,7 @@ spec:
               app: glance
       containers:
         - name: glance
-          image: ghcr.io/panonim/dynacat:3.0.3
+          image: ghcr.io/panonim/dynacat:3.0.4
           envFrom:
             - secretRef:
                 name: glance-secrets

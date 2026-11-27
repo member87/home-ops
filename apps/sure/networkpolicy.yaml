@@ -1,0 +1,42 @@
+---
+# Redis has no password: only the Sure pod may reach it. Enforced by
+# infrastructure/kube-network-policies.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sure-redis
+  namespace: sure
+spec:
+  podSelector:
+    matchLabels:
+      app: sure-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sure
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sure-postgres
+  namespace: sure
+spec:
+  podSelector:
+    matchLabels:
+      app: sure-postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sure
+      ports:
+        - protocol: TCP
+          port: 5432

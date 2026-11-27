@@ -41,6 +41,10 @@ pages:
                 url: https://karakeep.lab.jackhumes.com
                 check-url: https://karakeep.lab.jackhumes.com/api/health
                 icon: sh:karakeep
+              - title: Sure
+                url: https://sure.lab.jackhumes.com
+                check-url: https://sure.lab.jackhumes.com/up
+                icon: sh:sure-finance
               - title: Gotify
                 url: https://gotify.jackhumes.com
                 icon: sh:gotify

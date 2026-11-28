@@ -29,7 +29,7 @@ spec:
       containers:
         # Rails/Puma. The image entrypoint runs db:prepare (create or migrate) before the server.
         - name: web
-          image: ghcr.io/we-promise/sure:0.7.7-alpha.10
+          image: ghcr.io/we-promise/sure:0.7.7-rc.1
           ports:
             - containerPort: 3000
               name: http
@@ -78,7 +78,7 @@ spec:
         # Sidekiq: syncs, imports, market data, scheduled jobs. Same pod as web because both
         # need the ReadWriteOnce storage volume.
         - name: worker
-          image: ghcr.io/we-promise/sure:0.7.7-alpha.10
+          image: ghcr.io/we-promise/sure:0.7.7-rc.1
           args:
             - bundle
             - exec
